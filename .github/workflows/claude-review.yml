@@ -7,6 +7,11 @@ on:
 jobs:
   review:
     name: review
+    # Bot-authored pull requests are skipped rather than failed. Dependabot's
+    # PRs cannot read repository secrets by design, so the API key would always
+    # arrive empty and every dependency bump would carry a red check for a
+    # review that never could have run.
+    if: ${{ !endsWith(github.actor, '[bot]') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
