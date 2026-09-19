@@ -38,16 +38,17 @@ npm run verify       # format + lint + typecheck + test + build（CI 跑的同�
 要接真的 API，複製 `apps/.env.example` 成 `.env.local`，設定 `VITE_API_BASE_URL`
 並把 `VITE_USE_MOCK` 改成 `false`。
 
-| 指令                              | 說明                                    |
-| --------------------------------- | --------------------------------------- |
-| `npm run dev`                     | 前端開發伺服器                          |
-| `npm run build`                   | 型別檢查後打包到 `apps/dist`            |
-| `npm run test`                    | Vitest（打字引擎、錯字簿、AI 判讀規則） |
-| `npm run lint` / `npm run format` | ESLint / Prettier                       |
-| `npm run api:dev`                 | 後端 API（https://localhost:7001）      |
-| `npm run desktop:dev`             | Tauri 桌面殼開發模式（自動帶起前端）    |
-| `npm run desktop:build`           | 打包當前平台的安裝檔                    |
-| `npm run docker:up`               | 網頁版整套起來（http://localhost:8080） |
+| 指令                              | 說明                                     |
+| --------------------------------- | ---------------------------------------- |
+| `npm run dev`                     | 前端開發伺服器                           |
+| `npm run build`                   | 型別檢查後打包到 `apps/dist`             |
+| `npm run test`                    | Vitest（打字引擎、錯字簿、AI 判讀規則）  |
+| `npm run test:e2e`                | Playwright（焦點、IME 組字等瀏覽器行為） |
+| `npm run lint` / `npm run format` | ESLint / Prettier                        |
+| `npm run api:dev`                 | 後端 API（https://localhost:7001）       |
+| `npm run desktop:dev`             | Tauri 桌面殼開發模式（自動帶起前端）     |
+| `npm run desktop:build`           | 打包當前平台的安裝檔                     |
+| `npm run docker:up`               | 網頁版整套起來（http://localhost:8080）  |
 
 ### 網頁版 / Docker
 
@@ -93,7 +94,10 @@ npm run db:schema                         # 匯出 server/db/schema.sql
 AI 提示詞存在後端的 `PromptTemplates`，內建版本由 `Data/PromptSeeds.cs` 在每次
 啟動時重新種入——提示詞不需要使用者自己撰寫，改好內建版並遞增 `Revision`
 就會推到所有部署；使用者若另存同 `Code` 的版本會優先採用，且內建版永不被覆寫，
-隨時可還原預設。
+隨時可還原預設。顯示用的名稱與說明（以及本機模型的 `Note`）另由
+`Data/CatalogueTranslationSeeds.cs` 種進 `Translations`（en / zh-TW / zh-CN）；
+`GET /prompts?locale=` 與 `GET /models?locale=` 會依語系回傳。給模型看的
+`Content` 維持英文。
 
 ### 多國語 / Translation
 
@@ -167,14 +171,52 @@ docker compose -f docker/docker-compose.yml build
 的應用程式。要消除需要 Windows 程式碼簽章憑證與 Apple Developer ID，並把憑證
 放進 repository secrets。
 
+## 桌面自動更新 / Auto-update
+
+已安裝的桌面版可以自己更新：`tauri-plugin-updater` 向 GitHub Releases 上的
+`latest.json` 詢問新版，下載並驗證簽章後換上安裝檔。入口在「設定 → 軟體更新」，
+**僅桌面版可見**（網頁端沒有東西可安裝，它的更新方式是拉新的容器映像）。
+
+端到端是這樣串起來的：
+
+1. `tauri.conf.json` 的 `bundle.createUpdaterArtifacts` 讓 `tauri build` 為每個
+   安裝檔簽出 `.sig`；`plugins.updater.endpoints` 指向
+   `…/releases/latest/download/latest.json`。
+2. `tauri-action`（`release.yml`）把各平台的簽章合併成同一份 `latest.json` 並上傳。
+   合併是「讀取→疊加→刪除→重傳」，沒有鎖，所以三個平台 job 用
+   `max-parallel: 1` 依序跑；並行時最後寫入者會蓋掉別的平台條目，而三個 job
+   全綠。`updater-manifest` job 會下載該檔並斷言四個平台鍵都在，把這種靜默失敗
+   變成響亮失敗。
+3. App 內 `check()` 比對版號，`downloadAndInstall()` 下載並驗章，macOS／Linux
+   再 `relaunch()`（Windows 由安裝程式接手，進程在啟動安裝時就結束了）。
+
+第一次使用前要做三件事，只做一次：
+
+```bash
+npm run tauri signer generate -- -w ~/.tauri/typelab.key
+```
+
+- 把 `typelab.key.pub` 的**內容**貼進 `tauri.conf.json` 的 `plugins.updater.pubkey`
+  （目前是可辨識的佔位字串）。佔位值不影響啟動，也不影響「檢查更新」，只會在
+  真要下載時因驗章失敗而擋下來。
+- 私鑰進 repository secrets：`TAURI_SIGNING_PRIVATE_KEY`（有設密碼再加
+  `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`）。沒放金鑰時 `tauri build` 會直接失敗，
+  這是刻意的——不該發出未簽章的正式版。本機只想試打包可暫時把
+  `createUpdaterArtifacts` 改成 `false`。
+- **私鑰遺失 = 已安裝的舊版永遠收不到更新**，請離線備份。
+
+注意 `release.yml` 仍用 `releaseDraft: true`：GitHub 的 `/releases/latest/` 會跳過
+草稿，所以更新對使用者來說是在你手動 Publish 之後才生效（這是與「草稿＋人工
+發佈」那道閘門取的捨，不是漏掉）。
+
 ## CI
 
-| Workflow            | 觸發          | 內容                                                |
-| ------------------- | ------------- | --------------------------------------------------- |
-| `ci.yml`            | push · PR     | format、lint、typecheck、test、build                |
-| `claude-review.yml` | PR 開啟／更新 | Claude Code 自動審查，需 `ANTHROPIC_API_KEY` secret |
-| `version.yml`       | push 到 main  | 自動 patch 升版；訊息含 `[release]` 才打 tag 並發布 |
-| `release.yml`       | `v*` tag、手動、或由 `version.yml` 呼叫 | 三平台桌面安裝檔 + 容器映像推上 GHCR |
+| Workflow            | 觸發                                    | 內容                                                |
+| ------------------- | --------------------------------------- | --------------------------------------------------- |
+| `ci.yml`            | push · PR                               | format、lint、typecheck、test、build                |
+| `claude-review.yml` | PR 開啟／更新                           | Claude Code 自動審查，需 `ANTHROPIC_API_KEY` secret |
+| `version.yml`       | push 到 main                            | 自動 patch 升版；訊息含 `[release]` 才打 tag 並發布 |
+| `release.yml`       | `v*` tag、手動、或由 `version.yml` 呼叫 | 三平台桌面安裝檔 + 容器映像推上 GHCR                |
 
 ## 路線圖 / Roadmap
 

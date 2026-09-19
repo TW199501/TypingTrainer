@@ -364,7 +364,12 @@
     "preferLocal": "优先使用本地模型；只有长篇摘要才会调用云端。",
     "available": "可用模型",
     "download": "下载",
-    "remove": "移除"
+    "remove": "移除",
+    "kind": {
+      "Token": "分词",
+      "Embed": "嵌入",
+      "Rerank": "重排序"
+    }
   },
   "settings": {
     "preferences": "练习偏好",
@@ -398,6 +403,17 @@
     },
     "localData": "本地数据",
     "localDataHint": "文本、练习记录与错字本存在本地 SQLite（{path}）；离线可练，联网后自动同步。",
+    "update": {
+      "title": "软件更新",
+      "check": "检查更新",
+      "checking": "检查中…",
+      "latest": "已是最新版本。",
+      "found": "有新版本 {version}。",
+      "apply": "下载并安装",
+      "applying": "下载中… {percent}%",
+      "installed": "安装完成，正在重新启动…",
+      "failed": "检查更新失败：{reason}"
+    },
     "shortcuts": "快捷键",
     "shortcutStart": "开始／重新开始",
     "shortcutNext": "换一篇",

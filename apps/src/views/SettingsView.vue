@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore, type FontSize } from '@/stores/settings'
 import { LOCALES, LOCALE_LABEL, type Locale } from '@/i18n'
+import { IS_DESKTOP, checkDesktopUpdate, type DesktopUpdate } from '@/api/desktop'
 import { useGridLayout } from '@/composables/useGridLayout'
 import ToggleSwitch from '@/components/ToggleSwitch.vue'
 
@@ -68,6 +69,73 @@ function pick(key: PrefKey, value: string) {
   else if (key === 'uiLang') settings.uiLang = value as Locale
   else settings[key] = value
 }
+
+// The desktop bundle updates itself; the browser build has nothing to install.
+const updateState = ref<'idle' | 'checking' | 'latest' | 'found' | 'installing' | 'done' | 'error'>('idle')
+const updateVersion = ref('')
+const updatePercent = ref(0)
+const updateError = ref('')
+let pendingUpdate: DesktopUpdate | null = null
+
+const updateHint = computed(() => {
+  switch (updateState.value) {
+    case 'checking':
+      return t('settings.update.checking')
+    case 'latest':
+      return t('settings.update.latest')
+    case 'found':
+      return t('settings.update.found', { version: updateVersion.value })
+    case 'installing':
+      return t('settings.update.applying', { percent: updatePercent.value })
+    case 'done':
+      return t('settings.update.installed')
+    case 'error':
+      return t('settings.update.failed', { reason: updateError.value })
+    default:
+      return ''
+  }
+})
+
+const updateBusy = computed(() => updateState.value === 'checking' || updateState.value === 'installing')
+
+const updateAction = computed(() =>
+  updateState.value === 'found'
+    ? { label: t('settings.update.apply'), primary: true, run: installUpdate }
+    : { label: t('settings.update.check'), primary: false, run: checkForUpdate },
+)
+
+const reason = (e: unknown) => (e instanceof Error ? e.message : String(e))
+
+async function checkForUpdate() {
+  updateState.value = 'checking'
+  try {
+    pendingUpdate = await checkDesktopUpdate()
+    updateVersion.value = pendingUpdate?.version ?? ''
+    updateState.value = pendingUpdate ? 'found' : 'latest'
+  } catch (e) {
+    pendingUpdate = null
+    updateError.value = reason(e)
+    updateState.value = 'error'
+  }
+}
+
+async function installUpdate() {
+  const update = pendingUpdate
+  if (!update) return
+  updateState.value = 'installing'
+  updatePercent.value = 0
+  try {
+    await update.install((p) => {
+      updatePercent.value = p
+    })
+    // On Windows the process is already gone by the time install() returns, so
+    // this line only ever runs on macOS and Linux.
+    updateState.value = 'done'
+  } catch (e) {
+    updateError.value = reason(e)
+    updateState.value = 'error'
+  }
+}
 </script>
 
 <template>
@@ -120,6 +188,18 @@ function pick(key: PrefKey, value: string) {
             <div v-for="k in shortcuts" :key="k.label" class="shortcut">
               <span class="ell">{{ k.label }}</span>
               <span class="keys mono">{{ k.keys }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="IS_DESKTOP" class="block">
+          <span class="card-title">{{ t('settings.update.title') }}</span>
+          <div class="update-row">
+            <span class="card-sub" style="line-height: 18px">{{ updateHint }}</span>
+            <div class="btn-slot" style="width: 118px" @click="updateAction.run">
+              <a-button :type="updateAction.primary ? 'primary' : 'default'" :disabled="updateBusy">
+                {{ updateAction.label }}
+              </a-button>
             </div>
           </div>
         </div>
@@ -217,6 +297,12 @@ function pick(key: PrefKey, value: string) {
   display: flex;
   flex-direction: column;
   gap: 3px;
+}
+.update-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 .shortcut {
   display: flex;

@@ -364,7 +364,12 @@
     "preferLocal": "優先使用本機模型；只有長篇摘要才會呼叫雲端。",
     "available": "可用模型",
     "download": "下載",
-    "remove": "移除"
+    "remove": "移除",
+    "kind": {
+      "Token": "分詞",
+      "Embed": "嵌入",
+      "Rerank": "重排序"
+    }
   },
   "settings": {
     "preferences": "練習偏好",
@@ -398,6 +403,17 @@
     },
     "localData": "本機資料",
     "localDataHint": "文本、練習紀錄與錯字簿存在本機 SQLite（{path}）；離線可練，連線後自動同步。",
+    "update": {
+      "title": "軟體更新",
+      "check": "檢查更新",
+      "checking": "檢查中…",
+      "latest": "已是最新版本。",
+      "found": "有新版本 {version}。",
+      "apply": "下載並安裝",
+      "applying": "下載中… {percent}%",
+      "installed": "安裝完成，正在重新啟動…",
+      "failed": "檢查更新失敗：{reason}"
+    },
     "shortcuts": "快捷鍵",
     "shortcutStart": "開始／重新開始",
     "shortcutNext": "換一篇",

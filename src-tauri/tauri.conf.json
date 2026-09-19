@@ -29,6 +29,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -39,5 +40,14 @@
     "category": "Education",
     "shortDescription": "Typing trainer",
     "longDescription": "Typing practice for English, Chinese (bopomofo / cangjie), code and vocabulary."
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "REPLACE-WITH-CONTENT-OF-typelab.key.pub",
+      "endpoints": ["https://github.com/TW199501/TypingTrainer/releases/latest/download/latest.json"],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }

@@ -46,6 +46,17 @@ pub fn run() {
     tauri::Builder::default()
         // Every new command must be added here, or `invoke` fails at runtime.
         .invoke_handler(tauri::generate_handler![shell_info, model_dir])
+        .setup(|app| {
+            // Registered at runtime rather than on the builder so the mobile
+            // targets, which have no updater to register, still compile.
+            #[cfg(desktop)]
+            {
+                app.handle()
+                    .plugin(tauri_plugin_updater::Builder::new().build())?;
+                app.handle().plugin(tauri_plugin_process::init())?;
+            }
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running TypeLab");
 }

@@ -33,6 +33,12 @@ jobs:
       contents: write
     strategy:
       fail-fast: false
+      # The three jobs write the same `latest.json` asset on one release, and
+      # tauri-action builds it by reading the existing asset, merging its own
+      # platform in, then deleting and re-uploading — with no lock. In parallel
+      # the last writer wins and the other platforms' entries vanish from the
+      # manifest while every job still reports success.
+      max-parallel: 1
       matrix:
         include:
           - platform: windows-latest
@@ -76,9 +82,17 @@ jobs:
 
       # Runs `tauri build`, which triggers beforeBuildCommand (npm run build)
       # and uploads the resulting bundles to a draft release.
+      #
+      # The private key signs every bundle and its `.sig`; `createUpdaterArtifacts`
+      # in tauri.conf.json makes the build fail outright when it is missing, so
+      # an unsigned release cannot slip out by accident. Set the secrets once
+      # with `npm run tauri signer generate` — losing that key means installed
+      # apps can never be updated again.
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ inputs.tag || github.ref_name }}
           releaseName: 'TypeLab ${{ inputs.tag || github.ref_name }}'
@@ -86,6 +100,49 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+          # The asset upload inside the updater-JSON merge has no backoff of its
+          # own, so a stale asset id surfaces as a 404 on the first try.
+          retryAttempts: 3
+          # Windows bundles both an .msi (WiX) and a setup.exe (NSIS); this picks
+          # which one the `windows-x86_64` entry in latest.json points at. Left
+          # explicit because the action's own default is documented as possibly
+          # flipping for tauri@v2 apps.
+          updaterJsonPreferNsis: false
+          # The macOS job builds one universal bundle, which the action expands
+          # into darwin-aarch64 and darwin-x86_64 entries. Keeping the universal
+          # key as well would leave a third path nothing is tested against.
+          updaterJsonKeepUniversal: false
+
+  # The manifest is merged by read-modify-write across the three jobs above, so
+  # a lost platform entry leaves every job green while half the installs stop
+  # seeing updates. Assert the keys rather than trusting the colours.
+  updater-manifest:
+    name: verify updater manifest
+    needs: desktop
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # gh needs no checkout: the asset is fetched from the release by tag.
+      - name: Every platform is listed in latest.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          gh release download "$TAG" -p latest.json -D /tmp
+          node -e '
+            const have = Object.keys(require("/tmp/latest.json").platforms ?? {});
+            // The macOS job builds universal, which the action expands to both
+            // Apple Silicon and Intel.
+            const want = ["windows-x86_64", "darwin-aarch64", "darwin-x86_64", "linux-x86_64"];
+            const missing = want.filter((k) => !have.includes(k));
+            console.log("latest.json platforms:\n" + have.join("\n"));
+            if (missing.length) {
+              console.error("missing from latest.json: " + missing.join(", "));
+              process.exit(1);
+            }
+          '
 
   docker:
     name: container images

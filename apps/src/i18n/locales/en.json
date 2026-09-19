@@ -364,7 +364,12 @@
     "preferLocal": "Local models are preferred; the cloud is only used for long-form summaries.",
     "available": "Available models",
     "download": "Download",
-    "remove": "Remove"
+    "remove": "Remove",
+    "kind": {
+      "Token": "Token",
+      "Embed": "Embed",
+      "Rerank": "Rerank"
+    }
   },
   "settings": {
     "preferences": "Preferences",
@@ -398,6 +403,17 @@
     },
     "localData": "Local data",
     "localDataHint": "Texts, sessions and the error book live in a local SQLite file ({path}); practice works offline and syncs when reconnected.",
+    "update": {
+      "title": "Updates",
+      "check": "Check for updates",
+      "checking": "Checking…",
+      "latest": "You are on the latest version.",
+      "found": "Version {version} is available.",
+      "apply": "Download and install",
+      "applying": "Downloading… {percent}%",
+      "installed": "Installed — restarting…",
+      "failed": "Update check failed: {reason}"
+    },
     "shortcuts": "Shortcuts",
     "shortcutStart": "Start／Restart",
     "shortcutNext": "Next text",
