@@ -57,9 +57,13 @@ routes between providers, and each provider is its own package.
 
 Two kinds of text look alike and must not be handled alike:
 
-- **Copy** — the shipped UI strings and the seven built-in categories. These are
-  translated in the front-end i18n JSON, so translations improve with a release
-  and cost nothing at runtime. Built-in categories carry an `I18nKey` for this.
+- **Copy** — the shipped UI chrome (nav, buttons, kind labels) and the seven
+  built-in categories. These are translated in the front-end i18n JSON, so
+  translations improve with a release and cost nothing at runtime. Built-in
+  categories carry an `I18nKey` for this.
+- **Catalogue data** — prompt names/descriptions and model notes, which the API
+  serves. Seeded into `Translations` from `CatalogueTranslationSeeds` so a
+  locale query can resolve them without the front-end bundle.
 - **Data** — anything a user creates. A category added today cannot appear in a
   bundle built yesterday, so its translations go in the `Translations` table.
 
@@ -76,6 +80,12 @@ to have translated them.
 Front-end tests sit beside the file they cover (`analyze.ts` →
 `analyze.test.ts`) and run under vitest. The server has its own xUnit project,
 `server/TypeLab.Api.Tests`. Both run in CI.
+
+End-to-end tests live in `e2e/` and run under Playwright against a real Chrome.
+They exist for what jsdom structurally cannot observe: focus, IME composition,
+and browser event ordering. The Chinese input field is the motivating case — it
+broke because a toolbar button stole focus, and no unit test could have caught
+it. Verified by disabling the fix and confirming the suite goes red.
 
 ## Typing engine (`stores/session.ts`)
 

@@ -26,3 +26,9 @@ TestResults/
 
 # Playwright MCP scratch output (page snapshots, console logs, screenshots)
 .playwright-mcp/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/.playwright/
