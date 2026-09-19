@@ -179,15 +179,32 @@ watch(
   },
 )
 
-watch(
-  () => session.layout,
-  () => nextTick(() => imeRef.value?.focus()),
-)
+/**
+ * Hand focus back to the hidden IME field.
+ *
+ * The OS composes into whatever is focused, so in Chinese modes that field has
+ * to hold focus for the whole run. Clicking Start, Next text or a topic pill
+ * moves focus to that control, and from then on the IME has nowhere to compose:
+ * the candidate window never opens and no character can be chosen. Focusing on
+ * mount and on layout changes alone is not enough, because none of those
+ * clicks change the layout.
+ */
+function focusIme() {
+  if (session.layout !== 'zh') return
+  void nextTick(() => imeRef.value?.focus())
+}
+
+watch(() => session.layout, focusIme)
+// Covers everything that resets a run — Start, Next text, a new topic — without
+// having to remember each control individually.
+watch(() => [session.target, session.startedAt, session.count], focusIme)
 onMounted(() => nextTick(() => imeRef.value?.focus()))
 </script>
 
 <template>
-  <div ref="colRef" class="page practice">
+  <!-- Any click inside the practice screen ends up back on the IME field;
+       a toolbar button that keeps focus would silently disable Chinese input. -->
+  <div ref="colRef" class="page practice" @click="focusIme">
     <div ref="barRef" class="toolbar">
       <div class="pickers">
         <div class="picker-row">

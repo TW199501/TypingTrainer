@@ -23,3 +23,6 @@ server/**/app.db*
 
 # .NET test output
 TestResults/
+
+# Playwright MCP scratch output (page snapshots, console logs, screenshots)
+.playwright-mcp/

@@ -26,13 +26,27 @@ jobs:
         with:
           node-version: 22
 
+      # A commit that already carries a tag was released deliberately — bumping
+      # it would immediately supersede the version that was just published.
+      - name: Check whether this commit is already released
+        id: guard
+        run: |
+          if git describe --exact-match --tags HEAD >/dev/null 2>&1; then
+            echo "Already tagged $(git describe --exact-match --tags HEAD); skipping."
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Bump
         id: bump
+        if: steps.guard.outputs.release == 'false'
         run: |
           node scripts/version.mjs patch
           echo "version=$(node scripts/version.mjs)" >> "$GITHUB_OUTPUT"
 
       - name: Commit and tag
+        if: steps.guard.outputs.release == 'false'
         env:
           VERSION: ${{ steps.bump.outputs.version }}
         run: |
