@@ -43,7 +43,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "REPLACE-WITH-CONTENT-OF-typelab.key.pub",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEFGQzYxQTNGQ0U2MzQ2NUIKUldSYlJtUE9QeHJHcjhWUWtQQ3NnWkI2K0F1TzhOUnZTT2ZmWW9HMmVvamxOL3l5NVVMNmg1L2kK",
       "endpoints": ["https://github.com/TW199501/TypingTrainer/releases/latest/download/latest.json"],
       "windows": {
         "installMode": "passive"

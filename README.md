@@ -196,13 +196,16 @@ docker compose -f docker/docker-compose.yml build
 npm run tauri signer generate -- -w ~/.tauri/typelab.key
 ```
 
-- 把 `typelab.key.pub` 的**內容**貼進 `tauri.conf.json` 的 `plugins.updater.pubkey`
-  （目前是可辨識的佔位字串）。佔位值不影響啟動，也不影響「檢查更新」，只會在
-  真要下載時因驗章失敗而擋下來。
+- 把 `typelab.key.pub` 的**內容**貼進 `tauri.conf.json` 的 `plugins.updater.pubkey`。
+  不是有效的 base64 公鑰時，`tauri build` 會在簽章階段直接中止
+  （`failed to decode base64 pubkey`），而不是等到執行期才擋。
 - 私鑰進 repository secrets：`TAURI_SIGNING_PRIVATE_KEY`（有設密碼再加
   `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`）。沒放金鑰時 `tauri build` 會直接失敗，
   這是刻意的——不該發出未簽章的正式版。本機只想試打包可暫時把
   `createUpdaterArtifacts` 改成 `false`。
+- **換金鑰後務必重存 secret。** 兩者不成對時沒有任何一道關卡會擋：打包、發布、
+  `latest.json` 檢查全部會過，錯誤只在使用者按下「下載並安裝」時才出現。要確認
+  就比對 `gh secret list` 的時間戳是否晚於金鑰檔。
 - **私鑰遺失 = 已安裝的舊版永遠收不到更新**，請離線備份。
 
 注意 `release.yml` 仍用 `releaseDraft: true`：GitHub 的 `/releases/latest/` 會跳過
