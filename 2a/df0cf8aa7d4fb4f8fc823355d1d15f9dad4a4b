@@ -1,0 +1,26 @@
+.github/workflows/version.yml
+  s_5f06c3d98e55ab::t_bfdf3b3cf936ac 60-63
+  s_5f06c3d98e55ab::t_49194aebda1f84 20-22
+  s_5f06c3d98e55ab::t_cd701bacd2049c 65-78
+.github/workflows/release.yml
+  s_5f06c3d98e55ab::t_b0c6e200050a40 8,11-12,18-27
+  s_5f06c3d98e55ab::t_2fe1f132291abf 49,83-84,99,121,138
+src-tauri/Cargo.lock
+  s_5f06c3d98e55ab::t_8e549c3987d54e 3603
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "2adf0cf8aa7d4fb4f8fc823355d1d15f9dad4a4b",
+  "prompts": {},
+  "sessions": {
+    "s_5f06c3d98e55ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "28fa3d9b-cf29-49a9-8055-cf6318579de0",
+        "model": "claude-opus-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
