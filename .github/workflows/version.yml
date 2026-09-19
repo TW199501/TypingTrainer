@@ -59,12 +59,27 @@ jobs:
         if: steps.guard.outputs.release == 'false'
         env:
           VERSION: ${{ steps.bump.outputs.version }}
-          PUBLISH: ${{ contains(github.event.head_commit.message, '[release]') }}
+          # The whole message, subject and body. Passed through the environment
+          # rather than interpolated into the script, so no punctuation in it
+          # can be interpreted as shell.
+          MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "chore(release): v$VERSION [skip ci]"
+
+          # Only the subject line decides. Matching the whole message means any
+          # commit that merely *mentions* [release] — a comment, a doc change,
+          # this very mechanism being described — publishes a version nobody
+          # asked for. That is exactly how v0.0.5 escaped.
+          SUBJECT=${MESSAGE%%$'\n'*}
+          case "$SUBJECT" in
+            *'[release]'*) PUBLISH=true ;;
+            *) PUBLISH=false ;;
+          esac
+          echo "Subject: $SUBJECT"
+          echo "Publishing: $PUBLISH"
 
           if [ "$PUBLISH" = "true" ]; then
             # Annotated, not lightweight: --follow-tags only pushes annotated

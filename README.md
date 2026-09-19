@@ -132,12 +132,15 @@ npm run version:major    # 0.1.0 -> 1.0.0
 合併進 `main` 後，`.github/workflows/version.yml` 會自動 patch 升版並提交；
 要升 minor／major 就在合併前先手動跑上面的指令。
 
-**打 tag 與打包只在 commit 訊息含 `[release]` 時才發生。** 日常提交只推進版號，
+**打 tag 與打包只在 commit 標題含 `[release]` 時才發生。** 日常提交只推進版號，
 不會產生 tag，也不會花二十分鐘打三個平台的安裝檔：
 
 ```bash
 git commit -m "Add the leaderboard endpoint [release]"
 ```
+
+只看**標題行**是刻意的：比對整則訊息的話，任何在本文裡提到 `[release]` 的
+commit——一句註解、一次文件修改——都會發出沒人要求的版本。v0.0.5 就是這樣跑掉的。
 
 ## 發布 / Release
 
