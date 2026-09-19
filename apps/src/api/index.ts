@@ -14,6 +14,7 @@ import type {
   LoginRequest,
   ModelStorageDto,
   PersonalBestDto,
+  PromptDto,
   SessionResultDto,
   SessionSubmitDto,
   StatsSummaryDto,
@@ -120,10 +121,10 @@ export const api = {
      * whoever owns the disk: the Tauri shell on desktop, the server in a
      * browser — the front end never assumes one.
      */
-    async storage(): Promise<ModelStorageDto> {
+    async storage(locale?: string): Promise<ModelStorageDto> {
       const dto = await pick(
-        () => fx.MODEL_STORAGE,
-        () => http.get<ModelStorageDto>('/models'),
+        () => fx.modelStorage(locale),
+        () => http.get<ModelStorageDto>('/models', { params: { locale } }),
       )
       const local = await desktopModelDir()
       return local ? { ...dto, directory: local, writable: true } : dto
@@ -137,6 +138,14 @@ export const api = {
       pick(
         () => undefined,
         () => http.delete<void>(`/models/${code}/install`),
+      ),
+  },
+
+  prompts: {
+    list: (locale?: string): Promise<PromptDto[]> =>
+      pick(
+        () => fx.prompts(locale),
+        () => http.get<PromptDto[]>('/prompts', { params: { locale } }),
       ),
   },
 

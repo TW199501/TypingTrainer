@@ -56,6 +56,7 @@ api.MapCrud<Word>("/words");
 // Hand-written: the storage path is resolved per runtime, and the built-in
 // prompt rows must not be deletable through a generic DELETE.
 api.MapModels();
+api.MapPrompts();
 api.MapTranslation();
 
 app.Run();

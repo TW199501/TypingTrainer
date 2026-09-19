@@ -14,6 +14,7 @@ import type {
   LeaderboardRowDto,
   ModelStorageDto,
   PersonalBestDto,
+  PromptDto,
   StatsSummaryDto,
   SubCategoryDto,
   TextDto,
@@ -553,52 +554,126 @@ export const COACH: CoachDto = {
 /**
  * Mirrors GET /models. The directory is a placeholder: with no backend there is
  * no real one, and at runtime the Tauri shell overwrites it with the actual
- * path on desktop.
+ * path on desktop. Notes follow `?locale=` the same way the API does.
  */
-export const MODEL_STORAGE: ModelStorageDto = {
-  directory: '~/TypeLab/models',
-  writable: true,
-  usedMb: 2242,
-  models: [
-    {
-      code: 'jieba-zh-tw',
-      name: 'jieba-zh-tw',
-      kind: 'Token',
-      note: 'Traditional Chinese segmentation',
-      mb: 42,
-      installed: true,
+const MODEL_NOTES: Record<string, Record<string, string>> = {
+  'jieba-zh-tw': {
+    en: 'Traditional Chinese segmentation',
+    'zh-TW': '繁體中文分詞',
+    'zh-CN': '繁体中文分词',
+  },
+  'bge-m3': {
+    en: 'Multilingual vectors for semantic search',
+    'zh-TW': '多語語意搜尋向量',
+    'zh-CN': '多语语义搜索向量',
+  },
+  'text2vec-base-chinese': {
+    en: 'Lightweight Chinese vectors',
+    'zh-TW': '輕量中文向量',
+    'zh-CN': '轻量中文向量',
+  },
+  'bge-reranker-v2-m3': {
+    en: 'High-precision result reranking',
+    'zh-TW': '高精度結果重排序',
+    'zh-CN': '高精度结果重排序',
+  },
+  'jina-reranker-v2-tiny': {
+    en: 'Lightweight rerank, realtime on desktop',
+    'zh-TW': '輕量重排序，桌面即時可用',
+    'zh-CN': '轻量重排序，桌面实时可用',
+  },
+}
+
+const MODEL_ROWS: Omit<ModelStorageDto['models'][number], 'note'>[] = [
+  { code: 'jieba-zh-tw', name: 'jieba-zh-tw', kind: 'Token', mb: 42, installed: true },
+  { code: 'bge-m3', name: 'bge-m3', kind: 'Embed', mb: 2200, installed: true },
+  { code: 'text2vec-base-chinese', name: 'text2vec-base-chinese', kind: 'Embed', mb: 410, installed: false },
+  { code: 'bge-reranker-v2-m3', name: 'bge-reranker-v2-m3', kind: 'Rerank', mb: 1100, installed: false },
+  { code: 'jina-reranker-v2-tiny', name: 'jina-reranker-v2-tiny', kind: 'Rerank', mb: 280, installed: false },
+]
+
+function catalogueLocale(locale: string): 'en' | 'zh-TW' | 'zh-CN' {
+  return locale === 'zh-TW' || locale === 'zh-CN' ? locale : 'en'
+}
+
+export function modelStorage(locale = 'en'): ModelStorageDto {
+  const tag = catalogueLocale(locale)
+  return {
+    directory: '~/TypeLab/models',
+    writable: true,
+    usedMb: 2242,
+    models: MODEL_ROWS.map((m) => ({
+      ...m,
+      note: MODEL_NOTES[m.code]?.[tag] ?? MODEL_NOTES[m.code]?.en ?? '',
+    })),
+  }
+}
+
+/** English snapshot; prefer <see cref="modelStorage"/> when a locale is known. */
+export const MODEL_STORAGE: ModelStorageDto = modelStorage('en')
+
+const PROMPT_COPY: Record<
+  string,
+  { name: Record<string, string>; description: Record<string, string>; content: string }
+> = {
+  categorise: {
+    name: { en: 'Categorise', 'zh-TW': '分類', 'zh-CN': '分类' },
+    description: {
+      en: 'Files a pasted or imported text into group, topic and level.',
+      'zh-TW': '將貼上或匯入的文本歸入大類、細項與難度。',
+      'zh-CN': '将粘贴或导入的文本归入大类、细项与难度。',
     },
-    {
-      code: 'bge-m3',
-      name: 'bge-m3',
-      kind: 'Embed',
-      note: 'Multilingual vectors for semantic search',
-      mb: 2200,
-      installed: true,
+    content:
+      'Detect the language and topic, then return a title (max 18 chars), group, topic and an L1–L6 level with a one-line rationale.',
+  },
+  examples: {
+    name: { en: 'Examples', 'zh-TW': '例句', 'zh-CN': '例句' },
+    description: {
+      en: 'Generates an example sentence for a dictionary term.',
+      'zh-TW': '為字典詞彙產生一句實用例句。',
+      'zh-CN': '为词典词条生成一句实用例句。',
     },
-    {
-      code: 'text2vec-base-chinese',
-      name: 'text2vec-base-chinese',
-      kind: 'Embed',
-      note: 'Lightweight Chinese vectors',
-      mb: 410,
-      installed: false,
+    content:
+      'Write one practical 12–18 word sentence for the given term in a workplace context, with a Traditional Chinese translation.',
+  },
+  rewrite: {
+    name: { en: 'Rewrite', 'zh-TW': '改寫', 'zh-CN': '改写' },
+    description: {
+      en: 'Rewrites a text to drill the keys the learner misses most.',
+      'zh-TW': '把最常打錯的鍵自然織進文本，供針對練習。',
+      'zh-CN': '把最常打错的键自然织进文本，供针对练习。',
     },
-    {
-      code: 'bge-reranker-v2-m3',
-      name: 'bge-reranker-v2-m3',
-      kind: 'Rerank',
-      note: 'High-precision result reranking',
-      mb: 1100,
-      installed: false,
+    content:
+      'Weave the user’s most-missed keys naturally into the text, keeping it readable and about the same length.',
+  },
+  level: {
+    name: { en: 'Level', 'zh-TW': '難度', 'zh-CN': '难度' },
+    description: {
+      en: 'Scores typing difficulty.',
+      'zh-TW': '評定打字難度（L1–L6）。',
+      'zh-CN': '评定打字难度（L1–L6）。',
     },
-    {
-      code: 'jina-reranker-v2-tiny',
-      name: 'jina-reranker-v2-tiny',
-      kind: 'Rerank',
-      note: 'Lightweight rerank, realtime on desktop',
-      mb: 280,
-      installed: false,
+    content: 'Score L1–L6 from sentence length, symbol density and rare-word ratio, with a one-line reason.',
+  },
+  'segment.zh': {
+    name: { en: 'Chinese segmentation', 'zh-TW': '中文分詞', 'zh-CN': '中文分词' },
+    description: {
+      en: 'Splits a Chinese practice text into the units a learner types as one chunk, with part of speech and bopomofo.',
+      'zh-TW': '把中文練習文本切成一次打完的單位，並標詞性與注音。',
+      'zh-CN': '把中文练习文本切成一次打完的单位，并标词性与拼音。',
     },
-  ],
+    content:
+      'You segment Chinese text for a typing trainer. The learner types the text character by character; your job is to mark the word boundaries that per-word accuracy and the bopomofo prompt are measured against.',
+  },
+}
+
+export function prompts(locale = 'en'): PromptDto[] {
+  const tag = catalogueLocale(locale)
+  return Object.entries(PROMPT_COPY).map(([code, row]) => ({
+    code,
+    name: row.name[tag] ?? row.name.en,
+    description: row.description[tag] ?? row.description.en,
+    content: row.content,
+    isBuiltIn: true,
+  }))
 }

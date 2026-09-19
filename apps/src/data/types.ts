@@ -58,6 +58,8 @@ export interface LocalModel {
 }
 
 export interface PromptPreset {
+  /** Set on catalogue rows; absent on a prompt the user just added. */
+  code?: string
   name: string
   text: string
 }

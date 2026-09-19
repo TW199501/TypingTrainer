@@ -63,7 +63,9 @@ const rows = computed(() =>
         <div class="card-title" style="flex-shrink: 0">{{ t('models.available') }}</div>
         <div class="scroll-y" style="padding-top: 4px">
           <div v-for="m in rows" :key="m.name" class="model-row">
-            <span class="kind" :style="{ background: m.kindBg, color: m.kindColor }">{{ m.kind }}</span>
+            <span class="kind" :style="{ background: m.kindBg, color: m.kindColor }">{{
+              t(`models.kind.${m.kind}`)
+            }}</span>
             <div style="flex: 1; min-width: 0">
               <div class="model-name ell">{{ m.name }}</div>
               <div class="model-note ell">{{ m.note }} · {{ m.size }}</div>

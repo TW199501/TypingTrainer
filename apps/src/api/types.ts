@@ -178,6 +178,14 @@ export interface LocalModelDto {
   installed: boolean
 }
 
+export interface PromptDto {
+  code: string
+  name: string
+  description: string | null
+  content: string
+  isBuiltIn: boolean
+}
+
 /**
  * Where the models live is reported by whoever owns the disk — the Tauri shell
  * on desktop, the API in a browser — never assumed by the front end.

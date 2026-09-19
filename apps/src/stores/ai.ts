@@ -1,8 +1,10 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { api } from '@/api'
 import { BASE_URL, MODELS, type Provider } from '@/data/constants'
 import type { LocalModel, PromptPreset } from '@/data/types'
+import { i18n } from '@/i18n'
+import { useSettingsStore } from './settings'
 
 export interface AiConfig {
   provider: Provider
@@ -28,6 +30,8 @@ export interface AiConfig {
 }
 
 export const useAiStore = defineStore('ai', () => {
+  const settings = useSettingsStore()
+
   const cfg = ref<AiConfig>({
     provider: 'Claude',
     model: 'claude-sonnet-4-5',
@@ -56,25 +60,9 @@ export const useAiStore = defineStore('ai', () => {
   const modelQuery = ref<string | null>(null)
   const modelOpen = ref(false)
 
-  const prompts = ref<PromptPreset[]>([
-    {
-      name: 'Categorise',
-      text: 'Detect the language and topic, then return a title (max 18 chars), group, topic and an L1–L6 level with a one-line rationale.',
-    },
-    {
-      name: 'Examples',
-      text: 'Write one practical 12–18 word sentence for the given term in a workplace context, with a Traditional Chinese translation.',
-    },
-    {
-      name: 'Rewrite',
-      text: 'Weave the user’s most-missed keys naturally into the text, keeping it readable and about the same length.',
-    },
-    {
-      name: 'Level',
-      text: 'Score L1–L6 from sentence length, symbol density and rare-word ratio, with a one-line reason.',
-    },
-  ])
+  const prompts = ref<PromptPreset[]>([])
   const promptIdx = ref(0)
+  const promptsLoaded = ref(false)
 
   // Both are filled by loadModels(). The directory is never hard-coded here:
   // it belongs to whichever runtime owns the disk — the Tauri shell on desktop,
@@ -85,7 +73,7 @@ export const useAiStore = defineStore('ai', () => {
   const modelsLoaded = ref(false)
 
   async function loadModels() {
-    const storage = await api.models.storage()
+    const storage = await api.models.storage(settings.uiLang)
     modelDir.value = storage.directory
     modelDirWritable.value = storage.writable
     localModels.value = storage.models.map((m) => ({
@@ -112,10 +100,39 @@ export const useAiStore = defineStore('ai', () => {
     modelQuery.value = null
   }
 
+  async function loadPrompts() {
+    const list = await api.prompts.list(settings.uiLang)
+    const previous = promptsLoaded.value
+      ? new Map(prompts.value.filter((p) => p.code).map((p) => [p.code!, p]))
+      : new Map<string, PromptPreset>()
+    const custom = prompts.value.filter((p) => !p.code)
+    prompts.value = [
+      ...list.map((p) => ({
+        code: p.code,
+        name: p.name,
+        text: previous.get(p.code)?.text ?? p.content,
+      })),
+      ...custom,
+    ]
+    if (promptIdx.value >= prompts.value.length) promptIdx.value = 0
+    promptsLoaded.value = true
+  }
+
   function addPrompt() {
-    prompts.value = [...prompts.value, { name: 'Prompt ' + (prompts.value.length + 1), text: '' }]
+    prompts.value = [
+      ...prompts.value,
+      { name: String(i18n.global.t('ai.promptName', { index: prompts.value.length + 1 })), text: '' },
+    ]
     promptIdx.value = prompts.value.length - 1
   }
+
+  watch(
+    () => settings.uiLang,
+    () => {
+      if (modelsLoaded.value) void loadModels()
+      if (promptsLoaded.value) void loadPrompts()
+    },
+  )
 
   /** Optimistic: flip the row, then roll it back if the server disagrees. */
   async function toggleLocalModel(i: number) {
@@ -143,6 +160,8 @@ export const useAiStore = defineStore('ai', () => {
     modelOpen,
     prompts,
     promptIdx,
+    promptsLoaded,
+    loadPrompts,
     modelDir,
     modelDirWritable,
     localModels,

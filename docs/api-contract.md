@@ -30,8 +30,9 @@ behaviour are hand-written.
 | GET           | `/leaderboard?lang=&period=` | leaderboard rows                                         |
 | GET           | `/coach`                     | level, targets and today's recommendations               |
 | GET · PUT     | `/book`                      | error book (spaced repetition state)                     |
-| GET           | `/models`                    | model catalogue + the install directory for this runtime |
+| GET           | `/models?locale=`            | model catalogue + the install directory for this runtime |
 | POST · DELETE | `/models/{code}/install`     | mark a model installed / remove it                       |
+| GET           | `/prompts?locale=`           | built-in prompt catalogue (Name/Description localised)   |
 | GET           | `/translate/providers`       | registered translators and whether each is configured    |
 | POST          | `/translate/locales`         | one locale in, the remaining UI locales out              |
 
@@ -106,6 +107,14 @@ translation for that key and ignores `Name`. User-created rows leave it null and
 put their translations in `Translations`, keyed by
 (`EntityType`, `EntityId`, `Field`, `Locale`). Resolution order is the requested
 locale → the row's base column → English.
+
+Shipped prompt names/descriptions and model notes are seeded into
+`Translations` on every start from `Data/CatalogueTranslationSeeds.cs` (English
+copied from the entity, zh-TW / zh-CN from that file). `GET /models` and
+`GET /prompts` take `?locale=` (or `Accept-Language`) and return those fields
+already resolved. Prompt `Content` stays English — it is the instruction sent
+to the model, not UI copy. A user-owned prompt row is never written by the
+seed.
 
 `POST /translate/locales` takes one locale and returns every UI locale, so a
 name typed once can be stored in all three. Locales that could not be translated

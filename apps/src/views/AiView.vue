@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { MODELS, type Provider } from '@/data/constants'
 import { useAiStore } from '@/stores/ai'
@@ -57,6 +57,10 @@ const numFields: ['timeout' | 'retry' | 'concurrency', string][] = [
 ]
 
 const langs = LOCALES.map((id) => ({ id, label: LOCALE_LABEL[id] }))
+
+onMounted(() => {
+  if (!ai.promptsLoaded) void ai.loadPrompts()
+})
 
 const options = ['offlineFallback', 'sendStats'] as const
 

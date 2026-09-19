@@ -64,5 +64,6 @@ public static class SqlSugarSetup
         db.CodeFirst.InitTables(Entities);
         PromptSeeds.Seed(db);
         ModelSeeds.Seed(db);
+        CatalogueTranslationSeeds.Seed(db);
     }
 }

@@ -30,14 +30,27 @@ public static class ModelEndpoints
     {
         var group = app.MapGroup(prefix).WithTags("Models");
 
-        group.MapGet("/", async (ISqlSugarClient db, ModelStorage storage) =>
+        group.MapGet("/", async (
+            ISqlSugarClient db,
+            ModelStorage storage,
+            HttpRequest request,
+            string? locale) =>
         {
+            var tag = CatalogueLocalizer.ResolveLocale(locale, request.Headers.AcceptLanguage);
             var rows = await db.Queryable<LocalModelEntry>().OrderBy(m => m.SortOrder).ToListAsync();
+            var copy = CatalogueLocalizer.Load(db, CatalogueTranslationSeeds.ModelEntity,
+                rows.Select(r => r.Id).ToList(), tag);
             return Results.Ok(new ModelStorageDto(
                 storage.Root,
                 storage.EnsureWritable(),
                 Math.Round(storage.UsedBytes() / 1024d / 1024d, 2),
-                rows.Select(m => new ModelDto(m.Code, m.Name, m.Kind, m.Note, m.SizeMb, m.Installed)).ToList()));
+                rows.Select(m => new ModelDto(
+                    m.Code,
+                    m.Name,
+                    m.Kind,
+                    CatalogueLocalizer.Pick(copy, m.Id, "Note", m.Note),
+                    m.SizeMb,
+                    m.Installed)).ToList()));
         })
         .WithName("GetModels");
 

@@ -321,8 +321,10 @@ public class UserWordMastery
 }
 
 /// <summary>
-/// Translations for user-created rows, which cannot live in the front-end i18n
-/// files because they did not exist when the bundle was built.
+/// Translations for rows whose display copy is served by the API: user-created
+/// names, and the shipped prompt / model catalogue (re-seeded from
+/// <c>CatalogueTranslationSeeds</c>). UI chrome stays in the front-end i18n
+/// files because those strings existed when the bundle was built.
 ///
 /// One generic table rather than a per-entity one: the alternative is a new
 /// table and a new join every time something becomes translatable, and the
