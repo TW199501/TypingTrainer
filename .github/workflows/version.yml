@@ -17,6 +17,9 @@ jobs:
     if: "!startsWith(github.event.head_commit.message, 'chore(release):')"
     permissions:
       contents: write
+    outputs:
+      released: ${{ steps.guard.outputs.release }}
+      version: ${{ steps.bump.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -54,5 +57,22 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "chore(release): v$VERSION [skip ci]"
-          git tag "v$VERSION"
+          # Annotated, not lightweight: --follow-tags only pushes annotated
+          # tags, so a lightweight one is silently left behind and the release
+          # never happens.
+          git tag -a "v$VERSION" -m "TypeLab v$VERSION"
           git push --follow-tags
+
+  # The tag above was pushed with GITHUB_TOKEN, which GitHub deliberately does
+  # not let trigger further workflows. So the release is invoked directly rather
+  # than waiting for a `push` event that will never arrive.
+  release:
+    name: release
+    needs: bump
+    if: needs.bump.outputs.released == 'false'
+    permissions:
+      contents: write
+      packages: write
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: v${{ needs.bump.outputs.version }}

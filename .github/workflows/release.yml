@@ -5,14 +5,26 @@ name: Release
 # records a version — without this, a release has nothing to download.
 
 on:
+  # Covers a tag pushed by a person.
   push:
     tags: ['v*']
-  # Lets a tag that was pushed before this workflow existed be built by hand.
+
+  # Lets an existing tag be built by hand.
   workflow_dispatch:
     inputs:
       tag:
         description: 'Existing tag to build (e.g. v0.0.1)'
         required: true
+        type: string
+
+  # How version.yml reaches this workflow. A tag pushed with GITHUB_TOKEN does
+  # not trigger anything — GitHub suppresses it to avoid recursive runs — so the
+  # auto-version job has to call this directly instead of relying on `push`.
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
 
 jobs:
   desktop:
@@ -34,7 +46,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
+          ref: ${{ inputs.tag || github.ref }}
 
       - uses: actions/setup-node@v5
         with:
@@ -68,8 +80,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.event.inputs.tag || github.ref_name }}
-          releaseName: 'TypeLab ${{ github.event.inputs.tag || github.ref_name }}'
+          tagName: ${{ inputs.tag || github.ref_name }}
+          releaseName: 'TypeLab ${{ inputs.tag || github.ref_name }}'
           releaseBody: 'Desktop installers. Container images are published to ghcr.io.'
           releaseDraft: true
           prerelease: false
@@ -84,7 +96,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
+          ref: ${{ inputs.tag || github.ref }}
 
       # GHCR rejects upper-case names, and the repository slug has them.
       - name: Normalise image prefix
@@ -106,7 +118,7 @@ jobs:
           file: docker/api.Dockerfile
           push: true
           tags: |
-            ${{ steps.img.outputs.prefix }}/api:${{ github.event.inputs.tag || github.ref_name }}
+            ${{ steps.img.outputs.prefix }}/api:${{ inputs.tag || github.ref_name }}
             ${{ steps.img.outputs.prefix }}/api:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -123,7 +135,7 @@ jobs:
             VITE_API_BASE_URL=/api
             VITE_USE_MOCK=true
           tags: |
-            ${{ steps.img.outputs.prefix }}/web:${{ github.event.inputs.tag || github.ref_name }}
+            ${{ steps.img.outputs.prefix }}/web:${{ inputs.tag || github.ref_name }}
             ${{ steps.img.outputs.prefix }}/web:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
