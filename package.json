@@ -1,7 +1,7 @@
 {
   "name": "typing-trainer",
   "private": true,
-  "version": "0.1.3",
+  "version": "0.1.4",
   "type": "module",
   "description": "TypeLab — typing trainer for English, Chinese and code, packaged for desktop with Tauri.",
   "workspaces": [
