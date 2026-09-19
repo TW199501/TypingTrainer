@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/ant-design-system-c7cd0970-76c4-496a-91e1-3ff5443bbd2c/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/ant-design-system-c7cd0970-76c4-496a-91e1-3ff5443bbd2c/tokens/fig-tokens.css">
+<link rel="stylesheet" href="_ds/ant-design-system-c7cd0970-76c4-496a-91e1-3ff5443bbd2c/components/data-display/fig-assets.css">
+<link rel="stylesheet" href="_ds/ant-design-system-c7cd0970-76c4-496a-91e1-3ff5443bbd2c/styles.css">
+<script src="_ds/ant-design-system-c7cd0970-76c4-496a-91e1-3ff5443bbd2c/_ds_bundle.js"></script>
+<style>
+body { margin: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+a { color: #c0623f; text-decoration: none; }
+a:hover { color: #e08a6c; }
+@keyframes caret { 0%, 49% { opacity: 1 } 50%, 100% { opacity: 0.15 } }
+@keyframes caretPulse { 0%, 49% { box-shadow: inset 2px 0 0 0 #d97757 } 50%, 100% { box-shadow: inset 2px 0 0 0 transparent } }
+@keyframes caretCell { 0%, 49% { box-shadow: inset 0 -3px 0 0 #d97757 } 50%, 100% { box-shadow: inset 0 -3px 0 0 #e6ded2 } }
+:root { --color-primary-colorprimary:#d97757; --color-primary-colorprimaryhover:#e08a6c; --color-primary-colorprimaryactive:#c0623f; --color-success-colorsuccess:#8a9a5b; --color-error-colorerror:#bc4b3c; --color-warning-colorwarning:#c4922f; }
+</style>
+</helmet>
+<div style="display:flex;height:100vh;overflow:hidden;background:#faf9f5;color:#1f1e1d;font-family:'SF Pro Text',-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang TC','Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:22px">
+
+<div style="flex-shrink:0;background:#262624;display:flex;flex-direction:column;overflow:hidden;transition:width 0.2s ease-in-out;width:{{ siderWidth }}">
+<div style="height:48px;display:flex;align-items:center;gap:12px;padding:0 {{ siderPadX }};justify-content:{{ siderJustify }};color:#fff;font-size:14px;font-weight:600;letter-spacing:0.2px;white-space:nowrap;flex-shrink:0">
+<span style="width:28px;height:28px;border-radius:6px;background:#d97757;display:flex;align-items:center;justify-content:center;flex-shrink:0"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Icon" name="Thunderbolt3" size="16" hint-size="16px,16px"></x-import></span>
+<span style="display:{{ labelDisplay }}">TypeLab</span>
+</div>
+<div style="display:flex;flex-direction:column;padding:4px {{ navGutter }};gap:2px;overflow-y:auto;min-height:0">
+<sc-for list="{{ navGroups }}" as="g" hint-placeholder-count="4">
+<div style="height:1px;background:rgba(255,255,255,0.22);margin:7px -6px;display:{{ g.dividerDisplay }}"></div>
+<div style="padding:10px 16px 4px;font-size:12px;color:rgba(255,255,255,0.35);white-space:nowrap;display:{{ labelDisplay }}">{{ g.title }}</div>
+<sc-for list="{{ g.items }}" as="n" hint-placeholder-count="2">
+<div onClick="{{ n.go }}" title="{{ n.label }}" style="display:flex;align-items:center;justify-content:{{ siderJustify }};gap:12px;height:40px;padding:0 {{ navPadX }};border-radius:6px;cursor:pointer;font-size:14px;white-space:nowrap;background:{{ n.bg }};color:{{ n.color }}">
+<span style="width:16px;height:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Icon" name="{{ n.icon }}" size="16" hint-size="16px,16px"></x-import></span>
+<span style="flex:1;min-width:0;overflow:hidden;display:{{ labelDisplay }}">{{ n.label }}</span>
+<span style="font-size:11px;padding:0 6px;border-radius:2px;white-space:nowrap;display:{{ labelDisplay }};background:{{ n.badgeBg }};color:{{ n.badgeColor }}">{{ n.badge }}</span>
+</div>
+</sc-for>
+</sc-for>
+</div>
+<div style="margin-top:auto;display:flex;flex-direction:column;flex-shrink:0">
+<div style="padding:14px 20px;border-top:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.45);font-size:12px;line-height:20px;white-space:nowrap;display:{{ footDisplay }}">12-day streak<br>Personal best 78 WPM</div>
+<div style="display:flex;border-top:1px solid rgba(255,255,255,0.12)">
+<div onClick="{{ togglePin }}" title="Pin sidebar" style="flex:1;height:46px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:{{ pinColor }}"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Icon" name="{{ pinIcon }}" size="16" hint-size="16px,16px"></x-import></div>
+<div onClick="{{ toggleSider }}" title="Toggle sidebar" style="flex:1;height:46px;display:flex;align-items:center;justify-content:center;cursor:{{ collapseCursor }};color:{{ collapseColor }};border-left:1px solid rgba(255,255,255,0.12)"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Icon" name="{{ collapseIcon }}" size="16" hint-size="16px,16px"></x-import></div>
+</div>
+</div>
+</div>
+
+<div style="flex:1;min-width:0;min-height:0;display:flex;flex-direction:column">
+<div style="height:48px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 24px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);flex-shrink:0">
+<div style="display:flex;align-items:baseline;gap:12px"><span style="font-size:14px;font-weight:600">{{ pageTitle }}</span><span style="font-size:14px;color:#8b877e">{{ pageSub }}</span></div>
+<div style="display:flex;align-items:center;gap:12px">
+<span onClick="{{ toggleOnline }}" style="cursor:pointer"><x-import component-from-global-scope="AntDesignSystem_c7cd09.BadgeStatus" status="{{ netStatus }}" text1="{{ netLabel }}" hint-size="130px,22px"></x-import></span>
+<span style="font-size:12px;color:#8b877e;white-space:nowrap">{{ shortcutHint }}</span>
+<span style="font-size:14px;color:#5c5951">chen.wei</span>
+</div>
+</div>
+
+<div style="flex:1;min-width:0;min-height:0;overflow-y:auto;padding:16px 24px">
+
+<sc-if value="{{ isPractice }}" hint-placeholder-val="{{ true }}">
+<div ref="{{ colRef }}" style="max-width:1000px;height:100%;min-height:0;margin:0 auto;display:flex;flex-direction:column;gap:10px">
+
+<div ref="{{ barRef }}" style="display:flex;flex-wrap:nowrap;gap:12px;align-items:flex-start;justify-content:space-between;flex-shrink:0">
+<div style="display:flex;flex-direction:column;gap:6px;min-width:0;flex:1">
+<div style="display:flex;align-items:center;gap:8px;min-width:0">
+<span style="font-size:12px;color:#8b877e;white-space:nowrap;flex-shrink:0;width:56px">Category</span>
+<div style="display:flex;background:#f0ebe2;border-radius:6px;padding:2px;gap:2px;min-width:0;flex-wrap:wrap">
+<sc-for list="{{ modes }}" as="m" hint-placeholder-count="6">
+<div onClick="{{ m.go }}" style="display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:13px;white-space:nowrap;flex-shrink:0;background:{{ m.bg }};color:{{ m.color }};box-shadow:{{ m.shadow }}"><span style="width:6px;height:6px;border-radius:50%;background:{{ m.dot }}"></span>{{ m.label }}</div>
+</sc-for>
+</div>
+</div>
+<sc-if value="{{ hasSubs }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:8px;min-width:0">
+<span style="font-size:12px;color:#8b877e;white-space:nowrap;flex-shrink:0;width:56px">Topic</span>
+<div style="display:flex;gap:6px;min-width:0;flex-wrap:wrap">
+<sc-for list="{{ subs }}" as="x" hint-placeholder-count="5">
+<div onClick="{{ x.go }}" style="display:flex;align-items:center;gap:6px;padding:2px 10px;border-radius:100px;cursor:pointer;font-size:12px;line-height:20px;white-space:nowrap;flex-shrink:0;border:1px solid {{ x.border }};background:{{ x.bg }};color:{{ x.color }}">{{ x.label }}<span style="opacity:0.7">{{ x.count }}</span></div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+<div style="display:flex;gap:8px;align-items:center;flex-shrink:0;align-self:flex-start">
+<div onClick="{{ restart }}" style="cursor:pointer;width:96px;flex-shrink:0"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Button" type="default" title="{{ startBtn }}" dc-props="{{ fluid }}" hint-size="96px,32px"></x-import></div>
+<div onClick="{{ nextText }}" style="cursor:pointer;width:96px;flex-shrink:0"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Button" type="primary" title="Next text" dc-props="{{ fluid }}" hint-size="96px,32px"></x-import></div>
+</div>
+</div>
+
+<div style="background:#fff;border-radius:8px;padding:16px 28px 18px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);flex:1 1 auto;min-height:{{ textFloor }};display:flex;flex-direction:column;overflow:hidden">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+<div style="display:flex;gap:8px;align-items:center">
+<x-import component-from-global-scope="AntDesignSystem_c7cd09.TagColorful" color="volcano" title="{{ textCategory }}" hint-size="62px,22px"></x-import>
+<span style="font-size:14px;color:#5c5951">{{ subName }}</span><span style="font-size:14px;color:#8b877e">{{ textMeta }}</span>
+</div>
+<span style="font-size:12px;color:#8b877e">Typing starts the timer · Backspace to correct</span>
+</div>
+<sc-if value="{{ countOverlay }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">
+<span style="font-size:72px;line-height:80px;font-weight:600;color:#d97757;font-variant-numeric:tabular-nums">{{ countValue }}</span>
+<span style="font-size:13px;color:#8b877e">Get ready — timing starts at zero</span>
+</div>
+</sc-if>
+<sc-if value="{{ hasVocab }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;align-items:center;gap:2px;margin:4px 0 10px;flex-shrink:0">
+<span style="font-size:12px;color:#8b877e">{{ prompt.progress }}</span>
+<span style="font-size:30px;line-height:40px;font-weight:600;color:#1f1e1d">{{ prompt.zh }}</span>
+<span style="font-size:13px;color:#8b877e">{{ prompt.pos }} {{ prompt.ph }}</span>
+</div>
+</sc-if>
+<div ref="{{ boxRef }}" style="font-family:'SF Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;line-height:1.8;white-space:pre-wrap;word-break:break-word;letter-spacing:0.2px;flex:1;min-height:0;overflow-y:auto;text-align:{{ textAlign }};font-size:{{ typeFontSize }}">
+<sc-for list="{{ chars }}" as="c" hint-placeholder-count="80">
+<span ref="{{ c.ref }}" style="position:relative;display:{{ c.display }};border-radius:3px;margin:{{ c.margin }};padding:{{ c.pad }};min-width:{{ c.minW }};text-align:center;animation:{{ c.anim }};color:{{ c.color }};background:{{ c.bg }};box-shadow:{{ c.shadow }};text-decoration:{{ c.deco }};text-decoration-color:#bc4b3c;text-underline-offset:6px">{{ c.ch }}<span style="position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 2px);display:{{ c.compDisplay }};padding:1px 8px;border-radius:100px;background:#d97757;color:#fff;font-size:13px;line-height:20px;white-space:nowrap;box-shadow:0 2px 6px rgba(217,119,87,0.32)">{{ compText }}</span></span>
+</sc-for>
+</div>
+<sc-if value="{{ imeMode }}" hint-placeholder-val="{{ false }}">
+<input ref="{{ imeRef }}" onChange="{{ onIme }}" onCompositionStart="{{ onCompStart }}" onCompositionUpdate="{{ onCompUpdate }}" onCompositionEnd="{{ onCompEnd }}" autoFocus="{{ true }}" aria-label="Chinese IME" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">
+</sc-if>
+<sc-if value="{{ hintOpen }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:10px;margin-top:8px;padding:8px 12px;border-radius:6px;background:rgba(217,119,87,0.08);flex-shrink:0">
+<span style="font-size:12px;color:#c0623f;font-weight:600;white-space:nowrap">3 misses</span>
+<span style="font-size:13px;color:#5c5951">Type <span style="font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:14px;font-weight:600;color:#1f1e1d;padding:0 4px">{{ hintChar }}</span>{{ hintText }}</span>
+</div>
+</sc-if>
+</div>
+
+<sc-if value="{{ showKeyboard }}" hint-placeholder-val="{{ true }}">
+<div style="background:#fff;border-radius:8px;padding:10px 20px 12px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);flex:0 0 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden;height:{{ kbHeight }}">
+<sc-if value="{{ kbHint }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+<span style="font-size:14px;color:#5c5951">Keyboard　Next key: <span style="color:#d97757;font-weight:600">{{ nextKeyLabel }}</span>　{{ nextFingerLabel }}</span>
+<div style="display:flex;gap:14px;align-items:center;opacity:{{ legendOpacity }}">
+<sc-for list="{{ fingerLegend }}" as="f" hint-placeholder-count="5">
+<span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#8b877e"><span style="width:10px;height:10px;border-radius:2px;background:{{ f.color }}"></span>{{ f.label }}</span>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<div style="display:flex;flex-direction:column;gap:5px;width:100%;max-width:820px;margin:0 auto;flex:1;min-height:0">
+<sc-for list="{{ kbRows }}" as="row" hint-placeholder-count="5">
+<div style="display:flex;gap:5px;width:100%;flex:1 1 0;min-height:0">
+<span style="flex:{{ row.pad }} 1 0;min-width:0"></span>
+<sc-for list="{{ row.keys }}" as="k" hint-placeholder-count="13">
+<div style="height:100%;display:flex;align-items:center;justify-content:center;line-height:1;padding:0 2px 2px;border-radius:6px;font-size:13px;overflow:hidden;white-space:nowrap;box-sizing:border-box;flex:{{ k.w }} 1 0;min-width:0;background:{{ k.bg }};color:{{ k.color }};box-shadow:{{ k.shadow }}"><span style="line-height:1">{{ k.label }}</span><span style="font-size:9px;line-height:1;opacity:0.5;margin-left:3px">{{ k.sub }}</span></div>
+</sc-for>
+<span style="flex:{{ row.pad }} 1 0;min-width:0"></span>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+</div>
+</sc-if>
+
+<sc-if value="{{ isResult }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:16px">
+<div style="background:#fff;border-radius:8px;padding:32px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);text-align:center">
+<div style="font-size:14px;color:#8b877e">Your score</div>
+<div style="font-size:64px;line-height:72px;font-weight:600;color:#d97757;margin:4px 0 2px">{{ wpm }}</div>
+<div style="font-size:14px;color:#8b877e;margin-bottom:20px">{{ speedUnit }}　{{ resultVerdict }}</div>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;text-align:left">
+<div style="border:1px solid #ebe5db;border-radius:8px;padding:14px 16px"><div style="font-size:14px;color:#8b877e">Accuracy</div><div style="font-size:24px;line-height:32px;font-weight:600;color:{{ accColor }}">{{ accuracy }}%</div></div>
+<div style="border:1px solid #ebe5db;border-radius:8px;padding:14px 16px"><div style="font-size:14px;color:#8b877e">Time</div><div style="font-size:24px;line-height:32px;font-weight:600">{{ elapsedLabel }}</div></div>
+<div style="border:1px solid #ebe5db;border-radius:8px;padding:14px 16px"><div style="font-size:14px;color:#8b877e">Errors</div><div style="font-size:24px;line-height:32px;font-weight:600;color:#bc4b3c">{{ errorCount }}</div></div>
+<div style="border:1px solid #ebe5db;border-radius:8px;padding:14px 16px"><div style="font-size:14px;color:#8b877e">Characters</div><div style="font-size:24px;line-height:32px;font-weight:600">{{ typedCount }}</div></div>
+</div>
+</div>
+<div style="background:#fff;border-radius:8px;padding:20px 24px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03)">
+<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px"><span style="font-size:14px;font-weight:600">Most missed keys</span><span style="font-size:12px;color:#8b877e">Added to the error book for tomorrow</span></div>
+<sc-if value="{{ hasErrors }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-wrap:wrap;gap:10px">
+<sc-for list="{{ topErrors }}" as="e" hint-placeholder-count="5">
+<div style="display:flex;align-items:center;gap:8px;border:1px solid #ebe5db;border-radius:6px;padding:8px 12px"><span style="font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:18px;font-weight:600">{{ e.key }}</span><span style="font-size:14px;color:#8b877e">×{{ e.count }}</span></div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ noErrors }}" hint-placeholder-val="{{ false }}">
+<div style="font-size:14px;color:#8b877e">No mistakes this round. Keep it up.</div>
+</sc-if>
+</div>
+<div style="display:flex;gap:8px;justify-content:center">
+<div onClick="{{ restart }}" style="cursor:pointer"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Button" type="primary" title="Again" dc-props="{{ fluid }}" hint-size="96px,32px"></x-import></div>
+<sc-if value="{{ hasErrors }}" hint-placeholder-val="{{ true }}">
+<div onClick="{{ startReview }}" style="cursor:pointer;width:96px;flex-shrink:0"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Button" type="default" title="Review" dc-props="{{ fluid }}" hint-size="96px,32px"></x-import></div>
+</sc-if>
+<div onClick="{{ goStats }}" style="cursor:pointer;width:96px;flex-shrink:0"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Button" type="default" title="Stats" dc-props="{{ fluid }}" hint-size="96px,32px"></x-import></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isStats }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:1000px;height:100%;min-height:0;margin:0 auto;display:flex;flex-direction:column;gap:12px">
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;flex-shrink:0">
+<sc-for list="{{ summary }}" as="s" hint-placeholder-count="4">
+<div style="background:#fff;border-radius:8px;padding:8px 14px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span style="font-size:12px;color:#8b877e">{{ s.label }}</span><span style="font-size:22px;line-height:28px;font-weight:600;color:{{ s.color }}">{{ s.value }}</span><span style="font-size:12px;color:#8b877e">{{ s.hint }}</span></div>
+</sc-for>
+</div>
+<div style="background:#fff;border-radius:8px;padding:14px 20px 12px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);flex:0.95 1 0;min-height:120px;display:flex;flex-direction:column">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-shrink:0;gap:12px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:14px;font-weight:600">Last 30 days</span><div style="display:flex;background:#f0ebe2;border-radius:6px;padding:2px;gap:2px">
+<sc-for list="{{ statsLangs }}" as="l" hint-placeholder-count="2">
+<div onClick="{{ l.go }}" style="padding:3px 12px;border-radius:4px;cursor:pointer;font-size:13px;white-space:nowrap;background:{{ l.bg }};color:{{ l.color }};box-shadow:{{ l.shadow }}">{{ l.label }}</div>
+</sc-for>
+</div></div><div style="display:flex;gap:16px"><span style="font-size:12px;color:#8b877e;display:flex;align-items:center;gap:6px"><span style="width:14px;height:2px;background:#d97757"></span>{{ speedUnitStats }}</span><span style="font-size:12px;color:#8b877e;display:flex;align-items:center;gap:6px"><span style="width:14px;height:2px;background:#8a9a5b"></span>Accuracy</span></div></div>
+<svg viewBox="0 0 960 260" preserveAspectRatio="none" style="width:100%;flex:1;min-height:0;display:block">
+<line x1="0" y1="20" x2="960" y2="20" stroke="#ebe5db"></line>
+<line x1="0" y1="80" x2="960" y2="80" stroke="#ebe5db"></line>
+<line x1="0" y1="140" x2="960" y2="140" stroke="#ebe5db"></line>
+<line x1="0" y1="200" x2="960" y2="200" stroke="#ebe5db"></line>
+<polyline points="{{ accPoints }}" fill="none" stroke="#8a9a5b" stroke-width="2" stroke-dasharray="4 4"></polyline>
+<polyline points="{{ wpmPoints }}" fill="none" stroke="#d97757" stroke-width="2.5"></polyline>
+</svg>
+<div style="display:flex;justify-content:space-between;font-size:12px;color:#8b877e;margin-top:4px;flex-shrink:0"><span>8/21</span><span>8/28</span><span>9/04</span><span>9/11</span><span>9/19</span></div>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:12px;flex:1.25 1 0;min-height:132px">
+<div style="background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);display:flex;flex-direction:column;min-height:0;overflow:hidden">
+<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;flex-shrink:0"><span style="font-size:14px;font-weight:600">Error heatmap</span><span style="font-size:12px;color:#8b877e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Darker means more errors</span></div>
+<div style="display:flex;flex-direction:column;gap:4px;width:100%;max-width:560px;margin:0 auto;flex:1;min-height:0">
+<sc-for list="{{ heatRows }}" as="row" hint-placeholder-count="4">
+<div style="display:flex;gap:5px;width:100%;padding-left:{{ row.indent }};flex:1 1 0;min-height:0">
+<sc-for list="{{ row.keys }}" as="k" hint-placeholder-count="12">
+<div style="height:100%;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:12px;box-sizing:border-box;flex:1 1 0;min-width:0;background:{{ k.bg }};color:{{ k.color }};box-shadow:inset 0 0 0 1px #ebe5db">{{ k.label }}</div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);display:flex;flex-direction:column;min-height:0">
+<div style="font-size:14px;font-weight:600;margin-bottom:6px;flex-shrink:0">History</div>
+<div style="flex:1;min-height:0;overflow-y:auto">
+<sc-for list="{{ history }}" as="h" hint-placeholder-count="6">
+<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #ebe5db">
+<x-import component-from-global-scope="AntDesignSystem_c7cd09.TagColorful" color="{{ h.tagColor }}" title="{{ h.type }}" hint-size="56px,22px"></x-import>
+<span style="flex:1;min-width:0;font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap">{{ h.wpm }}<span style="font-size:11px;color:#8b877e;margin-left:3px">{{ h.unit }}</span></span>
+<span style="color:#5c5951;font-variant-numeric:tabular-nums;white-space:nowrap">{{ h.acc }}%</span>
+<span style="width:64px;flex-shrink:0;text-align:right;color:#8b877e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ h.when }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isBoard }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:1000px;height:100%;min-height:0;margin:0 auto;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap">
+<div style="display:flex;background:#f0ebe2;border-radius:6px;padding:2px;gap:2px;width:fit-content">
+<sc-for list="{{ scopes }}" as="sc" hint-placeholder-count="2">
+<div onClick="{{ sc.go }}" style="padding:5px 16px;border-radius:4px;cursor:pointer;font-size:14px;white-space:nowrap;background:{{ sc.bg }};color:{{ sc.color }};box-shadow:{{ sc.shadow }}">{{ sc.label }}</div>
+</sc-for>
+</div>
+<div style="display:flex;background:#f0ebe2;border-radius:6px;padding:2px;gap:2px;width:fit-content">
+<sc-for list="{{ periods }}" as="p" hint-placeholder-count="2">
+<div onClick="{{ p.go }}" style="padding:5px 18px;border-radius:4px;cursor:pointer;font-size:14px;background:{{ p.bg }};color:{{ p.color }};box-shadow:{{ p.shadow }}">{{ p.label }}</div>
+</sc-for>
+</div>
+<span style="font-size:12px;color:#8b877e;display:{{ selfHintDisplay }}">Solid = this period, light = previous</span>
+</div>
+<sc-if value="{{ isSelfScope }}" hint-placeholder-val="{{ true }}">
+<div style="background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);flex:1 1 0;min-height:140px;display:flex;flex-direction:column">
+<div style="font-size:14px;font-weight:600;margin-bottom:6px;flex-shrink:0">Overview</div>
+<div style="flex:1;min-height:0;overflow-y:auto">
+<sc-for list="{{ compareRows }}" as="r" hint-placeholder-count="6">
+<div style="display:flex;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid #ebe5db">
+<span style="width:84px;flex-shrink:0;font-size:13px;color:#5c5951;white-space:nowrap">{{ r.label }}</span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+<span style="height:8px;border-radius:100px;background:#ece6dc;overflow:hidden;display:block"><span style="display:block;height:8px;border-radius:100px;background:#d97757;width:{{ r.bar }}"></span></span>
+<span style="height:6px;border-radius:100px;background:#f5f1ea;overflow:hidden;display:block"><span style="display:block;height:6px;border-radius:100px;background:#e3c3b4;width:{{ r.barPrev }}"></span></span>
+</div>
+<span style="width:62px;flex-shrink:0;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap">{{ r.now }}</span>
+<span style="width:58px;flex-shrink:0;text-align:right;font-size:12px;color:#8b877e;font-variant-numeric:tabular-nums;white-space:nowrap">{{ r.prev }}</span>
+<span style="width:56px;flex-shrink:0;text-align:right;font-size:13px;font-weight:500;white-space:nowrap;color:{{ r.deltaColor }}">{{ r.delta }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);flex:1 1 0;min-height:130px;display:flex;flex-direction:column">
+<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;flex-shrink:0">
+<span style="font-size:14px;font-weight:600">Personal bests by text</span>
+<span style="font-size:12px;color:#8b877e">vs previous record</span>
+</div>
+<div style="flex:1;min-height:0;overflow-y:auto">
+<sc-for list="{{ bestRows }}" as="b" hint-placeholder-count="5">
+<div style="display:flex;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid #ebe5db">
+<div style="flex:1;min-width:0">
+<div style="font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ b.title }}</div>
+<div style="font-size:12px;color:#8b877e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ b.cat }}</div>
+</div>
+<span style="width:52px;flex-shrink:0;text-align:right;font-weight:600;font-variant-numeric:tabular-nums">{{ b.best }}</span>
+<span style="width:44px;flex-shrink:0;text-align:right;font-size:12px;color:#8b877e;font-variant-numeric:tabular-nums">{{ b.prev }}</span>
+<span style="width:40px;flex-shrink:0;text-align:right;font-size:13px;font-weight:500;color:{{ b.deltaColor }}">{{ b.delta }}</span>
+<span style="width:64px;flex-shrink:0;text-align:right;font-size:12px;color:#8b877e;white-space:nowrap">{{ b.when }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSocialScope }}" hint-placeholder-val="{{ false }}">
+<div style="background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);flex-shrink:0;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:12px;color:#8b877e">Your rank</span><span style="font-size:24px;line-height:30px;font-weight:600;color:#d97757">#{{ myRank }}</span><span style="font-size:12px;color:#8a9a5b">{{ myRankDelta }}</span></div>
+<div style="width:1px;height:24px;background:#ebe5db"></div>
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:12px;color:#8b877e">Gap to next</span><span style="font-size:14px;font-weight:600">{{ gapAhead }}</span></div>
+<div style="display:flex;background:#f0ebe2;border-radius:6px;padding:2px;gap:2px;margin-left:auto">
+<sc-for list="{{ boardLangs }}" as="l" hint-placeholder-count="2">
+<div onClick="{{ l.go }}" style="padding:4px 14px;border-radius:4px;cursor:pointer;font-size:13px;white-space:nowrap;background:{{ l.bg }};color:{{ l.color }};box-shadow:{{ l.shadow }}">{{ l.label }}</div>
+</sc-for>
+</div>
+</div>
+<div style="background:#fff;border-radius:8px;padding:0 20px 8px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);flex:1 1 0;min-height:140px;display:flex;flex-direction:column">
+<div style="display:flex;gap:12px;padding:14px 0 10px;color:#8b877e;border-bottom:1px solid #ebe5db;font-size:13px;flex-shrink:0">
+<span style="width:40px;flex-shrink:0">#</span><span style="flex:1;min-width:0">User</span><span style="width:62px;flex-shrink:0;text-align:right">{{ speedUnitBoard }}</span><span style="width:62px;flex-shrink:0;text-align:right">Accuracy</span><span style="width:52px;flex-shrink:0;text-align:right">Runs</span>
+</div>
+<div style="flex:1;min-height:0;overflow-y:auto">
+<sc-for list="{{ board }}" as="b" hint-placeholder-count="8">
+<div style="display:flex;gap:12px;align-items:center;padding:7px 0;border-bottom:1px solid #ebe5db;font-size:14px;background:{{ b.rowBg }}">
+<span style="width:40px;flex-shrink:0;font-weight:600;color:{{ b.rankColor }}">{{ b.rank }}</span>
+<span style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;overflow:hidden"><span style="width:24px;height:24px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;background:{{ b.avatarBg }}">{{ b.initial }}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ b.name }}</span></span>
+<span style="width:62px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums;font-weight:600">{{ b.wpm }}</span>
+<span style="width:62px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums;color:#5c5951">{{ b.acc }}%</span>
+<span style="width:52px;flex-shrink:0;text-align:right;color:#8b877e">{{ b.runs }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isCoach }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:1000px;height:100%;min-height:0;margin:0 auto;display:flex;flex-direction:column;gap:12px">
+<div style="background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr);gap:24px;align-items:center;flex-shrink:0">
+<div style="text-align:center;border-right:1px solid #ebe5db">
+<div style="font-size:14px;color:#8b877e">Current level</div>
+<div style="font-size:48px;line-height:56px;font-weight:600;color:#d97757">B+</div>
+<div style="font-size:12px;color:#8b877e">From 32 sessions in 14 days</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="font-size:14px;color:#5c5951">Difficulty adapts to your speed, accuracy and error keys. Your next set is ready.</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+<sc-for list="{{ coachMetrics }}" as="m" hint-placeholder-count="3">
+<div style="border:1px solid #ebe5db;border-radius:8px;padding:12px 14px">
+<div style="font-size:12px;color:#8b877e">{{ m.label }}</div>
+<div style="font-size:20px;line-height:28px;font-weight:600;color:{{ m.color }}">{{ m.value }}</div>
+<div style="font-size:12px;color:#8b877e">{{ m.hint }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:12px;flex:1 1 0;min-height:0">
+<div style="background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);display:flex;flex-direction:column;min-height:0">
+<div style="font-size:14px;font-weight:600">Recommended today</div>
+<div style="font-size:12px;color:#8b877e;margin-bottom:6px">Generated from your weak keys; level is re-scored after each run</div>
+<div style="flex:1;min-height:0;overflow-y:auto">
+<sc-for list="{{ recommended }}" as="r" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #ebe5db">
+<span style="width:28px;height:28px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600;background:{{ r.levelColor }}">{{ r.level }}</span>
+<div style="flex:1;min-width:0">
+<div style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.title }}</div>
+<div style="font-size:12px;color:#8b877e">{{ r.reason }}</div>
+</div>
+<x-import component-from-global-scope="AntDesignSystem_c7cd09.TagColorful" color="{{ r.tagColor }}" title="{{ r.category }}" hint-size="56px,22px"></x-import>
+<div onClick="{{ r.start }}" style="cursor:pointer;width:56px;flex-shrink:0"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Button" type="primary" size="sm" title="Start" dc-props="{{ fluidSm }}" hint-size="56px,24px"></x-import></div>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);display:flex;flex-direction:column;min-height:0">
+<div style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+<span style="font-size:14px;font-weight:600">Error book</span>
+<span style="font-size:12px;color:#8b877e">Due today {{ dueCount }}</span>
+</div>
+<div style="font-size:12px;color:#8b877e;margin-bottom:8px;flex-shrink:0">Spaced repetition:  1 → 2 → 4 → 7 → 15 → 30 d</div>
+<div style="flex:1;min-height:0;overflow-y:auto">
+<sc-for list="{{ bookRows }}" as="b" hint-placeholder-count="5">
+<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #ebe5db">
+<span style="width:30px;height:30px;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:14px;font-weight:600;background:rgba(168,65,47,0.10);color:#a8412f">{{ b.ch }}</span>
+<div style="flex:1;min-width:0">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><span style="font-size:12px;color:#5c5951">×{{ b.total }}　{{ b.finger }}</span><span style="font-size:12px;color:{{ b.dueColor }};white-space:nowrap">{{ b.dueLabel }}</span></div>
+<div style="height:5px;border-radius:100px;background:#ece6dc;overflow:hidden;margin-top:4px"><div style="height:5px;border-radius:100px;background:{{ b.barColor }};width:{{ b.bar }}"></div></div>
+</div>
+</div>
+</sc-for>
+</div>
+<div onClick="{{ startDueReview }}" style="margin-top:10px;flex-shrink:0;cursor:pointer"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Button" type="primary" title="{{ dueBtn }}" dc-props="{{ fluid }}" hint-size="100%,32px"></x-import></div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isLibrary }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:1000px;height:100%;min-height:0;margin:0 auto;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;flex-shrink:0">
+<div style="display:flex;gap:16px;align-items:center;font-size:12px;color:#8b877e">
+<span>Texts <span style="font-size:14px;font-weight:600;color:#1f1e1d">128</span> </span>
+<span>Custom <span style="font-size:14px;font-weight:600;color:#1f1e1d">46</span> </span>
+<x-import component-from-global-scope="AntDesignSystem_c7cd09.BadgeStatus" status="success" text1="Synced 2 min ago" hint-size="150px,22px"></x-import>
+</div>
+<div style="display:flex;gap:8px;align-items:center">
+<div onClick="{{ openImport }}" style="cursor:pointer;width:96px;flex-shrink:0"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Button" type="default" title="Import files" dc-props="{{ fluid }}" hint-size="96px,32px"></x-import></div>
+<div onClick="{{ toggleComposer }}" style="cursor:pointer;width:118px;flex-shrink:0"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Button" type="primary" title="{{ composerBtn }}" dc-props="{{ fluid }}" hint-size="118px,32px"></x-import></div>
+</div>
+</div>
+
+<sc-if value="{{ composerOpen }}" hint-placeholder-val="{{ false }}">
+<div style="background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);flex-shrink:0;display:flex;gap:16px;align-items:stretch">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px">
+<span style="font-size:14px;font-weight:600">Paste text — AI names and files it</span>
+<textarea value="{{ draft }}" onChange="{{ onDraft }}" placeholder="Paste any paragraph, code or Chinese article; language, category and level are detected" style="flex:1;min-height:88px;resize:none;border-radius:6px;border:1px solid #ddd6ca;padding:10px 12px;font-size:14px;font-family:inherit;color:#1f1e1d;outline:none"></textarea>
+<div style="display:flex;gap:8px">
+<div onClick="{{ analyze }}" style="cursor:pointer;width:96px;flex-shrink:0"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Button" type="default" title="Analyse" dc-props="{{ fluid }}" hint-size="96px,32px"></x-import></div>
+<div onClick="{{ saveDraft }}" style="cursor:pointer;width:96px;flex-shrink:0"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Button" type="primary" title="Save" dc-props="{{ fluid }}" hint-size="96px,32px"></x-import></div>
+</div>
+</div>
+<div style="width:280px;flex-shrink:0;border-left:1px solid #ebe5db;padding-left:16px;display:flex;flex-direction:column;gap:6px">
+<span style="font-size:12px;color:#8b877e">AI result (editable)</span>
+<sc-for list="{{ aiFields }}" as="a" hint-placeholder-count="4">
+<div style="display:flex;justify-content:space-between;align-items:center;font-size:14px;padding:6px 0;border-bottom:1px solid #ebe5db">
+<span style="color:#8b877e">{{ a.label }}</span><span style="font-weight:500;color:{{ a.color }}">{{ a.value }}</span>
+</div>
+</sc-for>
+<span style="font-size:12px;color:#8b877e;line-height:18px;margin-top:auto">{{ aiReason }}</span>
+</div>
+</div>
+</sc-if>
+<div style="flex:1;min-height:0;display:grid;gap:12px;grid-template-columns:{{ libCols }};grid-template-rows:{{ libRows }}">
+<div style="background:#fff;border-radius:8px;padding:0 20px 12px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);display:flex;flex-direction:column;min-height:0;overflow:hidden">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0 10px;border-bottom:1px solid #ebe5db;flex-shrink:0">
+<span style="font-size:14px;font-weight:600">Categories</span><span style="font-size:12px;color:#8b877e">{{ catCount }}</span>
+</div>
+<div style="flex:1;min-height:0;overflow-y:auto;padding:4px 0">
+<sc-for list="{{ catRows }}" as="c" hint-placeholder-count="6">
+<div style="display:flex;flex-direction:column;padding:2px 0">
+<div style="display:flex;align-items:center;gap:6px;height:30px;font-size:14px;border-radius:4px">
+<span onClick="{{ c.toggle }}" style="width:16px;flex-shrink:0;text-align:center;cursor:pointer;color:#8b877e;font-size:10px">{{ c.caret }}</span>
+<span style="width:8px;height:8px;border-radius:2px;flex-shrink:0;background:{{ c.color }}"></span>
+<input value="{{ c.name }}" onChange="{{ c.rename }}" style="flex:1;min-width:0;border:none;background:transparent;font-size:14px;font-weight:600;font-family:inherit;color:#1f1e1d;outline:none;padding:2px 0">
+<span style="font-size:11px;color:#8b877e;white-space:nowrap">{{ c.layoutLabel }}</span>
+<span style="font-size:12px;color:#8b877e;width:26px;text-align:right">{{ c.count }}</span>
+<span onClick="{{ c.remove }}" title="Delete group" style="cursor:pointer;color:#b8b3a8;font-size:14px;width:14px;text-align:center">×</span>
+</div>
+<sc-if value="{{ c.open }}" hint-placeholder-val="{{ false }}">
+<div style="margin-left:11px;padding-left:12px;border-left:1px dashed #ddd6ca;display:flex;flex-direction:column">
+<sc-for list="{{ c.children }}" as="x" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;gap:8px;height:26px;font-size:13px">
+<span style="width:8px;height:1px;background:#ddd6ca;flex-shrink:0;margin-left:-12px"></span>
+<input value="{{ x.name }}" onChange="{{ x.rename }}" style="flex:1;min-width:0;border:none;background:transparent;font-size:13px;font-family:inherit;color:#5c5951;outline:none;padding:2px 0">
+<span style="font-size:12px;color:#8b877e;width:26px;text-align:right">{{ x.count }}</span>
+<span onClick="{{ x.remove }}" title="Delete topic" style="cursor:pointer;color:#b8b3a8;font-size:13px;width:14px;text-align:center">×</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+<div onClick="{{ openCatModal }}" style="padding-top:10px;border-top:1px solid #ebe5db;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:6px;height:42px;cursor:pointer;color:#d97757;font-size:13px">＋ New category</div>
+</div>
+<div style="background:#fff;border-radius:8px;padding:0 20px 8px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);min-height:0;display:flex;flex-direction:column">
+<div style="display:flex;gap:12px;padding:14px 0 12px;color:#8b877e;border-bottom:1px solid #ebe5db;font-size:14px;flex-shrink:0">
+<span style="flex:1 1 0;min-width:0">Title</span><span style="width:40px;flex-shrink:0">Level</span><span style="width:52px;text-align:right;flex-shrink:0">Best</span><span style="width:40px;flex-shrink:0"></span>
+</div>
+<div style="flex:1;min-height:0;overflow-y:auto">
+<sc-for list="{{ library }}" as="t" hint-placeholder-count="8">
+<div style="display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid #ebe5db;font-size:14px">
+<div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:2px;overflow:hidden">
+<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.title }}</span>
+<span style="display:flex;align-items:center;gap:6px;min-width:0;font-size:12px;color:#8b877e"><x-import component-from-global-scope="AntDesignSystem_c7cd09.TagColorful" color="{{ t.tagColor }}" title="{{ t.category }}" hint-size="44px,20px"></x-import><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.sub }} · {{ t.last }}</span></span>
+</div>
+<span style="width:40px;flex-shrink:0;color:{{ t.levelColor }};font-weight:500">{{ t.level }}</span>
+<span style="width:52px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums;font-weight:500">{{ t.best }}</span>
+<span style="width:40px;flex-shrink:0;text-align:right;color:#d97757;cursor:pointer;white-space:nowrap">Drill</span>
+</div>
+</sc-for>
+</div>
+<div style="display:flex;justify-content:flex-end;padding-top:12px;flex-shrink:0">
+<x-import component-from-global-scope="AntDesignSystem_c7cd09.Pagination" hint-size="320px,32px"></x-import>
+</div>
+</div>
+</div>
+<sc-if value="{{ importOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(31,30,29,0.45);display:flex;align-items:center;justify-content:center;z-index:50">
+<div style="width:560px;max-width:92vw;background:#fff;border-radius:8px;box-shadow:0 6px 16px 0 rgba(0,0,0,0.08),0 3px 6px -4px rgba(0,0,0,0.12),0 9px 28px 8px rgba(0,0,0,0.05);padding:20px 24px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;justify-content:space-between">
+<span style="font-size:14px;font-weight:600">Import files</span>
+<span onClick="{{ closeImport }}" style="cursor:pointer;color:#8b877e;font-size:16px">×</span>
+</div>
+<div onDragOver="{{ onDragOver }}" onDragLeave="{{ onDragLeave }}" onDrop="{{ onDrop }}" onClick="{{ pickFiles }}" style="border:1px dashed {{ dropBorder }};background:{{ dropBg }};border-radius:8px;padding:28px 20px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:background 0.2s,border-color 0.2s">
+<span style="width:40px;height:40px;border-radius:50%;background:rgba(217,119,87,0.10);display:flex;align-items:center;justify-content:center;color:#d97757"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Icon" name="Export" size="18" hint-size="18px,18px"></x-import></span>
+<span style="font-size:14px;color:#1f1e1d">{{ dropTitle }}</span>
+<span style="font-size:12px;color:#8b877e">.txt / .md / .csv / .json · up to 2 MB each · multiple files</span>
+<input ref="{{ fileRef }}" type="file" multiple="{{ true }}" accept=".txt,.md,.csv,.json" onChange="{{ onFiles }}" style="display:none">
+</div>
+<sc-if value="{{ hasFiles }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto">
+<sc-for list="{{ importFiles }}" as="fl" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #ebe5db;border-radius:6px">
+<span style="width:26px;height:26px;border-radius:4px;flex-shrink:0;background:#f5f1ea;display:flex;align-items:center;justify-content:center;font-size:10px;color:#8b877e">{{ fl.ext }}</span>
+<div style="flex:1;min-width:0">
+<div style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ fl.name }}</div>
+<div style="font-size:11px;color:#8b877e">{{ fl.size }}　{{ fl.note }}</div>
+</div>
+<span onClick="{{ fl.remove }}" style="cursor:pointer;color:#b8b3a8;font-size:14px">×</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+<span style="font-size:12px;color:#8b877e;white-space:nowrap">After import</span>
+<div style="display:flex;background:#f0ebe2;border-radius:6px;padding:2px;gap:2px">
+<sc-for list="{{ importModes }}" as="im" hint-placeholder-count="2">
+<div onClick="{{ im.go }}" style="padding:4px 12px;border-radius:4px;cursor:pointer;font-size:13px;white-space:nowrap;background:{{ im.bg }};color:{{ im.color }};box-shadow:{{ im.shadow }}">{{ im.label }}</div>
+</sc-for>
+</div>
+<span style="font-size:12px;color:#8b877e">{{ importHint }}</span>
+</div>
+<div style="display:flex;justify-content:flex-end;gap:8px;padding-top:4px">
+<div onClick="{{ closeImport }}" style="cursor:pointer;width:80px;flex-shrink:0"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Button" type="default" title="Cancel" dc-props="{{ fluid }}" hint-size="80px,32px"></x-import></div>
+<div onClick="{{ confirmImport }}" style="cursor:pointer;width:96px;flex-shrink:0"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Button" type="primary" title="{{ importBtn }}" dc-props="{{ fluid }}" hint-size="96px,32px"></x-import></div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ catModalOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(31,30,29,0.45);display:flex;align-items:center;justify-content:center;z-index:50">
+<div style="width:440px;max-width:90vw;background:#fff;border-radius:8px;box-shadow:0 6px 16px 0 rgba(0,0,0,0.08),0 3px 6px -4px rgba(0,0,0,0.12),0 9px 28px 8px rgba(0,0,0,0.05);padding:20px 24px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;justify-content:space-between">
+<span style="font-size:14px;font-weight:600">New category</span>
+<span onClick="{{ closeCatModal }}" style="cursor:pointer;color:#8b877e;font-size:16px">×</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:12px;color:#8b877e">Level</span>
+<div style="display:flex;background:#f0ebe2;border-radius:6px;padding:2px;gap:2px;width:fit-content">
+<sc-for list="{{ modalLevels }}" as="l" hint-placeholder-count="2">
+<div onClick="{{ l.go }}" style="padding:5px 16px;border-radius:4px;cursor:pointer;font-size:14px;background:{{ l.bg }};color:{{ l.color }};box-shadow:{{ l.shadow }}">{{ l.label }}</div>
+</sc-for>
+</div>
+</div>
+<sc-if value="{{ modalIsSub }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:12px;color:#8b877e">Parent group</span>
+<div style="display:flex;gap:6px;flex-wrap:wrap">
+<sc-for list="{{ modalParents }}" as="p" hint-placeholder-count="6">
+<div onClick="{{ p.go }}" style="display:flex;align-items:center;gap:6px;padding:4px 12px;border-radius:100px;cursor:pointer;font-size:13px;white-space:nowrap;flex-shrink:0;border:1px solid {{ p.border }};background:{{ p.bg }};color:{{ p.color }}"><span style="width:6px;height:6px;border-radius:50%;background:{{ p.dot }}"></span>{{ p.label }}</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:12px;color:#8b877e">Name</span>
+<input value="{{ modalName }}" onChange="{{ onModalName }}" placeholder="{{ modalPlaceholder }}" autoFocus="{{ true }}" style="height:36px;border-radius:6px;border:1px solid #ddd6ca;padding:0 12px;font-size:14px;font-family:inherit;color:#1f1e1d;outline:none">
+</div>
+<div style="display:flex;justify-content:flex-end;gap:8px;padding-top:4px">
+<div onClick="{{ closeCatModal }}" style="cursor:pointer;width:80px;flex-shrink:0"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Button" type="default" title="Cancel" dc-props="{{ fluid }}" hint-size="80px,32px"></x-import></div>
+<div onClick="{{ submitCat }}" style="cursor:pointer;width:80px;flex-shrink:0"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Button" type="primary" title="Create" dc-props="{{ fluid }}" hint-size="80px,32px"></x-import></div>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isDict }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:1000px;height:100%;min-height:0;margin:0 auto;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0">
+<div style="display:flex;align-items:center;gap:12px;min-width:0">
+<input value="{{ dictQuery }}" onChange="{{ onDictQuery }}" placeholder="Search word, meaning or topic" style="width:240px;max-width:44vw;height:32px;border-radius:6px;border:1px solid #ddd6ca;padding:0 12px;font-size:14px;font-family:inherit;color:#1f1e1d;outline:none">
+<span style="font-size:12px;color:#8b877e">Thematic dictionary · {{ dictCount }} entries</span>
+</div>
+<div onClick="{{ openDictImport }}" style="cursor:pointer;width:96px;flex-shrink:0"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Button" type="primary" title="Import dictionary" dc-props="{{ fluid }}" hint-size="96px,32px"></x-import></div>
+</div>
+<div style="flex:1;min-height:0;display:grid;gap:12px;grid-template-columns:{{ libCols }};grid-template-rows:{{ libRows }}">
+<div style="background:#fff;border-radius:8px;padding:0 12px 10px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);display:flex;flex-direction:column;min-height:0;overflow:hidden">
+<div style="padding:14px 4px 10px;font-size:14px;font-weight:600;border-bottom:1px solid #ebe5db;flex-shrink:0">TopicCategory</div>
+<div style="flex:1;min-height:0;overflow-y:auto;padding:4px 0">
+<sc-for list="{{ dictTopics }}" as="t" hint-placeholder-count="6">
+<div onClick="{{ t.go }}" style="display:flex;align-items:center;gap:8px;height:32px;padding:0 10px;border-radius:6px;cursor:pointer;font-size:13px;background:{{ t.bg }};color:{{ t.color }}">
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.label }}</span>
+<span style="font-size:12px;opacity:0.7">{{ t.count }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="background:#fff;border-radius:8px;padding:0 20px 8px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);min-height:0;display:flex;flex-direction:column">
+<div style="display:flex;gap:12px;padding:14px 0 12px;color:#8b877e;border-bottom:1px solid #ebe5db;font-size:14px;flex-shrink:0">
+<span style="flex:2 1 0;min-width:0">Word</span><span style="flex:1.4 1 0;min-width:0">Chinese</span><span style="width:58px;flex-shrink:0;text-align:right">Mastery</span><span style="width:52px;flex-shrink:0"></span>
+</div>
+<div style="flex:1;min-height:0;overflow-y:auto">
+<sc-for list="{{ dictRows }}" as="d" hint-placeholder-count="10">
+<div style="display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #ebe5db;font-size:14px">
+<span style="flex:2 1 0;min-width:0;display:flex;flex-direction:column;overflow:hidden"><span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ d.w }}<span style="font-size:11px;color:#8b877e;margin-left:6px">{{ d.pos }}</span></span><span style="font-size:11px;color:#8b877e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ d.ph }}</span></span>
+<span style="flex:1.4 1 0;min-width:0;color:#5c5951;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ d.zh }}</span>
+<span style="width:58px;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:3px"><span style="font-size:11px;color:#8b877e">{{ d.mastery }}</span><span style="width:100%;height:5px;border-radius:100px;background:#ece6dc;overflow:hidden"><span style="display:block;height:5px;border-radius:100px;width:{{ d.bar }};background:{{ d.barColor }}"></span></span></span>
+<span onClick="{{ d.practise }}" style="width:52px;flex-shrink:0;text-align:right;color:#d97757;cursor:pointer;white-space:nowrap">Drill</span>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isAi }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:1000px;height:100%;min-height:0;margin:0 auto;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;gap:2px;background:#f0ebe2;border-radius:6px;padding:2px;width:fit-content;flex-shrink:0">
+<sc-for list="{{ aiTabs }}" as="tb" hint-placeholder-count="3">
+<div onClick="{{ tb.go }}" style="padding:5px 16px;border-radius:4px;cursor:pointer;font-size:14px;white-space:nowrap;background:{{ tb.bg }};color:{{ tb.color }};box-shadow:{{ tb.shadow }}">{{ tb.label }}</div>
+</sc-for>
+</div>
+
+<sc-if value="{{ aiTabConn }}" hint-placeholder-val="{{ true }}">
+<div style="flex:1;min-height:0;display:grid;gap:12px;grid-template-columns:minmax(0,1fr)">
+<div style="background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);display:flex;flex-direction:column;min-height:0">
+<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
+<span style="font-size:14px;font-weight:600;white-space:nowrap">Connection</span>
+<span style="font-size:12px;color:#8b877e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ aiStatusText }}</span>
+</div>
+<div style="flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px 20px;align-content:start;padding-top:10px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:12px;color:#8b877e">Provider</span>
+<div style="display:flex;background:#f0ebe2;border-radius:6px;padding:2px;gap:2px">
+<sc-for list="{{ aiProviders }}" as="p" hint-placeholder-count="4">
+<div onClick="{{ p.go }}" style="flex:1;min-width:0;padding:4px 6px;border-radius:4px;cursor:pointer;font-size:12px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:{{ p.segBg }};color:{{ p.color }};box-shadow:{{ p.segShadow }}">{{ p.label }}</div>
+</sc-for>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:12px;color:#8b877e">Model</span>
+<div style="position:relative">
+<input value="{{ modelQuery }}" onChange="{{ onModelQuery }}" onFocus="{{ openModels }}" placeholder="Search models" style="width:100%;height:34px;border-radius:6px;border:1px solid {{ modelBorder }};padding:0 30px 0 12px;font-size:14px;font-family:inherit;color:#1f1e1d;outline:none">
+<span onClick="{{ toggleModels }}" style="position:absolute;right:10px;top:13px;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:5px solid #8b877e;cursor:pointer"></span>
+<sc-if value="{{ modelOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;left:0;right:0;top:38px;z-index:30;max-height:180px;overflow-y:auto;background:#fff;border-radius:6px;box-shadow:0 6px 16px 0 rgba(0,0,0,0.08),0 3px 6px -4px rgba(0,0,0,0.12),0 9px 28px 8px rgba(0,0,0,0.05);padding:4px">
+<sc-for list="{{ aiModels }}" as="mo" hint-placeholder-count="5">
+<div onClick="{{ mo.pick }}" style="padding:6px 10px;border-radius:4px;cursor:pointer;font-size:13px;line-height:18px;background:{{ mo.bg }};color:{{ mo.color }}">
+<div style="font-weight:{{ mo.weight }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ mo.label }}</div>
+<div style="font-size:11px;color:#8b877e;font-family:'SF Mono',ui-monospace,Menlo,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ mo.id }}</div>
+</div>
+</sc-for>
+<sc-if value="{{ noModels }}" hint-placeholder-val="{{ false }}">
+<div style="padding:10px;font-size:12px;color:#8b877e;text-align:center">No matching model</div>
+</sc-if>
+</div>
+</sc-if>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:12px;color:#8b877e">API base URL</span>
+<input value="{{ aiCfg.url }}" onChange="{{ onAiUrl }}" placeholder="https://api.anthropic.com/v1" style="height:34px;border-radius:6px;border:1px solid #ddd6ca;padding:0 12px;font-size:13px;font-family:'SF Mono',ui-monospace,Menlo,monospace;color:#1f1e1d;outline:none">
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:12px;color:#8b877e">API key</span>
+<input value="{{ aiCfg.key }}" onChange="{{ onAiKey }}" style="height:34px;border-radius:6px;border:1px solid #ddd6ca;padding:0 12px;font-size:13px;font-family:'SF Mono',ui-monospace,Menlo,monospace;color:#1f1e1d;outline:none">
+<span style="font-size:11px;color:#8b877e;line-height:16px">Stored locally only</span>
+</div>
+</div>
+<div style="display:flex;gap:8px;padding-top:10px;border-top:1px solid #ebe5db;margin-top:10px;flex-shrink:0">
+<div style="cursor:pointer;width:96px;flex-shrink:0"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Button" type="default" title="Test" dc-props="{{ fluid }}" hint-size="96px,32px"></x-import></div>
+<div style="cursor:pointer;width:96px;flex-shrink:0"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Button" type="primary" title="Save" dc-props="{{ fluid }}" hint-size="96px,32px"></x-import></div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ aiTabParam }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;display:grid;gap:12px;grid-template-columns:minmax(0,1fr)">
+<div style="background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);display:flex;flex-direction:column;min-height:0">
+<div style="font-size:14px;font-weight:600;flex-shrink:0">Parameters</div>
+<div style="flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px 20px;align-content:start;padding-top:6px">
+<div style="display:flex;gap:12px">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+<span style="font-size:12px;color:#8b877e">Temperature {{ aiTempLabel }}</span>
+<input type="range" min="0" max="100" value="{{ aiCfg.temp }}" onChange="{{ onAiTemp }}" style="width:100%;accent-color:#d97757">
+</div>
+<div style="width:112px;flex-shrink:0;display:flex;flex-direction:column;gap:6px">
+<span style="font-size:12px;color:#8b877e">Max chars</span>
+<input value="{{ aiCfg.maxChars }}" onChange="{{ onAiMax }}" style="height:32px;border-radius:6px;border:1px solid #ddd6ca;padding:0 10px;font-size:13px;font-family:inherit;color:#1f1e1d;outline:none">
+</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+<sc-for list="{{ aiNums }}" as="nu" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+<span style="font-size:12px;color:#8b877e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ nu.label }}</span>
+<input value="{{ nu.value }}" onChange="{{ nu.onChange }}" style="height:32px;border-radius:6px;border:1px solid #ddd6ca;padding:0 10px;font-size:13px;font-family:inherit;color:#1f1e1d;outline:none">
+</div>
+</sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:12px;color:#8b877e">Output language</span>
+<div style="display:flex;background:#f0ebe2;border-radius:6px;padding:2px;gap:2px">
+<sc-for list="{{ aiLangs }}" as="lg" hint-placeholder-count="3">
+<div onClick="{{ lg.go }}" style="flex:1;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:13px;text-align:center;white-space:nowrap;background:{{ lg.bg }};color:{{ lg.color }};box-shadow:{{ lg.shadow }}">{{ lg.label }}</div>
+</sc-for>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+<sc-for list="{{ aiOpts }}" as="op" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 0">
+<div style="min-width:0"><div style="font-size:13px">{{ op.label }}</div><div style="font-size:11px;color:#8b877e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ op.hint }}</div></div>
+<div onClick="{{ op.toggle }}" style="cursor:pointer;flex-shrink:0"><span style="display:block;width:40px;height:20px;border-radius:100px;position:relative;background:{{ op.trackBg }}"><span style="position:absolute;top:2px;left:{{ op.knobLeft }};width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,35,11,0.2)"></span></span></div>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ aiTabAuto }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;display:grid;gap:12px;grid-template-columns:{{ aiCols }}">
+<div style="background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);display:flex;flex-direction:column;min-height:0">
+<div style="font-size:14px;font-weight:600;flex-shrink:0">Automation</div>
+<div style="flex:1;min-height:0;overflow-y:auto;padding-top:4px">
+<sc-for list="{{ aiFeatures }}" as="a" hint-placeholder-count="6">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #ebe5db">
+<div style="min-width:0"><div style="font-size:14px">{{ a.label }}</div><div style="font-size:12px;color:#8b877e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.hint }}</div></div>
+<div onClick="{{ a.toggle }}" style="cursor:pointer;display:flex;align-items:center;gap:8px;flex-shrink:0"><span style="width:44px;height:22px;border-radius:100px;position:relative;background:{{ a.trackBg }}"><span style="position:absolute;top:2px;left:{{ a.knobLeft }};width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,35,11,0.2)"></span></span></div>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);display:flex;flex-direction:column;gap:8px;min-height:0">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-shrink:0">
+<span style="font-size:14px;font-weight:600;white-space:nowrap">Prompts</span>
+<span onClick="{{ addPrompt }}" style="font-size:12px;color:#d97757;cursor:pointer;white-space:nowrap">+ New prompt</span>
+</div>
+<div style="display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0">
+<sc-for list="{{ promptTabs }}" as="pt" hint-placeholder-count="3">
+<div onClick="{{ pt.go }}" style="padding:3px 10px;border-radius:100px;cursor:pointer;font-size:12px;line-height:18px;white-space:nowrap;border:1px solid {{ pt.border }};background:{{ pt.bg }};color:{{ pt.color }}">{{ pt.label }}</div>
+</sc-for>
+</div>
+<textarea value="{{ promptText }}" onChange="{{ onPromptText }}" style="flex:1;min-height:52px;resize:none;border-radius:6px;border:1px solid #ddd6ca;padding:8px 12px;font-size:13px;line-height:20px;font-family:inherit;color:#1f1e1d;outline:none"></textarea>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;flex-shrink:0">
+<sc-for list="{{ aiUsage }}" as="u" hint-placeholder-count="3">
+<div style="border:1px solid #ebe5db;border-radius:6px;padding:8px 10px;min-width:0"><div style="font-size:12px;color:#8b877e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ u.label }}</div><div style="font-size:18px;line-height:24px;font-weight:600;color:{{ u.color }}">{{ u.value }}</div><div style="font-size:11px;color:#8b877e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ u.hint }}</div></div>
+</sc-for>
+</div>
+</div>
+</div>
+</sc-if>
+
+
+</div>
+</sc-if>
+
+<sc-if value="{{ isModels }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:1000px;height:100%;min-height:0;margin:0 auto;display:flex;flex-direction:column;gap:12px">
+<div style="flex:1;min-height:0;display:grid;gap:12px;grid-template-columns:{{ aiCols }}">
+<div style="background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);display:flex;flex-direction:column;gap:8px;min-height:0">
+<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
+<span style="font-size:14px;font-weight:600">Storage</span>
+<span style="font-size:12px;color:#8b877e;line-height:18px">Tokenizer, embedding and rerank models run locally so categorising and search work offline.</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+<span style="font-size:12px;color:#8b877e">Location</span>
+<input value="{{ modelDir }}" onChange="{{ onModelDir }}" style="height:32px;border-radius:6px;border:1px solid #ddd6ca;padding:0 10px;font-size:13px;font-family:'SF Mono',ui-monospace,Menlo,monospace;color:#1f1e1d;outline:none">
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:6px;background:#faf9f5;flex-shrink:0">
+<span style="font-size:12px;color:#5c5951">Used</span>
+<span style="font-size:14px;font-weight:600">{{ modelUsed }}</span>
+</div>
+<div style="margin-top:auto;font-size:12px;color:#8b877e;line-height:18px;flex-shrink:0">Local models are preferred; the cloud is only used for long-form summaries.</div>
+</div>
+<div style="background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);display:flex;flex-direction:column;min-height:0">
+<div style="font-size:14px;font-weight:600;flex-shrink:0">Available models</div>
+<div style="flex:1;min-height:0;overflow-y:auto;padding-top:4px">
+<sc-for list="{{ localModels }}" as="lm" hint-placeholder-count="5">
+<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #ebe5db">
+<span style="width:52px;flex-shrink:0;font-size:11px;padding:2px 0;text-align:center;border-radius:4px;background:{{ lm.kindBg }};color:{{ lm.kindColor }}">{{ lm.kind }}</span>
+<div style="flex:1;min-width:0">
+<div style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ lm.name }}</div>
+<div style="font-size:11px;color:#8b877e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ lm.note }} · {{ lm.size }}</div>
+</div>
+<span onClick="{{ lm.action }}" style="width:52px;flex-shrink:0;text-align:right;font-size:13px;cursor:pointer;white-space:nowrap;color:{{ lm.actionColor }}">{{ lm.actionLabel }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:1000px;height:100%;min-height:0;margin:0 auto;display:flex;flex-direction:column;gap:12px">
+<div style="background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);flex:1.1 1 0;min-height:120px;display:flex;flex-direction:column;overflow:hidden">
+<div style="font-size:14px;font-weight:600;margin-bottom:8px;flex-shrink:0">Preferences</div>
+<div style="display:flex;gap:20px;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid #ebe5db;margin-bottom:2px;flex-shrink:0">
+<sc-for list="{{ prefPickers }}" as="p" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column;gap:5px;min-width:0">
+<span style="font-size:12px;color:#8b877e">{{ p.label }}</span>
+<div style="display:flex;background:#f0ebe2;border-radius:6px;padding:2px;gap:2px;flex-wrap:wrap">
+<sc-for list="{{ p.options }}" as="o" hint-placeholder-count="4">
+<div onClick="{{ o.go }}" style="padding:4px 12px;border-radius:4px;cursor:pointer;font-size:13px;white-space:nowrap;background:{{ o.bg }};color:{{ o.color }};box-shadow:{{ o.shadow }}">{{ o.label }}</div>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:2px;flex:1;min-height:0;overflow-y:auto">
+<sc-for list="{{ settings }}" as="s" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #ebe5db">
+<div><div style="font-size:14px">{{ s.label }}</div><div style="font-size:12px;color:#8b877e">{{ s.hint }}</div></div>
+<div onClick="{{ s.toggle }}" style="cursor:pointer;display:flex;align-items:center;gap:8px"><span style="font-size:14px;color:#5c5951">{{ s.value }}</span><span style="width:44px;height:22px;border-radius:100px;position:relative;background:{{ s.trackBg }}"><span style="position:absolute;top:2px;left:{{ s.knobLeft }};width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,35,11,0.2)"></span></span></div>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:{{ aiCols }};grid-template-rows:{{ aiRows }};gap:12px;flex:1 1 0;min-height:150px">
+<div style="background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);display:flex;flex-direction:column;gap:12px;min-height:0;overflow-y:auto">
+<div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+<span style="font-size:14px;font-weight:600">Local data</span>
+<span style="font-size:12px;color:#8b877e;line-height:18px">Texts, sessions and the error book live in a local SQLite file ({{ dbPath }}); practice works offline and syncs when reconnected.</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+<span style="font-size:14px;font-weight:600">Shortcuts</span>
+<div style="display:flex;flex-direction:column;gap:3px">
+<sc-for list="{{ shortcuts }}" as="k" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:#5c5951"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ k.label }}</span><span style="font-family:'SF Mono',ui-monospace,Menlo,monospace;font-size:11px;padding:1px 6px;border-radius:4px;background:#f5f1ea;box-shadow:inset 0 0 0 1px #ddd6ca;white-space:nowrap">{{ k.keys }}</span></div>
+</sc-for>
+</div>
+</div>
+</div>
+<div style="background:#fff;border-radius:8px;padding:16px 20px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.03);min-height:0;display:flex;flex-direction:column">
+<div style="font-size:14px;font-weight:600;margin-bottom:10px;flex-shrink:0">Achievements</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;flex:1;min-height:0;overflow-y:auto;align-content:start">
+<sc-for list="{{ badges }}" as="b" hint-placeholder-count="8">
+<div style="border:1px solid #ebe5db;border-radius:8px;padding:12px 10px;text-align:center;opacity:{{ b.opacity }}">
+<div style="width:40px;height:40px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#fff;background:{{ b.color }}">{{ b.mark }}</div>
+<div style="font-size:14px;font-weight:500">{{ b.name }}</div>
+<div style="font-size:12px;color:#8b877e">{{ b.desc }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+</div>
+
+<sc-if value="{{ dictImportOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(31,30,29,0.45);display:flex;align-items:center;justify-content:center;z-index:50">
+<div style="width:600px;max-width:92vw;background:#fff;border-radius:8px;box-shadow:0 6px 16px 0 rgba(0,0,0,0.08),0 3px 6px -4px rgba(0,0,0,0.12),0 9px 28px 8px rgba(0,0,0,0.05);padding:20px 24px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;justify-content:space-between">
+<span style="font-size:16px;font-weight:600">Import dictionary</span>
+<span onClick="{{ closeDictImport }}" style="cursor:pointer;color:#8b877e;font-size:16px">×</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:12px;color:#8b877e">Source</span>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+<sc-for list="{{ dictSources }}" as="ds" hint-placeholder-count="4">
+<div onClick="{{ ds.go }}" style="padding:8px 12px;border-radius:6px;cursor:pointer;border:1px solid {{ ds.border }};background:{{ ds.bg }};min-width:0">
+<div style="font-size:13px;font-weight:500;color:{{ ds.color }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ ds.name }}</div>
+<div style="font-size:11px;color:#8b877e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ ds.note }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+<div onDragOver="{{ onDragOver }}" onDragLeave="{{ onDragLeave }}" onDrop="{{ onDictDrop }}" onClick="{{ pickDictFile }}" style="border:1px dashed {{ dropBorder }};background:{{ dropBg }};border-radius:8px;padding:20px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer">
+<span style="font-size:13px;color:#1f1e1d">{{ dictDropTitle }}</span>
+<span style="font-size:11px;color:#8b877e">.csv / .tsv / .json / .txt (ECDICT, CC-CEDICT exports)</span>
+<input ref="{{ dictFileRef }}" type="file" accept=".csv,.tsv,.json,.txt" onChange="{{ onDictFile }}" style="display:none">
+</div>
+<sc-if value="{{ dictFileReady }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#8b877e">
+<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ dictFileName }}</span>
+<span style="white-space:nowrap">Detected {{ dictRowCount }} rows</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px">
+<sc-for list="{{ dictMapFields }}" as="mf" hint-placeholder-count="4">
+<div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+<span style="font-size:11px;color:#8b877e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ mf.label }}</span>
+<select value="{{ mf.value }}" onChange="{{ mf.onChange }}" style="height:30px;border-radius:6px;border:1px solid #ddd6ca;padding:0 6px;font-size:12px;font-family:inherit;color:#1f1e1d;background:#fff;outline:none">
+<sc-for list="{{ dictColumns }}" as="co" hint-placeholder-count="4">
+<option value="{{ co.id }}">{{ co.label }}</option>
+</sc-for>
+</select>
+</div>
+</sc-for>
+</div>
+<div style="border:1px solid #ebe5db;border-radius:6px;overflow:hidden">
+<div style="display:flex;gap:10px;padding:6px 10px;background:#faf9f5;font-size:11px;color:#8b877e"><span style="flex:1;min-width:0">Word</span><span style="flex:1;min-width:0">Chinese</span><span style="width:76px;flex-shrink:0">Topic</span></div>
+<sc-for list="{{ dictPreview }}" as="pv" hint-placeholder-count="3">
+<div style="display:flex;gap:10px;padding:6px 10px;font-size:12px;border-top:1px solid #ebe5db"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ pv.w }}</span><span style="flex:1;min-width:0;color:#5c5951;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ pv.zh }}</span><span style="width:76px;flex-shrink:0;color:#8b877e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ pv.cat }}</span></div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+<div onClick="{{ toggleDedupe }}" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+<span style="width:40px;height:20px;border-radius:100px;position:relative;background:{{ dedupeBg }};flex-shrink:0"><span style="position:absolute;top:2px;left:{{ dedupeKnob }};width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,35,11,0.2)"></span></span>
+<span style="font-size:12px;color:#5c5951">Keep mastery for duplicates</span>
+</div>
+<div style="display:flex;gap:8px">
+<div onClick="{{ closeDictImport }}" style="cursor:pointer;width:80px;flex-shrink:0"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Button" type="default" title="Cancel" dc-props="{{ fluid }}" hint-size="80px,32px"></x-import></div>
+<div onClick="{{ confirmDictImport }}" style="cursor:pointer;width:96px;flex-shrink:0"><x-import component-from-global-scope="AntDesignSystem_c7cd09.Button" type="primary" title="{{ dictImportBtn }}" dc-props="{{ fluid }}" hint-size="96px,32px"></x-import></div>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+
+<div style="height:48px;flex-shrink:0;background:#fff;border-top:1px solid #ebe5db;box-shadow:0 -1px 2px 0 rgba(0,0,0,0.03);display:flex;align-items:center;gap:20px;padding:0 24px">
+<div style="display:flex;align-items:baseline;gap:6px"><span style="font-size:12px;color:#8b877e">{{ speedUnit }}</span><span style="font-size:20px;line-height:28px;font-weight:600;color:#d97757;font-variant-numeric:tabular-nums">{{ wpm }}</span></div>
+<div style="width:1px;height:24px;background:#ebe5db"></div>
+<div style="display:flex;align-items:baseline;gap:6px"><span style="font-size:12px;color:#8b877e">Accuracy</span><span style="font-size:20px;line-height:28px;font-weight:600;font-variant-numeric:tabular-nums;color:{{ accColor }}">{{ accuracy }}%</span></div>
+<div style="width:1px;height:24px;background:#ebe5db"></div>
+<div style="display:flex;align-items:baseline;gap:6px"><span style="font-size:12px;color:#8b877e">{{ clockLabel }}</span><span style="font-size:20px;line-height:28px;font-weight:600;font-variant-numeric:tabular-nums">{{ clockValue }}</span></div>
+<div style="flex:1;min-width:0;display:flex;align-items:center;gap:12px">
+<div style="flex:1;min-width:0;height:8px;border-radius:100px;background:#ece6dc;overflow:hidden"><div style="height:8px;border-radius:100px;background:#d97757;transition:width 0.1s linear;width:{{ progress }}"></div></div>
+<span style="font-size:14px;color:#5c5951;font-variant-numeric:tabular-nums;width:44px;text-align:right">{{ progress }}</span>
+</div>
+<div style="display:flex;align-items:center;gap:8px;color:#8b877e;font-size:12px;white-space:nowrap">
+<x-import component-from-global-scope="AntDesignSystem_c7cd09.TagColorful" color="volcano" title="{{ textCategory }}" hint-size="62px,22px"></x-import>
+<span>{{ statusHint }}</span>
+</div>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script data-dc-script type="text/plain" data-props="{&quot;showKeyboard&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Practice&quot;},&quot;strictMode&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Practice&quot;}}">
+
+const FING = { pinkyL:'#b4553c', ringL:'#c08552', midL:'#8a9a5b', idxL:'#6f8f85', idxR:'#d9a05b', midR:'#8a9a5b', ringR:'#c08552', pinkyR:'#b4553c', thumb:'#c4bdb1' };
+const FINGER_NAME = { pinkyL:'L pinky', ringL:'L ring', midL:'L middle', idxL:'L index', idxR:'R index', midR:'R middle', ringR:'R ring', pinkyR:'R pinky', thumb:'Thumb' };
+const FMAP = {};
+const assign = (keys, fg) => keys.split(' ').forEach(k => { FMAP[k] = fg; });
+assign('` 1 q a z tab caps shift-l', 'pinkyL');
+assign('2 w s x', 'ringL');
+assign('3 e d c', 'midL');
+assign('4 5 r t f g v b', 'idxL');
+assign('6 7 y u h j n m', 'idxR');
+assign('8 i k ,', 'midR');
+assign('9 o l .', 'ringR');
+assign("0 - = p [ ] \\ ; ' / enter backspace shift-r", 'pinkyR');
+assign('space', 'thumb');
+
+const ROWS = [
+  [['`',44],['1',44],['2',44],['3',44],['4',44],['5',44],['6',44],['7',44],['8',44],['9',44],['0',44],['-',44],['=',44],['backspace',80,'Back']],
+  [['tab',66,'Tab'],['q',44],['w',44],['e',44],['r',44],['t',44],['y',44],['u',44],['i',44],['o',44],['p',44],['[',44],[']',44],['\\',58]],
+  [['caps',80,'Caps'],['a',44],['s',44],['d',44],['f',44],['g',44],['h',44],['j',44],['k',44],['l',44],[';',44],["'",44],['enter',94,'Enter']],
+  [['shift-l',110,'Shift'],['z',44],['x',44],['c',44],['v',44],['b',44],['n',44],['m',44],[',',44],['.',44],['/',44],['shift-r',114,'Shift']],
+  [['space',360,'Space']],
+];
+const SHIFTED = { '~':'`','!':'1','@':'2','#':'3','$':'4','%':'5','^':'6','&':'7','*':'8','(':'9',')':'0','_':'-','+':'=','{':'[','}':']','|':'\\',':':';','"':"'",'<':',','>':'.','?':'/' };
+const ZHUYIN = { '1':'ㄅ','q':'ㄆ','a':'ㄇ','z':'ㄈ','2':'ㄉ','w':'ㄊ','s':'ㄋ','x':'ㄌ','e':'ㄍ','d':'ㄎ','c':'ㄏ','r':'ㄐ','f':'ㄑ','v':'ㄒ','5':'ㄓ','t':'ㄔ','g':'ㄕ','b':'ㄖ','y':'ㄗ','h':'ㄘ','n':'ㄙ','u':'ㄧ','j':'ㄨ','m':'ㄩ','8':'ㄚ','i':'ㄛ','k':'ㄜ',',':'ㄝ','9':'ㄞ','o':'ㄟ','l':'ㄠ','.':'ㄡ','0':'ㄢ','p':'ㄣ',';':'ㄤ','/':'ㄥ','-':'ㄦ','3':'ˇ','4':'ˋ','6':'ˊ','7':'˙' };
+const ZH_REV = {}; Object.keys(ZHUYIN).forEach(k => { if (!ZH_REV[ZHUYIN[k]]) ZH_REV[ZHUYIN[k]] = k; });
+
+const TEXTS = {
+  basic: { meta:'Guided key drills', items:[
+    'asdf jkl; asdf jkl; fjdk slas dkfj gh',
+    'the quick fox jumps over a lazy dog by the river',
+    'sad lads ask dad; fall glass half gaff jail',
+  ]},
+  english: { meta:'Medium · ~210 characters', items:[
+    'Design is not just what it looks like and feels like. Design is how it works. A good interface disappears into the task, leaving the person free to think about the work itself.',
+    'Typing well is a quiet skill. It rewards patience over speed, accuracy over bursts, and steady daily practice over a single long session.',
+  ]},
+  chinese: { meta:'Bopomofo / Cangjie · matched on composed characters', items:[
+    '打字練習的重點不在速度，而在穩定。每天固定練十分鐘，手指會自己記住位置，速度自然跟上來。',
+    '好的介面會消失在任務裡，讓人專心想事情本身，而不是想著手上的工具怎麼操作。',
+  ]},
+  zhuyin: { meta:'Dachen layout · symbol by symbol', items:[
+    'ㄅㄆㄇㄈ ㄉㄊㄋㄌ ㄍㄎㄏ ㄐㄑㄒ',
+    'ㄓㄔㄕㄖ ㄗㄘㄙ ㄧㄨㄩ ㄚㄛㄜㄝ',
+    'ㄞㄟㄠㄡ ㄢㄣㄤㄥ ㄦ ˊˇˋ˙',
+  ]},
+  bilingual: { meta:'Chinese then English · IME for Chinese', items:[] },
+  code: { meta:'JavaScript · symbol heavy', items:[
+    'const wpm = (chars, ms) => Math.round((chars / 5) / (ms / 60000));',
+    'if (typed[i] !== target[i]) { errors.set(target[i], (errors.get(target[i]) ?? 0) + 1); }',
+    'SELECT UserId, AVG(WPM) FROM Sessions WHERE CreatedAt > @start GROUP BY UserId;',
+  ]},
+  timed: { meta:'60 seconds · short English', items:[
+    'A calm mind types faster than a rushed one. Focus on the next character, not the whole paragraph, and the speed will follow on its own.',
+  ]},
+  custom: { meta:'Pasted content · categorised by AI', items:[
+    'Paste your own paragraph here to practise exactly the words you write every day at work.',
+  ]},
+};
+
+const DICT = [
+  { w:'exchange rate', ph:'/ɪksˈtʃeɪndʒ reɪt/', pos:'n.', zh:'匯率', cat:'Banking', ex:'The exchange rate today is lower than the rate we locked last week.', mastery:72 },
+  { w:'interest rate', ph:'/ˈɪntrəst reɪt/', pos:'n.', zh:'利率', cat:'Banking', ex:'The central bank kept the interest rate unchanged this quarter.', mastery:64 },
+  { w:'remittance', ph:'/rɪˈmɪtns/', pos:'n.', zh:'匯款', cat:'Banking', ex:'Please keep the remittance slip until the transfer is confirmed.', mastery:38 },
+  { w:'balance', ph:'/ˈbæləns/', pos:'n.', zh:'餘額', cat:'Banking', ex:'Check the balance of your savings account before you apply.', mastery:81 },
+  { w:'reconcile', ph:'/ˈrekənsaɪl/', pos:'v.', zh:'對帳', cat:'Accounting', ex:'The accountant will reconcile the invoice with the monthly statement.', mastery:45 },
+  { w:'depreciation', ph:'/dɪˌpriːʃiˈeɪʃn/', pos:'n.', zh:'折舊', cat:'Accounting', ex:'Depreciation is recorded on a straight line basis over five years.', mastery:29 },
+  { w:'receivable', ph:'/rɪˈsiːvəbl/', pos:'n.', zh:'應收帳款', cat:'Accounting', ex:'Accounts receivable rose slightly because of the new payment terms.', mastery:41 },
+  { w:'deployment', ph:'/dɪˈplɔɪmənt/', pos:'n.', zh:'部署', cat:'IT', ex:'The deployment failed because the migration script timed out.', mastery:58 },
+  { w:'latency', ph:'/ˈleɪtnsi/', pos:'n.', zh:'延遲', cat:'IT', ex:'Average latency dropped to forty milliseconds after the cache change.', mastery:52 },
+  { w:'rollback', ph:'/ˈrəʊlbæk/', pos:'n.', zh:'還原', cat:'IT', ex:'We prepared a rollback plan in case the release breaks checkout.', mastery:47 },
+  { w:'agenda', ph:'/əˈdʒendə/', pos:'n.', zh:'議程', cat:'Meetings', ex:'Please send the agenda and the meeting notes before Friday.', mastery:76 },
+  { w:'follow-up', ph:'/ˈfɒləʊ ʌp/', pos:'n.', zh:'後續追蹤', cat:'Meetings', ex:'I will schedule a follow-up with the vendor next Tuesday.', mastery:69 },
+  { w:'appointment', ph:'/əˈpɔɪntmənt/', pos:'n.', zh:'預約', cat:'Daily life', ex:'I made an appointment with the dentist for Monday morning.', mastery:83 },
+  { w:'receipt', ph:'/rɪˈsiːt/', pos:'n.', zh:'收據', cat:'Daily life', ex:'Keep the receipt in case you want to return the jacket.', mastery:74 },
+];
+
+const subsOf = (arr) => arr.map(([name, count]) => ({ id: name, name, count }));
+const DEFAULT_CATS = [
+  { id:'basic', name:'Basics', color:'#8a9a5b', layout:'en', kind:'basic', children: subsOf([['Home row',6],['Top row',5],['Bottom row',5],['Numbers',4],['Symbols',4]]) },
+  { id:'english', name:'English', color:'#d97757', layout:'en', kind:'english', children: subsOf([['Web',8],['Banking',5],['Support email',7],['Business email',6],['Tech news',9],['Literature',3]]) },
+  { id:'chinese', name:'Chinese', color:'#b06a4f', layout:'zh', kind:'chinese', children: subsOf([['Finance',6],['Accounting',4],['News',7],['Official',5],['Literature',4],['Daily talk',5]]) },
+  { id:'zhuyin', name:'Bopomofo', color:'#a8763e', layout:'zhuyin', kind:'zhuyin', children: subsOf([['Initials',4],['Finals',4],['Tones',2],['Mixed',2]]) },
+  { id:'bilingual', name:'Vocabulary', color:'#6f8f85', layout:'zh', kind:'bilingual', children: subsOf([['Banking',4],['Accounting',3],['IT',3],['Meetings',2],['Daily life',2]]) },
+  { id:'code', name:'Code', color:'#7d8c5c', layout:'en', kind:'code', children: subsOf([['C#',6],['JavaScript',7],['SQL',6]]) },
+  { id:'timed', name:'Timed', color:'#c08552', layout:'en', kind:'timed', children: subsOf([['1 min',3],['3 min',3],['5 min',2]]) },
+];
+const catTotal = (c) => (c.children || []).reduce((a, x) => a + x.count, 0);
+const LAYOUT_LABEL = { en:'Latin', zh:'Chinese', zhuyin:'Bopomofo' };
+const TAG_BY_CAT = { 'Vocabulary':'cyan', 'Code':'magenta', 'English':'volcano', 'Chinese':'dust red', 'Bopomofo':'sunset orange', 'Basics':'lime', 'Timed':'calendula gold' };
+const SUB_HINTS = { 'Chinese': [[/營收|股|財報|匯率|利率|投資/, 'Finance'], [/借方|貸方|科目|帳|折舊|分錄/, 'Accounting'], [/公告|函|核定|辦理|主旨|說明/, 'Official'], [/記者|報導|表示|昨日|今日/, 'News']], 'English': [[/account|transfer|balance|bank|payment/i, 'Banking'], [/click|login|sign up|page|website|menu/i, 'Web'], [/dear|regards|thank you for|apolog/i, 'Support email'], [/meeting|proposal|quarter|invoice/i, 'Business email']] };
+
+const HEAT = { q:0.04,w:0.06,e:0.02,r:0.03,t:0.02,y:0.08,u:0.05,i:0.03,o:0.04,p:0.11,a:0.02,s:0.03,d:0.01,f:0.01,g:0.05,h:0.04,j:0.02,k:0.07,l:0.06,';':0.14,z:0.12,x:0.10,c:0.05,v:0.07,b:0.09,n:0.04,m:0.06,',':0.08,'.':0.05,'/':0.13 };
+const HEAT_ROWS = [['q','w','e','r','t','y','u','i','o','p'],['a','s','d','f','g','h','j','k','l',';'],['z','x','c','v','b','n','m',',','.','/']];
+const MODELS = {
+  'Claude': [['claude-sonnet-4-5','Claude Sonnet 4.5（recommended）'],['claude-opus-4-1','Claude Opus 4.1'],['claude-haiku-4-5','Claude Haiku 4.5（fast）']],
+  'OpenAI': [['gpt-4.1-mini','GPT-4.1 mini（recommended）'],['gpt-4.1','GPT-4.1'],['gpt-4o-mini','GPT-4o mini（fast）']],
+  'Gemini': [['gemini-2.5-flash','Gemini 2.5 Flash（recommended）'],['gemini-2.5-pro','Gemini 2.5 Pro']],
+  'Custom': [['qwen2.5-7b','Qwen2.5 7B (Ollama)'],['llama3.1-8b','Llama 3.1 8B'],['breeze-7b','Breeze 7B (zh-TW)'],['custom','Custom model ID']],
+};
+const BASE_URL = { 'Claude':'https://api.anthropic.com/v1', 'OpenAI':'https://api.openai.com/v1', 'Gemini':'https://generativelanguage.googleapis.com/v1beta', 'Custom':'http://localhost:11434/v1' };
+const SRS_DAYS = [1, 2, 4, 7, 15, 30];
+const TREND = [], TREND_ZH = [];
+for (let i = 0; i < 30; i++) {
+  TREND.push({ wpm: Math.round(48 + i * 0.85 + Math.sin(i * 1.7) * 4), acc: Math.round(920 + i * 1.6 + Math.sin(i * 2.3) * 18) / 10 });
+  TREND_ZH.push({ wpm: Math.round(31 + i * 0.52 + Math.sin(i * 1.3) * 3), acc: Math.round(905 + i * 1.9 + Math.sin(i * 1.9) * 22) / 10 });
+}
+
+class Component extends DCLogic {
+  state = { view:'practice', mode:'basic', sub:'', idx:0, typed:'', keystrokes:0, correctStrokes:0, errors:{}, attempts:{}, pressed:'',
+    startedAt:0, now:0, done:false, endedAt:0, count:0, armed:false, reviewText:null,
+    period:'daily', scope:'self', statsLang:'en', boardLang:'en', sound:true, kb:true, strict:false,
+    collapsed:false, pinned:false, offline:false, expanded:{ chinese:true }, catModal:null,
+    uiLang:'English', layoutPref:'QWERTY', fontSize:'M', countPunct:true, ignoreWidth:true,
+    dictQuery:'', dictTopic:'All', dictStart:'', draft:'', ai:null, composerOpen:false, comp:'', composing:false, importOpen:false, importFiles:[], importMode:'ai', dragOver:false, dictImportOpen:false, dictSource:'ecdict', dictFile:null, dictMap:{}, dictDedupe:true, modelQuery:null, modelOpen:false, aiTab:'conn', modelDir:'~/Library/TypeLab/models', promptIdx:0,
+    prompts: [
+      { name:'Categorise', text:'Detect the language and topic, then return a title (max 18 chars), group, topic and an L1–L6 level with a one-line rationale.' },
+      { name:'Examples', text:'Write one practical 12–18 word sentence for the given term in a workplace context, with a Traditional Chinese translation.' },
+      { name:'Rewrite', text:'Weave the user\u2019s most-missed keys naturally into the text, keeping it readable and about the same length.' },
+      { name:'Level', text:'Score L1–L6 from sentence length, symbol density and rare-word ratio, with a one-line reason.' },
+    ],
+    localModels: [
+      { name:'jieba-zh-tw', kind:'Token', note:'Traditional Chinese segmentation', mb:42, installed:true },
+      { name:'bge-m3', kind:'Embed', note:'Multilingual vectors for semantic search', mb:2200, installed:true },
+      { name:'text2vec-base-chinese', kind:'Embed', note:'Lightweight Chinese vectors', mb:410, installed:false },
+      { name:'bge-reranker-v2-m3', kind:'Rerank', note:'High-precision result reranking', mb:1100, installed:false },
+      { name:'jina-reranker-v2-tiny', kind:'Rerank', note:'Lightweight rerank, realtime on desktop', mb:280, installed:false },
+    ],
+    categories: DEFAULT_CATS.map(c => ({ ...c, children: c.children.slice() })),
+    aiCfg: { provider:'Claude', model:'claude-sonnet-4-5', key:'sk-ant-••••••••••••7f2a', temp:30, maxChars:1200,
+      autoTitle:true, autoCat:true, autoLevel:true, genSentence:true, genVocab:false, rewrite:false,
+      url:'https://api.anthropic.com/v1', timeout:30, retry:2, concurrency:3, lang:'zh-TW', offlineFallback:true, sendStats:false,
+      prompt:'Detect the language and topic, then return a title (max 18 chars), group, topic and an L1–L6 level with a one-line rationale.', status:'connected' },
+    book: [
+      { ch:';', total:14, box:1, dueIn:0 },
+      { ch:'/', total:11, box:2, dueIn:0 },
+      { ch:'z', total:9, box:2, dueIn:1 },
+      { ch:'p', total:7, box:3, dueIn:3 },
+      { ch:'x', total:6, box:4, dueIn:6 },
+    ],
+    texts: [
+      { title:'Q3 revenue outlook', category:'Chinese', sub:'Finance', level:'L4', chars:412, best:52, last:'Today' },
+      { title:'SQL query drills #12', category:'Code', sub:'SQL', level:'L6', chars:286, best:63, last:'Yesterday' },
+      { title:'Refund reply template', category:'English', sub:'Support email', level:'L3', chars:534, best:74, last:'Sep 16' },
+      { title:'Memo: annual stocktake', category:'Chinese', sub:'Official', level:'L4', chars:365, best:48, last:'Sep 16' },
+      { title:'Bopomofo: ㄓㄔㄕㄖ drill', category:'Bopomofo', sub:'Initials', level:'L2', chars:96, best:44, last:'Sep 15' },
+      { title:'C# exception handling', category:'Code', sub:'C#', level:'L6', chars:238, best:58, last:'Sep 15' },
+      { title:'FX and fee vocabulary ×30', category:'Vocabulary', sub:'Banking', level:'L3', chars:268, best:61, last:'Sep 14' },
+      { title:'Key drill: semicolon and slash', category:'Basics', sub:'Symbols', level:'L5', chars:96, best:69, last:'Sep 13' },
+      { title:'AI chip supply chain report', category:'English', sub:'Tech news', level:'L4', chars:478, best:72, last:'Sep 09' },
+    ] };
+
+  boxRef = React.createRef();
+  imeRef = React.createRef();
+  fileRef = React.createRef();
+  dictFileRef = React.createRef();
+  curRef = React.createRef();
+  colRef = React.createRef();
+  barRef = React.createRef();
+
+  componentDidMount() {
+    this._onKey = (e) => this.handleKey(e);
+    document.addEventListener('keydown', this._onKey);
+    this._t = setInterval(() => { if (this.state.startedAt && !this.state.done) this.setState({ now: Date.now() }); }, 200);
+    this._ro = new ResizeObserver(() => this.measure());
+    if (this.colRef.current) this._ro.observe(this.colRef.current);
+    if (this.barRef.current) this._ro.observe(this.barRef.current);
+    setTimeout(() => this.measure(), 60);
+    this._onResize = () => this.setState({ vh: window.innerHeight, vw: window.innerWidth });
+    window.addEventListener('resize', this._onResize);
+    this.setState({ kb: this.props.showKeyboard ?? true, strict: this.props.strictMode ?? false, vh: window.innerHeight, vw: window.innerWidth });
+  }
+  componentWillUnmount() {
+    clearInterval(this._t); clearInterval(this._cd);
+    if (this._ro) this._ro.disconnect();
+    document.removeEventListener('keydown', this._onKey);
+    window.removeEventListener('resize', this._onResize);
+  }
+  componentDidUpdate() {
+    this.measure();
+    const ime = this.imeRef.current;
+    if (ime && !this.state.composing && this.state.typed === '' && ime.value !== '') ime.value = '';
+    const box = this.boxRef.current, cell = this.curRef.current;
+    if (box && cell && box.scrollHeight > box.clientHeight) {
+      const want = cell.offsetTop - (box.clientHeight - cell.offsetHeight) / 2;
+      const top = Math.max(0, Math.min(box.scrollHeight - box.clientHeight, want));
+      if (Math.abs(box.scrollTop - top) > 2) box.scrollTop = top;
+    }
+  }
+  measure() {
+    const col = this.colRef.current, bar = this.barRef.current;
+    if (!col || !bar) return;
+    const colH = col.clientHeight, barH = bar.offsetHeight;
+    if (colH !== this.state.colH || barH !== this.state.barH) this.setState({ colH, barH });
+  }
+
+  cat() { return this.state.categories.find(c => c.id === this.state.mode) || this.state.categories[0] || DEFAULT_CATS[0]; }
+  layout() { return this.cat().layout || 'en'; }
+  dictList() {
+    const c = this.cat();
+    const subName = (c.children.find(x => x.id === this.state.sub) || c.children[0] || {}).name;
+    let l = DICT.filter(d => d.cat === subName);
+    if (!l.length) l = DICT;
+    const at = l.findIndex(d => d.w === this.state.dictStart);
+    return at > 0 ? l.slice(at).concat(l.slice(0, at)) : l;
+  }
+  target() {
+    if (this.state.reviewText) return this.state.reviewText;
+    if (this.cat().kind === 'bilingual') return this.dictList().map(d => d.zh.split('；')[0] + ' ' + d.w).join('　');
+    const g = TEXTS[this.cat().kind] || TEXTS.custom;
+    return g.items[this.state.idx % g.items.length];
+  }
+  limit() { return this.cat().kind === 'timed' ? 60 : 0; }
+  elapsedMs() { if (!this.state.startedAt) return 0; return (this.state.done ? this.state.endedAt : this.state.now) - this.state.startedAt; }
+  norm(x) { return this.state.ignoreWidth && x ? x.replace(/[\uff01-\uff5e]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).replace(/\u3000/g, ' ') : x; }
+  press(id) { this.setState({ pressed: id }); clearTimeout(this._p); this._p = setTimeout(() => this.setState({ pressed: '' }), 130); }
+
+  startRun() {
+    clearInterval(this._cd);
+    this.reset({ armed: false, count: 3 });
+    this._cd = setInterval(() => {
+      const n = this.state.count - 1;
+      if (n <= 0) { clearInterval(this._cd); this.setState({ count: 0, armed: true }); }
+      else this.setState({ count: n });
+    }, 1000);
+  }
+  reset(patch) {
+    this.setState(Object.assign({ typed:'', keystrokes:0, correctStrokes:0, errors:{}, attempts:{}, pressed:'',
+      count:0, armed:false, reviewText:null, startedAt:0, now:0, done:false, endedAt:0, view:'practice' }, patch || {}));
+  }
+  loadDict(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result || '');
+      const lines = text.split(/\r?\n/).filter(Boolean);
+      const sep = text.includes('\t') ? '\t' : ',';
+      const cols = (lines[0] || 'word,translation,phonetic,tag').split(sep).map(c => c.trim());
+      const rows = lines.slice(1);
+      const preview = rows.slice(0, 3).map(r => { const p = r.split(sep);
+        return { w: p[0] || '', zh: p[1] || '', cat: p[3] || 'Uncategorised' }; });
+      this.setState({ dictFile: { name: file.name, rows: rows.length, cols, preview },
+        dictMap: { w: cols[0] || '', zh: cols[1] || '', ph: cols[2] || '', cat: cols[3] || '' } });
+    };
+    reader.readAsText(file);
+  }
+  addFiles(list) {
+    if (!list.length) return;
+    list.slice(0, 20).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = String(reader.result || '');
+        const ext = (file.name.split('.').pop() || '').toUpperCase();
+        const kb = file.size < 1024 ? file.size + ' B' : (file.size / 1024).toFixed(1) + ' KB';
+        const a = this.analyzeText(text);
+        this.setState(st => ({ importFiles: [...st.importFiles, { name: file.name, ext, size: kb, text,
+          note: a ? a.category + ' › ' + a.sub + '　' + a.level : '空白檔案' }] }));
+      };
+      reader.readAsText(file);
+    });
+  }
+  mergeBook() {
+    const s = this.state;
+    const book = s.book.map(b => ({ ...b }));
+    Object.entries(s.errors).forEach(([ch, n]) => {
+      const hit = book.find(b => b.ch === ch);
+      if (hit) { hit.total += n; hit.box = 1; hit.dueIn = SRS_DAYS[0]; }
+      else book.push({ ch, total: n, box: 1, dueIn: SRS_DAYS[0] });
+    });
+    this.setState({ book: book.sort((a, b) => a.dueIn - b.dueIn || b.total - a.total) });
+  }
+  analyzeText(text) {
+    const src = (text || '').trim();
+    if (!src) return null;
+    const han = (src.match(/[\u4e00-\u9fff]/g) || []).length;
+    const sym = (src.match(/[^\w\s\u4e00-\u9fff]/g) || []).length;
+    const code = /(const |let |function |class |SELECT |=>|\{|\};)/.test(src);
+    const category = code ? 'Code' : han > src.length * 0.2 ? 'Chinese' : 'English';
+    let subName = code ? (/SELECT|FROM|WHERE/i.test(src) ? 'SQL' : /using |namespace|public /.test(src) ? 'C#' : 'JavaScript') : (category === 'Chinese' ? 'Daily talk' : 'Literature');
+    (SUB_HINTS[category] || []).some(([re, name]) => { if (re.test(src)) { subName = name; return true; } return false; });
+    const ratio = sym / Math.max(1, src.length);
+    const level = 'L' + Math.min(6, Math.max(1, Math.round(1 + ratio * 14 + src.length / 400)));
+    const rawTxt = src.replace(/\s+/g, ' ');
+    return { title: rawTxt.length > 18 ? rawTxt.slice(0, 18) + '…' : rawTxt, category, sub: subName, level, chars: src.length,
+      reason: 'Language: ' + (han ? 'Chinese' : 'English') + ' · filed under ' + category + ' › ' + subName + ' · symbol density ' + Math.round(ratio * 100) + '% · suggested level ' + level + '.' };
+  }
+
+  handleKey(e) {
+    if (e.metaKey || e.ctrlKey) {
+      const k = e.key.toLowerCase();
+      if (k === 'enter') { e.preventDefault(); this.startRun(); }
+      else if (k === 'n') { e.preventDefault(); this.setState({ idx: this.state.idx + 1 }, () => this.startRun()); }
+      else if (k === 'b') { e.preventDefault(); if (!this.state.pinned) this.setState({ collapsed: !this.state.collapsed }); }
+      return;
+    }
+    if (e.altKey) return;
+    if (this.state.view !== 'practice' || this.state.done || this.state.count > 0) return;
+    if (this.limit() && !this.state.startedAt && !this.state.armed) return;
+    const lay = this.layout();
+    const t = this.target();
+    if (lay === 'zh') {
+      const k = e.key === ' ' ? 'space' : e.key === 'Backspace' ? 'backspace' : e.key === 'Enter' ? 'enter' : e.key.toLowerCase();
+      if (k.length === 1 || k === 'space' || k === 'backspace' || k === 'enter') this.press(k);
+      return;
+    }
+    if (e.key === 'Backspace') { e.preventDefault(); this.press('backspace'); this.setState(s2 => ({ typed: s2.typed.slice(0, -1) })); return; }
+    if (e.key === 'Tab' || e.key === ' ') e.preventDefault();
+    let ch = e.key === 'Enter' ? '\n' : e.key;
+    if (lay === 'zhuyin') { ch = ZHUYIN[e.key.toLowerCase()]; if (!ch) return; }
+    if (ch.length !== 1) return;
+    this.press(e.key === ' ' ? 'space' : e.key.toLowerCase());
+    const s = this.state;
+    const i = s.typed.length;
+    if (i >= t.length) return;
+    const ok = this.norm(ch) === this.norm(t[i]);
+    const attempts = { ...s.attempts };
+    if (!ok) attempts[i] = (attempts[i] || 0) + 1;
+    const errors = { ...s.errors };
+    if (!ok) errors[t[i]] = (errors[t[i]] || 0) + 1;
+    const punctSkip = !ok && !s.countPunct && /[^\w\s\u4e00-\u9fff\u3105-\u3129]/.test(t[i] || '');
+    if (s.strict && !ok) {
+      this.setState({ keystrokes: s.keystrokes + (punctSkip ? 0 : 1), errors, attempts, startedAt: s.startedAt || Date.now(), now: Date.now() });
+      return;
+    }
+    const typed = s.typed + ch;
+    const finished = typed.length >= t.length;
+    if (finished) setTimeout(() => this.mergeBook(), 0);
+    this.setState({ typed, errors, attempts, keystrokes: s.keystrokes + (punctSkip ? 0 : 1), correctStrokes: s.correctStrokes + (ok ? 1 : 0),
+      startedAt: s.startedAt || Date.now(), now: Date.now(), done: finished, endedAt: finished ? Date.now() : 0, view: finished ? 'result' : 'practice' });
+  }
+
+  renderVals() {
+    const s = this.state;
+    const t = this.target();
+    const ms = this.elapsedMs();
+    const lay = this.layout();
+    const eq = (a, b) => this.norm(a) === this.norm(b);
+    const correctChars = s.typed.split('').filter((c, i) => eq(c, t[i])).length;
+    const wpm = ms > 900 ? Math.max(0, Math.round((correctChars / 5) / (ms / 60000))) : 0;
+    const cpm = ms > 900 ? Math.max(0, Math.round(correctChars / (ms / 60000))) : 0;
+    const isZh = lay === 'zh';
+    const accuracy = s.keystrokes ? Math.round((s.correctStrokes / s.keystrokes) * 1000) / 10 : 100;
+    const limit = this.limit();
+    const remain = limit ? Math.max(0, limit - Math.floor(ms / 1000)) : 0;
+    if (limit && s.startedAt && !s.done && remain === 0) setTimeout(() => { this.setState({ done:true, endedAt: Date.now(), view:'result' }); this.mergeBook(); }, 0);
+
+    const collapsed = s.collapsed && !s.pinned;
+    const view = s.view === 'result' ? 'result' : s.view;
+    const isWord = this.cat().kind === 'bilingual' && !s.reviewText;
+    const cellMode = lay === 'zh' || lay === 'zhuyin';
+    const textFloorPx = isWord ? 210 : cellMode ? 200 : 120;
+    const kbPx = Math.max(120, Math.min(340, (s.colH ? s.colH - (s.barH || 34) - 20 : (s.vh || 900) - 176) - textFloorPx));
+    const libStack = ((s.vw || 1400) - (collapsed ? 120 : 264)) < 620;
+
+    const chars = t.split('').map((ch, i) => {
+      const typedCh = s.typed[i];
+      const cur = i === s.typed.length;
+      let color = '#8c877c', bg = 'transparent', deco = 'none';
+      if (typedCh !== undefined) {
+        if (eq(typedCh, ch)) color = '#1f1e1d';
+        else { color = '#bc4b3c'; bg = 'rgba(188,75,60,0.12)'; deco = 'underline'; }
+      }
+      const anim = cur && !s.startedAt && s.count === 0 ? 'caretPulse 1s steps(1) infinite' : 'none';
+      const cell = cellMode;
+      return { ch: ch === ' ' ? '\u00A0' : ch, color, bg, deco,
+        anim: cur && !s.startedAt && s.count === 0 ? (cell ? 'caretCell 1s steps(1) infinite' : 'caretPulse 1s steps(1) infinite') : 'none',
+        ref: cur ? this.curRef : null,
+        display: 'inline-block', margin: cell ? '0 3px 4px 0' : '0',
+        pad: cell ? '0 2px' : '0', minW: cell ? '1.35em' : '0',
+        compDisplay: cur && s.comp ? 'block' : 'none',
+        shadow: cur ? (cell ? 'inset 0 -2px 0 0 #d97757' : 'inset 2px 0 0 0 #d97757') : (cell ? 'inset 0 -1px 0 0 #e6ded2' : 'none') };
+    });
+
+    const nextRaw = t[s.typed.length];
+    let nextLower = nextRaw ? (SHIFTED[nextRaw] || nextRaw.toLowerCase()) : '';
+    if (lay === 'zhuyin' && nextRaw && ZH_REV[nextRaw]) nextLower = ZH_REV[nextRaw];
+    const nextKey = nextRaw === ' ' ? 'space' : (lay === 'zh' ? '' : nextLower);
+    const fing = FMAP[nextKey];
+    const kbRows = ROWS.map(row => ({
+      pad: (652 - row.reduce((a, k) => a + k[1], 0)) / 2,
+      keys: row.map(([id, w, label]) => {
+        const active = id === nextKey;
+        const down = s.pressed === id;
+        const zsym = ZHUYIN[id];
+        const zh = lay !== 'en' && zsym && id.length === 1;
+        return { label: zh ? zsym : (label || id), sub: zh ? id : '', w: w,
+          bg: down ? '#c0623f' : active ? '#d97757' : '#f5f1ea',
+          color: (down || active) ? '#fff' : '#5c5951',
+          shadow: (down ? 'inset 0 0 0 2px #8c4a33' : active ? '0 2px 6px rgba(217,119,87,0.32)' : 'inset 0 0 0 1px #ddd6ca') + ', inset 0 -3px 0 0 ' + (FING[FMAP[id]] || 'transparent') };
+      }),
+    }));
+    const heatRows = HEAT_ROWS.map((r, ri) => ({ indent: (ri * 14) + 'px', keys: r.map(k => {
+      const v = HEAT[k] || 0;
+      return { label: k, bg: v > 0.005 ? 'rgba(168,65,47,' + (0.08 + v * 4.5).toFixed(2) + ')' : '#f5f1ea', color: v > 0.11 ? '#fff' : '#5c5951' };
+    }) }));
+
+    const topErrors = Object.entries(s.errors).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, c]) => ({ key: k === ' ' ? 'Space' : k, count: c }));
+    const pt = (arr, lo, hi) => arr.map((v, i) => (i * (960 / 29)).toFixed(1) + ',' + (240 - ((v - lo) / (hi - lo)) * 220).toFixed(1)).join(' ');
+    const seg = (list, active, pick) => list.map(([id, label]) => ({ label, go: () => pick(id),
+      bg: active === id ? '#fff' : 'transparent', color: active === id ? '#1f1e1d' : '#5c5951', shadow: active === id ? '0 2px 8px rgba(0,0,0,0.06)' : 'none' }));
+
+    const navGroupDefs = [
+      ['Practice', [['practice','Practice','Aim',''], ['coach','Coach','Thunderbolt3','B+']]],
+      ['Content', [['library','Library','Database3','128'], ['dict','Dictionary','Read','14']]],
+      ['Data', [['stats','Stats','LineChart',''], ['leaderboard','Progress','Trophy3','+6']]],
+      ['System', [['ai','AI','Robot','on'], ['models','Local models','Database3',''], ['settings','Settings','Setting3','']]],
+    ];
+    const titles = { practice:['Practice', this.cat().name], result:['Result', this.cat().name], coach:['Coach','Auto-generated by skill level'],
+      library:['Library','Custom texts and cloud library'], dict:['Dictionary','Drill any entry directly'], ai:['AI','Auto title, category and difficulty'], models:['Local models','Tokenizer, embedding and rerank models'],
+      stats:['Stats','Last 30 days'], leaderboard:['Progress', s.period === 'daily' ? 'This week vs last' : 'This month vs last'], settings:['Settings','Preferences and achievements'] };
+
+    const toggles = [
+      { key:'kb', label:'Show keyboard', hint:'Highlights the next key and finger' },
+      { key:'strict', label:'Strict mode', hint:'Block on mistakes until corrected' },
+      { key:'sound', label:'Key sound', hint:'Soft click on each keystroke' },
+      { key:'countPunct', label:'Count punctuation', hint:'Off: punctuation misses are logged but not scored' },
+      { key:'ignoreWidth', label:'Ignore width', hint:'Full-width and half-width count as equal' },
+    ];
+    const bilingualCat = s.categories.find(c => c.kind === 'bilingual') || s.categories[0];
+
+    let prompt = { zh:'', w:'', ph:'', pos:'', progress:'' };
+    if (isWord) {
+      const l = this.dictList();
+      let pos = 0, cur = l[0], half = 'zh';
+      for (const d of l) {
+        const zhW = d.zh.split('；')[0];
+        const zhEnd = pos + zhW.length, enEnd = zhEnd + 1 + d.w.length;
+        if (s.typed.length <= enEnd) { cur = d; half = s.typed.length <= zhEnd ? 'zh' : 'en'; break; }
+        pos = enEnd + 1;
+      }
+      const at = l.findIndex(d => d.w === cur.w);
+      prompt = { zh: cur.zh.split('；')[0] + '　' + cur.w, w: cur.w, ph: cur.ph, pos: cur.pos,
+        progress: '#' + (at + 1) + ' / ' + l.length + ' 個　' + (half === 'zh' ? 'Chinese first' : 'then English') };
+    }
+    const dueList = s.book.filter(b => b.dueIn <= 0);
+
+    return {
+      colRef: this.colRef, barRef: this.barRef, boxRef: this.boxRef, imeRef: this.imeRef,
+      fluid: { style: { width: '100%', minWidth: 0, padding: '6px 16px' } },
+      fluidSm: { style: { width: '100%', minWidth: 0, padding: '2px 8px' } },
+      labelDisplay: collapsed ? 'none' : 'block',
+      footDisplay: collapsed ? 'none' : 'block',
+      siderJustify: collapsed ? 'center' : 'flex-start',
+      siderPadX: collapsed ? '0' : '18px',
+      navPadX: collapsed ? '0' : '16px',
+      navGutter: collapsed ? '10px' : '8px',
+      siderWidth: collapsed ? '72px' : '216px',
+      navGroups: navGroupDefs.map(([title, items], gi) => ({
+        title, dividerDisplay: collapsed && gi > 0 ? 'block' : 'none',
+        items: items.map(([id, label, icon, badge]) => {
+          const on = view === id || (id === 'practice' && view === 'result');
+          return { label, icon, badge, go: () => this.setState({ view: id }),
+            bg: on ? '#d97757' : 'transparent', color: on ? '#fff' : 'rgba(255,255,255,0.65)',
+            badgeBg: badge ? (on ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.12)') : 'transparent',
+            badgeColor: on ? '#fff' : 'rgba(255,255,255,0.45)' };
+        }),
+      })),
+      pinIcon: s.pinned ? 'Pushpin2' : 'Pushpin3',
+      pinColor: s.pinned ? '#d97757' : 'rgba(255,255,255,0.45)',
+      togglePin: () => this.setState({ pinned: !s.pinned, collapsed: false }),
+      collapseIcon: collapsed ? 'MenuUnfold' : 'MenuFold',
+      collapseColor: s.pinned ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.65)',
+      collapseCursor: s.pinned ? 'not-allowed' : 'pointer',
+      toggleSider: () => { if (!s.pinned) this.setState({ collapsed: !s.collapsed }); },
+      pageTitle: titles[view][0], pageSub: titles[view][1],
+      netStatus: s.offline ? 'warning' : 'success',
+      netLabel: s.offline ? 'Offline · 3 pending' : 'Synced 2 min ago',
+      toggleOnline: () => this.setState({ offline: !s.offline }),
+      shortcutHint: 'Ctrl+Enter Start · Ctrl+N Next text',
+      isPractice: view === 'practice', isResult: view === 'result', isStats: view === 'stats', isBoard: view === 'leaderboard',
+      isCoach: view === 'coach', isLibrary: view === 'library', isDict: view === 'dict', isAi: view === 'ai', isModels: view === 'models', isSettings: view === 'settings',
+
+      modes: s.categories.map(c => ({ label: c.name, dot: c.color, go: () => this.reset({ mode: c.id, sub: (c.children[0] || {}).id || '', idx: 0 }),
+        bg: s.mode === c.id ? '#fff' : 'transparent', color: s.mode === c.id ? '#1f1e1d' : '#5c5951', shadow: s.mode === c.id ? '0 2px 8px rgba(0,0,0,0.06)' : 'none' })),
+      subs: (this.cat().children || []).map((x, i) => { const on = (s.sub || (this.cat().children[0] || {}).id) === x.id;
+        return { label: x.name, count: x.count, go: () => this.reset({ sub: x.id, idx: i }),
+          bg: on ? this.cat().color : 'transparent', color: on ? '#fff' : '#5c5951', border: on ? this.cat().color : '#ddd6ca' }; }),
+      hasSubs: (this.cat().children || []).length > 0,
+      subName: (this.cat().children.find(x => x.id === s.sub) || this.cat().children[0] || {}).name || '',
+      startBtn: s.count > 0 ? String(s.count) : s.startedAt ? 'Restart' : 'Start',
+      restart: () => this.startRun(),
+      nextText: () => this.reset({ idx: s.idx + 1 }),
+      goStats: () => this.setState({ view: 'stats' }),
+      countOverlay: s.count > 0, countValue: s.count,
+      chars, accuracy,
+      wpm: isZh ? cpm : wpm,
+      speedUnit: isZh ? '字/分' : 'WPM',
+      accColor: accuracy >= 97 ? '#8a9a5b' : accuracy >= 92 ? '#c4922f' : '#bc4b3c',
+      clockLabel: limit ? 'Time left' : 'Elapsed',
+      clockValue: limit ? remain + 's' : Math.floor(ms / 1000) + 's',
+      progress: Math.round((s.typed.length / t.length) * 100) + '%',
+      textCategory: s.reviewText ? 'Error review' : this.cat().name,
+      textMeta: s.reviewText ? 'Your missed keys, four times each' : (TEXTS[this.cat().kind] || TEXTS.custom).meta,
+      statusHint: s.done ? 'Done' : s.startedAt ? 'Typing' : s.count > 0 ? 'Counting down' : 'Ready',
+      textFloor: textFloorPx + 'px',
+      typeFontSize: s.fontSize === 'S' ? 'clamp(15px,2.1vh,19px)' : s.fontSize === 'L' ? 'clamp(22px,3.2vh,30px)' : 'clamp(18px,2.6vh,24px)',
+      textAlign: isWord ? 'center' : 'left',
+      hasVocab: isWord, prompt,
+      imeMode: lay === 'zh',
+      typedText: s.typed,
+      compText: s.comp || '',
+      onCompStart: () => this.setState({ comp: '', composing: true }),
+      onCompUpdate: (e) => this.setState({ comp: e.data || '' }),
+      onCompEnd: (e) => {
+        const v = ((e.target && e.target.value) || '').slice(0, t.length);
+        const errors = { ...s.errors };
+        let correct = 0;
+        for (let i = 0; i < v.length; i++) { if (eq(v[i], t[i])) correct++; else if (v.length > s.typed.length) errors[t[i]] = (errors[t[i]] || 0) + 1; }
+        const fin = v.length >= t.length;
+        if (fin) setTimeout(() => this.mergeBook(), 0);
+        this.setState({ comp:'', composing:false, typed: v, errors, keystrokes: Math.max(s.keystrokes, v.length), correctStrokes: correct,
+          startedAt: s.startedAt || Date.now(), now: Date.now(), done: fin, endedAt: fin ? Date.now() : 0, view: fin ? 'result' : 'practice' });
+      },
+      onIme: (e) => {
+        if (this.state.composing) return;
+        const v = (e.target.value || '').slice(0, t.length);
+        const errors = { ...s.errors };
+        let correct = 0;
+        for (let i = 0; i < v.length; i++) { if (eq(v[i], t[i])) correct++; else if (v.length > s.typed.length) errors[t[i]] = (errors[t[i]] || 0) + 1; }
+        const fin = v.length >= t.length;
+        if (fin) setTimeout(() => this.mergeBook(), 0);
+        this.setState({ typed: v, errors, keystrokes: Math.max(s.keystrokes, v.length), correctStrokes: correct,
+          startedAt: s.startedAt || Date.now(), now: Date.now(), done: fin, endedAt: fin ? Date.now() : 0, view: fin ? 'result' : 'practice' });
+      },
+      hintOpen: (s.attempts[s.typed.length] || 0) >= 3 && !s.done,
+      hintChar: nextRaw === ' ' ? 'Space' : (nextRaw || ''),
+      hintText: fing ? ('，用' + FINGER_NAME[fing] + (lay === 'zhuyin' ? ' 按 ' + (ZH_REV[nextRaw] || '').toUpperCase() + ' 鍵' : '')) : '',
+      showKeyboard: s.kb && kbPx >= 130,
+      kbHint: kbPx >= 190,
+      kbHeight: kbPx + 'px',
+      nextKeyLabel: nextRaw ? (nextRaw === ' ' ? 'Space' : nextRaw) : '—',
+      nextFingerLabel: fing ? FINGER_NAME[fing] : '',
+      legendOpacity: (s.vh || 900) < 640 ? 0 : 1,
+      fingerLegend: [{ color: FING.pinkyL, label:'Pinky' }, { color: FING.ringL, label:'Ring' }, { color: FING.midL, label:'Middle' }, { color: FING.idxL, label:'L index' }, { color: FING.idxR, label:'R index' }],
+      kbRows, heatRows,
+
+      elapsedLabel: Math.round(ms / 100) / 10 + 's',
+      errorCount: Object.values(s.errors).reduce((a, b) => a + b, 0),
+      typedCount: s.typed.length,
+      hasErrors: topErrors.length > 0, noErrors: topErrors.length === 0, topErrors,
+      resultVerdict: wpm >= 70 ? 'Faster than 92% of users' : wpm >= 50 ? 'Steady — work on accuracy' : 'Keep practising',
+      startReview: () => {
+        const list = Object.entries(s.errors).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k]) => k);
+        const text = list.map(k => (k === ' ' ? '_' : k).repeat(4)).join(' ');
+        this.reset({ reviewText: text || null, view:'practice' });
+      },
+
+      summary: [
+        { label:'English WPM', value:'64', hint:'vs last week +6', color:'#d97757' },
+        { label:'Chinese CPM', value:'42', hint:'vs last week +4', color:'#b06a4f' },
+        { label:'Avg accuracy', value:'96.4%', hint:'vs last week +1.2', color:'#8a9a5b' },
+        { label:'Personal best', value:'78', hint:'Sep 14 · Code', color:'#a8763e' },
+      ],
+      statsLangs: seg([['en','English'],['zh','Chinese']], s.statsLang, id => this.setState({ statsLang: id })),
+      speedUnitStats: s.statsLang === 'zh' ? 'CPM' : 'WPM',
+      wpmPoints: s.statsLang === 'zh' ? pt(TREND_ZH.map(d => d.wpm), 26, 52) : pt(TREND.map(d => d.wpm), 42, 80),
+      accPoints: s.statsLang === 'zh' ? pt(TREND_ZH.map(d => d.acc), 89, 96) : pt(TREND.map(d => d.acc), 91, 98),
+      history: [
+        { type:'Code', tagColor:'magenta', wpm:78, unit:'WPM', acc:95.2, when:'Today 09:12' },
+        { type:'Chinese', tagColor:'dust red', wpm:46, unit:'CPM', acc:94.6, when:'Today 09:02' },
+        { type:'English', tagColor:'volcano', wpm:71, unit:'WPM', acc:97.8, when:'Today 08:40' },
+        { type:'Timed', tagColor:'calendula gold', wpm:66, unit:'WPM', acc:94.1, when:'Yesterday' },
+        { type:'Chinese', tagColor:'dust red', wpm:41, unit:'CPM', acc:93.2, when:'Yesterday' },
+        { type:'Basics', tagColor:'lime', wpm:59, unit:'WPM', acc:98.5, when:'Yesterday' },
+        { type:'English', tagColor:'volcano', wpm:63, unit:'WPM', acc:96.0, when:'Sep 17' },
+      ],
+
+      scopes: seg([['self','You'],['social','Leaderboard']], s.scope, id => this.setState({ scope: id })),
+      isSelfScope: s.scope === 'self', isSocialScope: s.scope === 'social',
+      selfHintDisplay: s.scope === 'self' ? 'block' : 'none',
+      periods: seg([['daily','Week'],['weekly','Month']], s.period, id => this.setState({ period: id })),
+      myRank: 2, myRankDelta: '↑ 1 名', gapAhead: s.boardLang === 'zh' ? '6 CPM' : '14 WPM',
+      boardLangs: seg([['en','English'],['zh','Chinese']], s.boardLang, id => this.setState({ boardLang: id })),
+      speedUnitBoard: s.boardLang === 'zh' ? 'CPM' : 'WPM',
+      compareRows: [
+        { label:'Avg WPM', now: s.period === 'daily' ? 64 : 61, prev: s.period === 'daily' ? 58 : 52, unit:'' },
+        { label:'Best WPM', now: 78, prev: s.period === 'daily' ? 73 : 69, unit:'' },
+        { label:'Chinese CPM', now: 42, prev: s.period === 'daily' ? 38 : 34, unit:'' },
+        { label:'Accuracy', now: 96.4, prev: s.period === 'daily' ? 95.2 : 94.1, unit:'%' },
+        { label:'PracticeRuns', now: s.period === 'daily' ? 31 : 118, prev: s.period === 'daily' ? 24 : 96, unit:'' },
+        { label:'Time spent', now: s.period === 'daily' ? 2.6 : 9.8, prev: s.period === 'daily' ? 2.1 : 8.4, unit:'h' },
+      ].map(r => { const d = Math.round((r.now - r.prev) * 10) / 10; return { label: r.label, now: r.now + r.unit, prev: r.prev + r.unit,
+        delta: (d > 0 ? '+' : '') + d + r.unit, deltaColor: d > 0 ? '#8a9a5b' : d < 0 ? '#bc4b3c' : '#8b877e',
+        bar: Math.min(100, Math.round((r.now / Math.max(r.now, r.prev)) * 100)) + '%',
+        barPrev: Math.min(100, Math.round((r.prev / Math.max(r.now, r.prev)) * 100)) + '%' }; }),
+      bestRows: [
+        { title:'Q3 revenue outlook', cat:'Chinese › Finance', best:52, prev:45, when:'Today' },
+        { title:'SQL query drills #12', cat:'Code › SQL', best:63, prev:58, when:'Yesterday' },
+        { title:'Refund reply template', cat:'English › Support email', best:74, prev:74, when:'Sep 16' },
+        { title:'AI chip supply chain report', cat:'English › Tech news', best:72, prev:66, when:'Sep 09' },
+        { title:'FX and fee vocabulary', cat:'Vocabulary › Banking', best:61, prev:54, when:'Sep 14' },
+      ].map(r => ({ ...r, delta: (r.best - r.prev > 0 ? '+' : '') + (r.best - r.prev), deltaColor: r.best > r.prev ? '#8a9a5b' : '#8b877e' })),
+      board: (s.boardLang === 'zh' ? [
+        ['wu.dan',58,96.2,14],['chen.wei',52,94.7,11],['lin.yu',49,97.5,18],['ming.h',46,95.8,9],['a.kuo',44,93.9,12],['sara.t',41,96.4,7],['j.hsu',38,94.1,6],['peng.l',35,92.8,5],
+      ] : [
+        ['lin.yu',92,98.4,31],['chen.wei',78,95.2,24],['a.kuo',75,97.1,19],['ming.h',71,96.6,28],['sara.t',69,94.8,15],['j.hsu',66,97.9,22],['peng.l',64,93.5,11],['wu.dan',61,95.0,17],
+      ]).map((b, i) => ({ rank: i + 1, name: b[0], initial: b[0][0].toUpperCase(), wpm: b[1], acc: b[2], runs: b[3],
+        rankColor: i < 3 ? '#d97757' : '#8b877e', rowBg: b[0] === 'chen.wei' ? 'rgba(217,119,87,0.05)' : 'transparent',
+        avatarBg: ['#d97757','#a8763e','#7d8c5c','#b06a4f','#8a7b5c','#c08552','#9a5f4a','#6f8f85'][i % 8] })),
+
+      coachMetrics: [
+        { label:'Suggested level', value:'Level 5', hint:'Symbols and capitals', color:'#d97757' },
+        { label:'Projected WPM', value:'64', hint:'Range 58–71' },
+        { label:'Today’s target', value:'12 min', hint:'4 short drills', color:'#8a9a5b' },
+      ],
+      recommended: [
+        { level:'L5', levelColor:'#d97757', title:'Symbol drill: ; / [ ] mixed', reason:'Semicolon and slash miss 3.2× more than average', category:'Basics', tagColor:'lime', start: () => this.reset({ mode:'basic', view:'practice' }) },
+        { level:'L5', levelColor:'#d97757', title:'JavaScript arrow functions', reason:'You practise code often, but bracket runs stay slow', category:'Code', tagColor:'magenta', start: () => this.reset({ mode:'code', view:'practice' }) },
+        { level:'L4', levelColor:'#8a9a5b', title:'Banking vocabulary: ZH then EN', reason:'Low mastery — start with four sets', category:'Vocabulary', tagColor:'cyan', start: () => this.reset({ mode: bilingualCat.id, sub:'Banking', view:'practice' }) },
+        { level:'L6', levelColor:'#c4922f', title:'60-second challenge', reason:'Hit 70 WPM to reach level A', category:'Timed', tagColor:'calendula gold', start: () => this.reset({ mode:'timed', view:'practice' }) },
+      ],
+      dueCount: dueList.length,
+      dueBtn: dueList.length ? 'Review ' + dueList.length + ' keys' : 'Nothing due today',
+      bookRows: s.book.map(b => ({
+        ch: b.ch === ' ' ? '␣' : b.ch, total: b.total,
+        finger: FINGER_NAME[FMAP[b.ch === ' ' ? 'space' : (b.ch || '').toLowerCase()]] || '',
+        dueLabel: b.dueIn <= 0 ? 'Due today' : b.dueIn + 'd left',
+        dueColor: b.dueIn <= 0 ? '#c0623f' : '#8b877e',
+        bar: Math.round((b.box / SRS_DAYS.length) * 100) + '%',
+        barColor: b.box >= 4 ? '#8a9a5b' : b.box >= 2 ? '#c4922f' : '#bc4b3c',
+      })),
+      startDueReview: () => {
+        if (!dueList.length) return;
+        this.reset({ reviewText: dueList.map(b => (b.ch === ' ' ? '_' : b.ch).repeat(4)).join(' '), view:'practice' });
+        setTimeout(() => this.setState({ book: s.book.map(b => b.dueIn <= 0 ? { ...b, box: Math.min(SRS_DAYS.length, b.box + 1), dueIn: SRS_DAYS[Math.min(SRS_DAYS.length - 1, b.box)] } : b) }), 0);
+      },
+
+      aiCols: libStack ? 'minmax(0,1fr)' : 'minmax(0,300px) minmax(0,1fr)',
+      aiRows: libStack ? 'minmax(240px,1fr) minmax(0,1fr)' : 'minmax(0,1fr)',
+      libCols: libStack ? 'minmax(0,1fr)' : 'minmax(0,232px) minmax(0,1fr)',
+      libColsNote: 1,
+      libRows: libStack ? 'minmax(220px,1.1fr) minmax(0,1fr)' : 'minmax(0,1fr)',
+      composerOpen: s.composerOpen,
+      composerBtn: s.composerOpen ? 'Close' : 'Add text',
+      toggleComposer: () => this.setState({ composerOpen: !s.composerOpen }),
+      draft: s.draft,
+      onDraft: (e) => this.setState({ draft: e.target.value }),
+      analyze: () => this.setState({ ai: this.analyzeText(s.draft) }),
+      saveDraft: () => {
+        const a = s.ai || this.analyzeText(s.draft);
+        if (!a) return;
+        const cats = s.categories.map(c => c.name !== a.category ? c : { ...c,
+          children: c.children.some(x => x.name === a.sub) ? c.children.map(x => x.name === a.sub ? { ...x, count: x.count + 1 } : x) : [...c.children, { id: a.sub, name: a.sub, count: 1 }] });
+        this.setState({ texts: [{ title: a.title, category: a.category, sub: a.sub, level: a.level, chars: a.chars, best: '—', last: 'Just now' }, ...s.texts],
+          categories: cats, draft:'', ai:null, composerOpen:false });
+      },
+      aiFields: [
+        { label:'Title', value: s.ai ? s.ai.title : 'Pending', color: s.ai ? '#1f1e1d' : '#b8b3a8' },
+        { label:'Category', value: s.ai ? (s.ai.category + ' › ' + s.ai.sub) : 'Pending', color: s.ai ? '#d97757' : '#b8b3a8' },
+        { label:'Level', value: s.ai ? s.ai.level : 'Pending', color: s.ai ? '#a8763e' : '#b8b3a8' },
+        { label:'Chars', value: s.ai ? s.ai.chars : '—', color:'#1f1e1d' },
+      ],
+      aiReason: s.ai ? s.ai.reason : 'Paste content and hit Analyse; title, category and level are filled in and stay editable.',
+      catCount: s.categories.length + ' groups · ' + s.categories.reduce((a, c) => a + c.children.length, 0) + ' topics',
+      catRows: s.categories.map(c => ({
+        name: c.name, color: c.color, count: catTotal(c), layoutLabel: LAYOUT_LABEL[c.layout] || 'Latin',
+        open: !!s.expanded[c.id], caret: s.expanded[c.id] ? '▼' : '▶',
+        toggle: () => this.setState({ expanded: { ...s.expanded, [c.id]: !s.expanded[c.id] } }),
+        rename: (e) => this.setState({ categories: s.categories.map(x => x.id === c.id ? { ...x, name: e.target.value } : x) }),
+        remove: () => this.setState({ categories: s.categories.filter(x => x.id !== c.id), mode: s.mode === c.id ? (s.categories.find(x => x.id !== c.id) || {}).id || s.mode : s.mode }),
+        children: c.children.map(x => ({
+          name: x.name, count: x.count,
+          rename: (e) => this.setState({ categories: s.categories.map(g => g.id !== c.id ? g : { ...g, children: g.children.map(y => y.id === x.id ? { ...y, name: e.target.value } : y) }) }),
+          remove: () => this.setState({ categories: s.categories.map(g => g.id !== c.id ? g : { ...g, children: g.children.filter(y => y.id !== x.id) }) }),
+        })),
+      })),
+      dictImportOpen: s.dictImportOpen,
+      dictFileRef: this.dictFileRef,
+      openDictImport: () => this.setState({ dictImportOpen: true }),
+      closeDictImport: () => this.setState({ dictImportOpen: false, dragOver: false }),
+      pickDictFile: () => { if (this.dictFileRef.current) this.dictFileRef.current.click(); },
+      onDictFile: (e) => this.loadDict((e.target.files || [])[0]),
+      onDictDrop: (e) => { e.preventDefault(); this.setState({ dragOver: false }); this.loadDict(((e.dataTransfer && e.dataTransfer.files) || [])[0]); },
+      dictDropTitle: s.dragOver ? 'Release to load' : s.dictFile ? 'Choose another file' : 'Drop a dictionary file here, or click to choose',
+      dictSources: [
+        { id:'ecdict', name:'ECDICT', note:'EN–ZH, ~770k entries with frequency tags' },
+        { id:'cedict', name:'CC-CEDICT', note:'ZH–EN, best for Chinese to English' },
+        { id:'wordnet', name:'WordNet', note:'Fills in missing examples' },
+        { id:'custom', name:'Custom file', note:'Your own word list' },
+      ].map(o => ({ name: o.name, note: o.note, go: () => this.setState({ dictSource: o.id }),
+        bg: s.dictSource === o.id ? 'rgba(217,119,87,0.08)' : '#fff', border: s.dictSource === o.id ? '#d97757' : '#ddd6ca',
+        color: s.dictSource === o.id ? '#c0623f' : '#1f1e1d' })),
+      dictFileReady: !!s.dictFile,
+      dictFileName: s.dictFile ? s.dictFile.name : '',
+      dictRowCount: s.dictFile ? s.dictFile.rows : 0,
+      dictColumns: (s.dictFile ? s.dictFile.cols : []).map(c2 => ({ id: c2, label: c2 })),
+      dictMapFields: [['w','Word column'],['zh','Meaning column'],['ph','Phonetic column'],['cat','Topic column']].map(([k, label]) => ({
+        label, value: s.dictMap[k] || '',
+        onChange: (e) => this.setState({ dictMap: { ...s.dictMap, [k]: e.target.value } }) })),
+      dictPreview: s.dictFile ? s.dictFile.preview : [],
+      dedupeBg: s.dictDedupe ? '#d97757' : '#b8b3a8',
+      dedupeKnob: s.dictDedupe ? '22px' : '2px',
+      toggleDedupe: () => this.setState({ dictDedupe: !s.dictDedupe }),
+      dictImportBtn: s.dictFile ? 'Import ' + s.dictFile.rows + ' rows' : 'Import',
+      confirmDictImport: () => this.setState({ dictImportOpen: false, dictFile: null }),
+      importOpen: s.importOpen,
+      fileRef: this.fileRef,
+      dropBorder: s.dragOver ? '#d97757' : '#ddd6ca',
+      dropBg: s.dragOver ? 'rgba(217,119,87,0.08)' : '#fdfcfa',
+      dropTitle: s.dragOver ? 'Release to add' : 'Drop files here, or click to choose',
+      openImport: () => this.setState({ importOpen: true }),
+      closeImport: () => this.setState({ importOpen: false, dragOver: false }),
+      pickFiles: () => { if (this.fileRef.current) this.fileRef.current.click(); },
+      onDragOver: (e) => { e.preventDefault(); if (!s.dragOver) this.setState({ dragOver: true }); },
+      onDragLeave: () => this.setState({ dragOver: false }),
+      onDrop: (e) => { e.preventDefault(); this.addFiles(Array.from((e.dataTransfer && e.dataTransfer.files) || [])); this.setState({ dragOver: false }); },
+      onFiles: (e) => this.addFiles(Array.from(e.target.files || [])),
+      importFiles: s.importFiles.map((fl, i) => ({ ...fl, remove: () => this.setState({ importFiles: s.importFiles.filter((x, j) => j !== i) }) })),
+      hasFiles: s.importFiles.length > 0,
+      importModes: [['ai','AI categorise'],['manual','All to Custom']].map(([id, label]) => { const on = s.importMode === id;
+        return { label, go: () => this.setState({ importMode: id }),
+          bg: on ? '#fff' : 'transparent', color: on ? '#1f1e1d' : '#5c5951', shadow: on ? '0 2px 8px rgba(0,0,0,0.06)' : 'none' }; }),
+      importHint: s.importMode === 'ai' ? 'Each file gets a title, category and level' : 'Everything lands in Custom for manual filing',
+      importBtn: s.importFiles.length ? 'Import ' + s.importFiles.length + ' files' : 'Import',
+      confirmImport: () => {
+        if (!s.importFiles.length) return;
+        const added = s.importFiles.map(fl => {
+          const a = s.importMode === 'ai' ? this.analyzeText(fl.text) : null;
+          return { title: (a && a.title) || fl.name.replace(/\.[^.]+$/, ''), category: (a && a.category) || 'English',
+            sub: (a && a.sub) || 'Literature', level: (a && a.level) || 'L3', chars: fl.text.length, best: '—', last: 'Just now' };
+        });
+        this.setState({ texts: [...added, ...s.texts], importFiles: [], importOpen: false });
+      },
+      catModalOpen: !!s.catModal,
+      modalIsSub: s.catModal ? s.catModal.level === 'sub' : true,
+      modalName: s.catModal ? s.catModal.name : '',
+      modalPlaceholder: s.catModal && s.catModal.level === 'top' ? 'e.g. Japanese, Decks' : 'e.g. Finance, Banking, SQL',
+      openCatModal: () => this.setState({ catModal: { level:'sub', parent: s.categories[0] ? s.categories[0].id : '', name:'' } }),
+      closeCatModal: () => this.setState({ catModal: null }),
+      onModalName: (e) => this.setState({ catModal: { ...s.catModal, name: e.target.value } }),
+      modalLevels: [['sub','Topic'],['top','Group']].map(([id, label]) => { const on = s.catModal && s.catModal.level === id;
+        return { label, go: () => this.setState({ catModal: { ...s.catModal, level: id } }),
+          bg: on ? '#fff' : 'transparent', color: on ? '#1f1e1d' : '#5c5951', shadow: on ? '0 2px 8px rgba(0,0,0,0.06)' : 'none' }; }),
+      modalParents: s.categories.map(c => { const on = s.catModal && s.catModal.parent === c.id;
+        return { label: c.name, dot: c.color, go: () => this.setState({ catModal: { ...s.catModal, parent: c.id } }),
+          bg: on ? 'rgba(217,119,87,0.08)' : '#fff', color: on ? '#c0623f' : '#5c5951', border: on ? '#d97757' : '#ddd6ca' }; }),
+      submitCat: () => {
+        const m = s.catModal; if (!m) return;
+        const name = (m.name || '').trim(); if (!name) return;
+        if (m.level === 'top') {
+          const palette = ['#d97757','#a8763e','#7d8c5c','#b06a4f','#c08552','#6f8f85'];
+          const id = 'c' + Date.now();
+          this.setState({ categories: [...s.categories, { id, name, color: palette[s.categories.length % palette.length], layout:'en', kind:'custom', children: [] }],
+            expanded: { ...s.expanded, [id]: true }, catModal: null });
+        } else {
+          this.setState({ categories: s.categories.map(g => g.id !== m.parent ? g : { ...g, children: [...g.children, { id:'s' + Date.now(), name, count: 0 }] }),
+            expanded: { ...s.expanded, [m.parent]: true }, catModal: null });
+        }
+      },
+      library: s.texts.map(t2 => ({ ...t2, tagColor: TAG_BY_CAT[t2.category] || 'magenta', levelColor: t2.level >= 'L5' ? '#c4922f' : '#8a9a5b' })),
+
+      dictCount: DICT.length,
+      dictQuery: s.dictQuery,
+      onDictQuery: (e) => this.setState({ dictQuery: e.target.value }),
+      dictTopics: [{ name:'All', count: DICT.length }].concat(bilingualCat.children.map(x => ({ name: x.name, count: DICT.filter(d => d.cat === x.name).length })))
+        .map(tp => { const on = (s.dictTopic || 'All') === tp.name; return { label: tp.name, count: tp.count, go: () => this.setState({ dictTopic: tp.name }),
+          bg: on ? 'rgba(217,119,87,0.10)' : 'transparent', color: on ? '#c0623f' : '#5c5951' }; }),
+      dictRows: DICT.filter(d => { const q = (s.dictQuery || '').trim().toLowerCase(); const tp = s.dictTopic || 'All';
+        return (tp === 'All' || d.cat === tp) && (!q || d.w.includes(q) || d.zh.includes(q) || d.cat.includes(q)); }).map(d => ({
+        w: d.w, ph: d.ph, pos: d.pos, zh: d.zh, cat: d.cat, ex: d.ex, mastery: d.mastery + '%',
+        bar: d.mastery + '%', barColor: d.mastery >= 70 ? '#8a9a5b' : d.mastery >= 45 ? '#c4922f' : '#bc4b3c',
+        practise: () => { const subId = (bilingualCat.children.find(x => x.name === d.cat) || bilingualCat.children[0]).id;
+          this.reset({ mode: bilingualCat.id, sub: subId, dictStart: d.w, idx: 0, view:'practice' }); },
+      })),
+
+      aiCfg: s.aiCfg,
+      aiProviders: ['Claude','OpenAI','Gemini','Custom'].map(p => ({ label: p,
+        go: () => this.setState({ aiCfg: { ...s.aiCfg, provider: p, model: MODELS[p][0][0], url: BASE_URL[p] }, modelQuery: null, modelOpen: false }),
+        segBg: s.aiCfg.provider === p ? '#fff' : 'transparent', segShadow: s.aiCfg.provider === p ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
+        bg: s.aiCfg.provider === p ? 'rgba(217,119,87,0.10)' : '#fff', color: s.aiCfg.provider === p ? '#c0623f' : '#5c5951', border: s.aiCfg.provider === p ? '#d97757' : '#ddd6ca' })),
+      modelQuery: s.modelQuery === null ? s.aiCfg.model : s.modelQuery,
+      modelOpen: s.modelOpen,
+      modelBorder: s.modelOpen ? '#d97757' : '#ddd6ca',
+      openModels: () => this.setState({ modelOpen: true, modelQuery: '' }),
+      toggleModels: () => this.setState({ modelOpen: !s.modelOpen, modelQuery: s.modelOpen ? null : '' }),
+      onModelQuery: (e) => this.setState({ modelQuery: e.target.value, modelOpen: true }),
+      aiModels: (MODELS[s.aiCfg.provider] || []).filter(m2 => { const q = (s.modelQuery || '').trim().toLowerCase();
+        return !q || m2[0].toLowerCase().includes(q) || m2[1].toLowerCase().includes(q); }).map(m2 => ({
+        id: m2[0], label: m2[1],
+        bg: s.aiCfg.model === m2[0] ? 'rgba(217,119,87,0.10)' : 'transparent',
+        color: s.aiCfg.model === m2[0] ? '#c0623f' : '#1f1e1d',
+        weight: s.aiCfg.model === m2[0] ? 600 : 400,
+        pick: () => this.setState({ aiCfg: { ...s.aiCfg, model: m2[0] }, modelOpen: false, modelQuery: null }),
+      })),
+      noModels: (MODELS[s.aiCfg.provider] || []).filter(m2 => { const q = (s.modelQuery || '').trim().toLowerCase();
+        return !q || m2[0].toLowerCase().includes(q) || m2[1].toLowerCase().includes(q); }).length === 0,
+      onAiUrl: (e) => this.setState({ aiCfg: { ...s.aiCfg, url: e.target.value } }),
+      onAiKey: (e) => this.setState({ aiCfg: { ...s.aiCfg, key: e.target.value } }),
+      onAiPrompt: (e) => this.setState({ aiCfg: { ...s.aiCfg, prompt: e.target.value } }),
+      onAiTemp: (e) => this.setState({ aiCfg: { ...s.aiCfg, temp: Number(e.target.value) } }),
+      onAiMax: (e) => this.setState({ aiCfg: { ...s.aiCfg, maxChars: Number(e.target.value) } }),
+      aiTabs: [['conn','Connection'],['param','Parameters'],['auto','Automation']].map(([id, label]) => { const on = (s.aiTab || 'conn') === id;
+        return { label, go: () => this.setState({ aiTab: id }),
+          bg: on ? '#fff' : 'transparent', color: on ? '#1f1e1d' : '#5c5951', shadow: on ? '0 2px 8px rgba(0,0,0,0.06)' : 'none' }; }),
+      aiTabConn: (s.aiTab || 'conn') === 'conn', aiTabParam: s.aiTab === 'param', aiTabAuto: s.aiTab === 'auto',
+      modelDir: s.modelDir,
+      onModelDir: (e) => this.setState({ modelDir: e.target.value }),
+      modelUsed: (s.localModels.filter(m2 => m2.installed).reduce((a, m2) => a + m2.mb, 0) / 1024).toFixed(2) + ' GB',
+      localModels: s.localModels.map((m2, i) => ({
+        name: m2.name, note: m2.note, size: m2.mb >= 1024 ? (m2.mb / 1024).toFixed(1) + ' GB' : m2.mb + ' MB',
+        kind: m2.kind,
+        kindBg: m2.kind === 'Embed' ? 'rgba(111,143,133,0.14)' : m2.kind === 'Rerank' ? 'rgba(168,118,62,0.14)' : 'rgba(217,119,87,0.12)',
+        kindColor: m2.kind === 'Embed' ? '#4f6b62' : m2.kind === 'Rerank' ? '#8a6428' : '#c0623f',
+        actionLabel: m2.installed ? 'Remove' : 'Download',
+        actionColor: m2.installed ? '#8b877e' : '#d97757',
+        action: () => this.setState({ localModels: s.localModels.map((x, j) => j === i ? { ...x, installed: !x.installed } : x) }),
+      })),
+      promptTabs: s.prompts.map((p2, i) => { const on = s.promptIdx === i;
+        return { label: p2.name, go: () => this.setState({ promptIdx: i }),
+          bg: on ? 'rgba(217,119,87,0.10)' : '#fff', color: on ? '#c0623f' : '#5c5951', border: on ? '#d97757' : '#ddd6ca' }; }),
+      promptText: (s.prompts[s.promptIdx] || {}).text || '',
+      onPromptText: (e) => { const v = e.target.value;
+        this.setState({ prompts: s.prompts.map((p2, i) => i === s.promptIdx ? { ...p2, text: v } : p2) }); },
+      addPrompt: () => this.setState({ prompts: [...s.prompts, { name: 'Prompt ' + (s.prompts.length + 1), text: '' }], promptIdx: s.prompts.length }),
+      aiTempLabel: (s.aiCfg.temp / 100).toFixed(2),
+      aiNums: [
+        { key:'timeout', label:'Timeout (s)' },
+        { key:'retry', label:'Retries' },
+        { key:'concurrency', label:'Concurrency' },
+      ].map(o => ({ label: o.label, value: s.aiCfg[o.key],
+        onChange: (e) => this.setState({ aiCfg: { ...s.aiCfg, [o.key]: e.target.value } }) })),
+      aiLangs: [['en','English'],['zh-TW','繁體中文'],['zh-CN','简体中文']].map(([id, label]) => { const on = s.aiCfg.lang === id;
+        return { label, go: () => this.setState({ aiCfg: { ...s.aiCfg, lang: id } }),
+          bg: on ? '#fff' : 'transparent', color: on ? '#1f1e1d' : '#5c5951', shadow: on ? '0 2px 8px rgba(0,0,0,0.06)' : 'none' }; }),
+      aiOpts: [
+        { key:'offlineFallback', label:'Fall back to local rules', hint:'Offline keyword-based categorising' },
+        { key:'sendStats', label:'Send practice stats', hint:'Error-key distribution only, never text' },
+      ].map(o => ({ label: o.label, hint: o.hint,
+        trackBg: s.aiCfg[o.key] ? '#d97757' : '#b8b3a8', knobLeft: s.aiCfg[o.key] ? '22px' : '2px',
+        toggle: () => this.setState({ aiCfg: { ...s.aiCfg, [o.key]: !s.aiCfg[o.key] } }) })),
+      aiStatus: s.aiCfg.status === 'connected' ? 'success' : 'default',
+      aiStatusText: s.aiCfg.status === 'connected' ? 'Connected · last call 2 min ago' : 'Not tested yet',
+      aiFeatures: [
+        { key:'autoTitle', label:'Auto title', hint:'Names pasted text in under 18 characters' },
+        { key:'autoCat', label:'Auto category', hint:'Files into group and topic; always overridable' },
+        { key:'autoLevel', label:'Auto level', hint:'Scores L1–L6 by symbols, length and rare words' },
+        { key:'genSentence', label:'Generate examples', hint:'Writes a drillable sentence when one is missing' },
+        { key:'genVocab', label:'Extract new words', hint:'Pulls low-mastery words into the dictionary' },
+        { key:'rewrite', label:'Rewrite for weak keys', hint:'Weaves your problem keys into practice text' },
+      ].map(o => ({ label: o.label, hint: o.hint, value: s.aiCfg[o.key] ? 'On' : 'Off',
+        trackBg: s.aiCfg[o.key] ? '#d97757' : '#b8b3a8', knobLeft: s.aiCfg[o.key] ? '24px' : '2px',
+        toggle: () => this.setState({ aiCfg: { ...s.aiCfg, [o.key]: !s.aiCfg[o.key] } }) })),
+      aiUsage: [
+        { label:'Calls this month', value:'286', hint:'Limit 2,000' },
+        { label:'Avg latency', value:'1.4s', hint:'Incl. network' },
+        { label:'Override rate', value:'11%', hint:'Categorising is accurate', color:'#8a9a5b' },
+      ],
+
+      prefPickers: [
+        { key:'uiLang', label:'Interface language', opts:['English','繁體中文','简体中文'] },
+        { key:'layoutPref', label:'Keyboard layout', opts:['QWERTY','Dvorak','Bopomofo','Cangjie'] },
+        { key:'fontSize', label:'Text size', opts:['S','M','L'] },
+      ].map(p => ({ label: p.label, options: p.opts.map(o => { const on = s[p.key] === o;
+        return { label: o, go: () => this.setState({ [p.key]: o }),
+          bg: on ? '#fff' : 'transparent', color: on ? '#1f1e1d' : '#5c5951', shadow: on ? '0 2px 8px rgba(0,0,0,0.06)' : 'none' }; }) })),
+      settings: toggles.map(o => ({ label: o.label, hint: o.hint, value: s[o.key] ? 'On' : 'Off',
+        trackBg: s[o.key] ? '#d97757' : '#b8b3a8', knobLeft: s[o.key] ? '24px' : '2px',
+        toggle: () => this.setState({ [o.key]: !s[o.key] }) })),
+      dbPath: '~/Library/TypeLab/typelab.db',
+      shortcuts: [
+        { label:'Start／Restart', keys:'Ctrl + Enter' },
+        { label:'Next text', keys:'Ctrl + N' },
+        { label:'Toggle sidebar', keys:'Ctrl + B' },
+        { label:'Start review', keys:'Ctrl + R' },
+      ],
+      badges: [
+        { mark:'7', name:'7-day streak', desc:'Unlocked', color:'#d97757', opacity:1 },
+        { mark:'60', name:'60 WPM', desc:'Unlocked', color:'#8a9a5b', opacity:1 },
+        { mark:'99', name:'Accuracy 99%', desc:'Unlocked', color:'#7d8c5c', opacity:1 },
+        { mark:'C', name:'Code master', desc:'Unlocked', color:'#a8763e', opacity:1 },
+        { mark:'30', name:'30-day streak', desc:'Progress 12/30', color:'#b8b3a8', opacity:0.5 },
+        { mark:'80', name:'80 WPM', desc:'Best 78', color:'#b8b3a8', opacity:0.5 },
+        { mark:'50', name:'50 words', desc:'Progress 14/50', color:'#b8b3a8', opacity:0.5 },
+        { mark:'#1', name:'Daily #1', desc:'Locked', color:'#b8b3a8', opacity:0.5 },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>
