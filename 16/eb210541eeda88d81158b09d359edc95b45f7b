@@ -1,0 +1,22 @@
+README.md
+  s_5f06c3d98e55ab::t_ee56f8e8edd948 135-159
+  s_5f06c3d98e55ab::t_e429d67b02884f 166-167
+.github/workflows/release.yml
+  s_5f06c3d98e55ab::t_06d54f87480eed 1-129
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "16eb210541eeda88d81158b09d359edc95b45f7b",
+  "prompts": {},
+  "sessions": {
+    "s_5f06c3d98e55ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "28fa3d9b-cf29-49a9-8055-cf6318579de0",
+        "model": "claude-opus-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
