@@ -1,6 +1,6 @@
 [package]
 name = "typelab"
-version = "0.1.2"
+version = "0.1.3"
 description = "TypeLab — typing trainer for English, Chinese and code"
 authors = ["TypeLab"]
 edition = "2021"
