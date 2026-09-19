@@ -137,7 +137,10 @@ jobs:
     needs: desktop
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      # write, not read: the release is still a draft at this point, and a
+      # read-only token cannot see drafts at all — the download fails with
+      # "release not found" while every asset is sitting there.
+      contents: write
     steps:
       # gh needs no checkout: the asset is fetched from the release by tag.
       - name: Every platform is listed in latest.json
