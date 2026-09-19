@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Version>0.0.1</Version>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
+    <PackageReference Include="SqlSugarCore" Version="5.1.4.221" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\framework\XiHan.Framework.Translation\XiHan.Framework.Translation.csproj" />
+    <ProjectReference Include="..\framework\XiHan.Framework.Translation.Google\XiHan.Framework.Translation.Google.csproj" />
+    <ProjectReference Include="..\framework\XiHan.Framework.Translation.OpenCC\XiHan.Framework.Translation.OpenCC.csproj" />
+  </ItemGroup>
+
+</Project>

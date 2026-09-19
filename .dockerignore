@@ -1,0 +1,19 @@
+.git
+.github
+node_modules
+**/node_modules
+apps/dist
+docs
+design
+src-tauri
+server/**/bin
+server/**/obj
+# A local dev database must never be baked into the image.
+server/**/app.db*
+**/.env
+**/.env.*
+!**/.env.example
+*.log
+.vscode
+.idea
+.playwright-mcp

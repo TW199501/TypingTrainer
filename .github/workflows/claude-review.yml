@@ -1,0 +1,56 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    name: review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Review this pull request. The repo holds four pieces that have to
+            stay in step, so weigh these first:
+
+            - apps/        Vue 3 + TS front end. The typing engine lives in
+                           src/stores/session.ts — it listens on keydown and
+                           routes Chinese input through an uncontrolled field;
+                           binding that field's value breaks IME composition.
+            - server/      ASP.NET Core 10 + SqlSugar on SQLite. Entities are
+                           CodeFirst; wire shapes must match
+                           apps/src/api/types.ts and docs/api-contract.md.
+            - src-tauri/   Tauri 2 shell. Commands must appear in
+                           generate_handler! and permissions in
+                           capabilities/default.json, or they fail at runtime.
+            - docker/      Web deployment; nginx proxies /api to the API.
+
+            Then the usual: correctness, security, performance, and whether
+            tests cover behaviour that would otherwise regress silently.
+            Flag any change that alters the API contract or the scoring rules
+            without updating docs/ alongside it.
+
+            Note: The PR branch is already checked out in the current working
+            directory.
+
+            Use `gh pr comment` for top-level feedback.
+            Use `mcp__github_inline_comment__create_inline_comment` (with
+            `confirmed: true`) to highlight specific code issues.
+            Only post GitHub comments - don't submit review text as messages.
+
+          claude_args: |
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"

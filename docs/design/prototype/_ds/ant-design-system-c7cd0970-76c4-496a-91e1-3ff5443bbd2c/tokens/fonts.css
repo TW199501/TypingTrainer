@@ -1,0 +1,20 @@
+/* Ant Design 5.9.4 (Community) — fonts.
+   The Figma file uses SF Pro Text / SF Pro (Apple system font, not redistributable),
+   Inter (spec labels), Roboto (code/docs), PingFang SC (CJK).
+   Substitution: SF Pro renders via the native system stack (-apple-system) which IS SF on macOS;
+   Inter and Roboto load from Google Fonts. Flagged in readme.md. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto:ital,wght@0,400;0,500;0,700;1,400&display=swap');
+/* The bundled SF-Pro-Display-Regular.ttf was removed: it is Apple's system font
+   and not redistributable, so it must not live in this repository. The
+   --font-family stack below already falls back to the native system font
+   (-apple-system on macOS, Segoe UI on Windows), which is what the prototype
+   was approximating anyway. */
+:root{
+  --font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Noto Sans SC',sans-serif;
+  --font-family-code:'SF Mono',SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace;
+  --font-size-base:14px;
+  --line-height-base:1.5714285714285714;
+}
+body{font-family:var(--font-family);font-size:var(--font-size-base);line-height:var(--line-height-base);color:rgba(0,0,0,0.88)}
+a{color:#1677ff;text-decoration:none}
+a:hover{color:#4096ff}

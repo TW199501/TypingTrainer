@@ -3,4 +3,9 @@ dist
 coverage
 package-lock.json
 # The exported design prototype is kept verbatim.
-design/
+docs/design/
+# Build output of the desktop shell and the backend.
+src-tauri/target
+src-tauri/gen
+server/**/bin
+server/**/obj

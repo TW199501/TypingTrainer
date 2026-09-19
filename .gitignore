@@ -10,4 +10,16 @@ coverage
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# Rust / Tauri
 target
+src-tauri/gen/schemas
+
+# .NET
+server/**/bin/
+server/**/obj/
+*.user
+server/**/app.db*
+
+# .NET test output
+TestResults/

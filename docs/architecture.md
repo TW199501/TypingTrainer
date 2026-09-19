@@ -3,7 +3,7 @@
 ## Layers
 
 ```
-apps/web
+apps/src
 ├─ views/        one component per route; layout and copy only
 ├─ components/   shell pieces (sider, top bar, status bar, keyboard, switch)
 ├─ stores/       Pinia state; the typing engine lives in stores/session.ts
@@ -17,6 +17,65 @@ Views never call `axios` and never hold fixtures: they read stores, stores call
 `api`, and `api` decides between the fixture and the endpoint based on
 `VITE_USE_MOCK`. Swapping the flag is the only change needed when the backend
 lands.
+
+## Repositories and runtimes
+
+The same `apps/` bundle is shipped three ways, which is why `vite.config.ts`
+uses a relative `base`:
+
+| Target       | Entry                       | API base                                      |
+| ------------ | --------------------------- | --------------------------------------------- |
+| Dev          | `npm run dev`               | `VITE_API_BASE_URL` or the fixtures           |
+| Web (Docker) | `docker/docker-compose.yml` | `/api`, proxied by nginx to the API container |
+| Desktop      | `src-tauri/`                | `VITE_API_BASE_URL`, local SQLite planned     |
+
+`src-tauri` is the stock Tauri layout: `main.rs` is a thin passthrough and every
+command lives in `lib.rs`, because the mobile targets generate their own entry
+point. Commands must be listed in `generate_handler!` and permissions granted in
+`capabilities/default.json` — Tauri 2 denies everything by default.
+
+## Backend (`server/`)
+
+ASP.NET Core 10 minimal APIs over **SqlSugar** on **SQLite**. Two pieces make new
+tables cheap:
+
+- `Data/SqlSugarSetup.cs` holds the `Entities` array; CodeFirst creates or
+  migrates those tables at start-up.
+- `Api/CrudEndpoints.cs` provides `MapCrud<T>(prefix)` — paged list, get, create,
+  update, delete — so plumbing routes are one line each.
+
+Endpoints that carry real behaviour are still hand-written: authentication,
+session submission with anti-cheat re-scoring, the stats aggregations, the
+leaderboard and the error-book scheduler.
+
+Reusable pieces live under `server/framework` as `XiHan.Framework.*` modules,
+written to that framework's conventions so they can move there wholesale. The
+first one is translation: `.Abstractions` holds the contracts, the main package
+routes between providers, and each provider is its own package.
+
+## Translation and locales
+
+Two kinds of text look alike and must not be handled alike:
+
+- **Copy** — the shipped UI strings and the seven built-in categories. These are
+  translated in the front-end i18n JSON, so translations improve with a release
+  and cost nothing at runtime. Built-in categories carry an `I18nKey` for this.
+- **Data** — anything a user creates. A category added today cannot appear in a
+  bundle built yesterday, so its translations go in the `Translations` table.
+
+For data, one locale is typed and the rest are derived through
+`POST /api/translate/locales`. Chinese script conversion is done offline by
+OpenCC — simplified/traditional is a deterministic glyph and vocabulary mapping,
+not a translation, and routing it through a paid API would add latency and quota
+for a worse result. Everything else goes to a configured provider; when none is
+configured the response lists those locales in `failed` rather than pretending
+to have translated them.
+
+## Testing
+
+Front-end tests sit beside the file they cover (`analyze.ts` →
+`analyze.test.ts`) and run under vitest. The server has its own xUnit project,
+`server/TypeLab.Api.Tests`. Both run in CI.
 
 ## Typing engine (`stores/session.ts`)
 
@@ -72,3 +131,8 @@ stay as the user typed them in every locale.
 `vitest` covers the parts where a regression would be silent: the typing engine
 (scoring, strict mode, punctuation and width options, bopomofo mapping, countdown
 lock, keystroke log), the error-book scheduler, and the AI intake rules.
+
+On the server, xUnit covers the model directory resolution (per-OS defaults,
+relative paths, Local vs Roaming on Windows), the Chinese conversion provider,
+and the provider routing — ordering, skipping unconfigured or unsupported
+providers, and falling back when one fails.

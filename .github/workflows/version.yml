@@ -1,0 +1,44 @@
+name: Auto version
+
+# Every merge into main bumps the patch level and tags it, so the four
+# toolchains (npm, Cargo, Tauri, MSBuild) never drift apart. Bump minor/major
+# by hand with `npm run version:minor` before merging; this job only ever
+# advances the patch.
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  bump:
+    name: bump patch
+    runs-on: ubuntu-latest
+    # The job's own commit must not retrigger it.
+    if: "!startsWith(github.event.head_commit.message, 'chore(release):')"
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Bump
+        id: bump
+        run: |
+          node scripts/version.mjs patch
+          echo "version=$(node scripts/version.mjs)" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and tag
+        env:
+          VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore(release): v$VERSION [skip ci]"
+          git tag "v$VERSION"
+          git push --follow-tags

@@ -1,12 +1,11 @@
 {
   "name": "typing-trainer",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.0.1",
   "type": "module",
   "description": "TypeLab — typing trainer for English, Chinese and code, packaged for desktop with Tauri.",
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "apps"
   ],
   "scripts": {
     "dev": "npm run dev --workspace @typelab/web",
@@ -18,9 +17,22 @@
     "format:check": "prettier --check \"**/*.{ts,vue,json,md,css}\"",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build"
+    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build",
+    "version:show": "node scripts/version.mjs",
+    "version:patch": "node scripts/version.mjs patch",
+    "version:minor": "node scripts/version.mjs minor",
+    "version:major": "node scripts/version.mjs major",
+    "tauri": "tauri",
+    "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build",
+    "api:dev": "dotnet run --project server/TypeLab.Api --launch-profile https",
+    "db:schema": "node scripts/export-schema.mjs",
+    "docker:up": "docker compose -f docker/docker-compose.yml up --build -d",
+    "docker:down": "docker compose -f docker/docker-compose.yml down",
+    "docker:logs": "docker compose -f docker/docker-compose.yml logs -f"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4",
     "prettier": "^3.3.3"
   },
   "engines": {

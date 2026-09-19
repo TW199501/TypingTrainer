@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/framework/">
+    <Project Path="framework/XiHan.Framework.Translation.Abstractions/XiHan.Framework.Translation.Abstractions.csproj" />
+    <Project Path="framework/XiHan.Framework.Translation.Google/XiHan.Framework.Translation.Google.csproj" />
+    <Project Path="framework/XiHan.Framework.Translation.OpenCC/XiHan.Framework.Translation.OpenCC.csproj" />
+    <Project Path="framework/XiHan.Framework.Translation/XiHan.Framework.Translation.csproj" />
+  </Folder>
+  <Project Path="TypeLab.Api.Tests/TypeLab.Api.Tests.csproj" />
+  <Project Path="TypeLab.Api/TypeLab.Api.csproj" />
+</Solution>
