@@ -32,3 +32,9 @@ TestResults/
 /playwright-report/
 /blob-report/
 /.playwright/
+
+# CodeGraph index (local, rebuilt on demand)
+.codegraph/
+
+# Personal Claude Code settings; shared skills under .claude/skills are tracked
+.claude/settings.local.json
