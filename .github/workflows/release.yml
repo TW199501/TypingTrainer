@@ -1,0 +1,129 @@
+name: Release
+
+# Produces the artefacts a tag implies: desktop installers for the three
+# platforms, and container images for the web deployment. Tagging alone only
+# records a version — without this, a release has nothing to download.
+
+on:
+  push:
+    tags: ['v*']
+  # Lets a tag that was pushed before this workflow existed be built by hand.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to build (e.g. v0.0.1)'
+        required: true
+
+jobs:
+  desktop:
+    name: desktop (${{ matrix.platform }})
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            args: ''
+          - platform: macos-latest
+            # One bundle covering both Apple Silicon and Intel.
+            args: '--target universal-apple-darwin'
+          - platform: ubuntu-latest
+            args: ''
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      # Speeds up the slowest part of the job by a large margin.
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - run: npm ci
+
+      # Runs `tauri build`, which triggers beforeBuildCommand (npm run build)
+      # and uploads the resulting bundles to a draft release.
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.event.inputs.tag || github.ref_name }}
+          releaseName: 'TypeLab ${{ github.event.inputs.tag || github.ref_name }}'
+          releaseBody: 'Desktop installers. Container images are published to ghcr.io.'
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+
+  docker:
+    name: container images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      # GHCR rejects upper-case names, and the repository slug has them.
+      - name: Normalise image prefix
+        id: img
+        run: echo "prefix=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push the API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/api.Dockerfile
+          push: true
+          tags: |
+            ${{ steps.img.outputs.prefix }}/api:${{ github.event.inputs.tag || github.ref_name }}
+            ${{ steps.img.outputs.prefix }}/api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push the web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/web.Dockerfile
+          push: true
+          # Still the fixtures: the API only serves /health and the generic CRUD
+          # routes, so a real-data build would render empty category rows.
+          build-args: |
+            VITE_API_BASE_URL=/api
+            VITE_USE_MOCK=true
+          tags: |
+            ${{ steps.img.outputs.prefix }}/web:${{ github.event.inputs.tag || github.ref_name }}
+            ${{ steps.img.outputs.prefix }}/web:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -23,7 +23,7 @@ shipped as a Docker web deployment and as a Tauri desktop app.
 │  ├─ api-contract.md   後端 API 與資料表
 │  └─ design/           設計階段產出（HTML 原型、交接說明、對話紀錄）
 ├─ scripts/         version.mjs — 跨四套工具鏈的版號同步
-└─ .github/workflows/   ci · claude-review · version
+└─ .github/workflows/   ci · claude-review · version · release
 ```
 
 ## 開發 / Getting started
@@ -132,13 +132,39 @@ npm run version:major    # 0.1.0 -> 1.0.0
 合併進 `main` 後，`.github/workflows/version.yml` 會自動 patch 升版、提交並打上
 `v<版號>` tag；要升 minor／major 就在合併前先手動跑上面的指令。
 
+## 發布 / Release
+
+打上 `v*` tag 會觸發 `release.yml`，產出這一版的實際可下載物：
+
+| 產物                                 | 平台        | 去處                   |
+| ------------------------------------ | ----------- | ---------------------- |
+| `.msi` ／ `.exe`                     | Windows     | GitHub Release（草稿） |
+| `.dmg`（Intel + Apple Silicon 通用） | macOS       | GitHub Release（草稿） |
+| `.deb` ／ `.AppImage`                | Linux       | GitHub Release（草稿） |
+| `api` ／ `web` 容器映像              | linux/amd64 | `ghcr.io/<repo>/…`     |
+
+Release 以**草稿**產生，確認無誤後再手動發佈。已經推過的 tag 可用
+`workflow_dispatch` 補跑（填入 tag 名稱）。
+
+本機打包：
+
+```bash
+npm run desktop:build      # 產物在 src-tauri/target/release/bundle/
+docker compose -f docker/docker-compose.yml build
+```
+
+桌面端安裝檔目前**未簽章**：Windows 會顯示 SmartScreen 警告，macOS 會擋下未公證
+的應用程式。要消除需要 Windows 程式碼簽章憑證與 Apple Developer ID，並把憑證
+放進 repository secrets。
+
 ## CI
 
 | Workflow            | 觸發          | 內容                                                |
 | ------------------- | ------------- | --------------------------------------------------- |
 | `ci.yml`            | push · PR     | format、lint、typecheck、test、build                |
 | `claude-review.yml` | PR 開啟／更新 | Claude Code 自動審查，需 `ANTHROPIC_API_KEY` secret |
-| `version.yml`       | push 到 main  | 自動 patch 升版並打 tag                             |
+| `version.yml`       | push 到 main  | 自動 patch 升版並打 tag；已帶 tag 的 commit 會跳過  |
+| `release.yml`       | 推送 `v*` tag | 三平台桌面安裝檔 + 容器映像推上 GHCR                |
 
 ## 路線圖 / Roadmap
 
