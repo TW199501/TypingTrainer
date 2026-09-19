@@ -1,0 +1,261 @@
+docs/design/prototype/_ds/ant-design-system-c7cd0970-76c4-496a-91e1-3ff5443bbd2c/readme.md
+  s_5f06c3d98e55ab::t_bb3112d66c1eb5 91-92
+  s_5f06c3d98e55ab::t_2f7c92d23cd056 56
+docs/api-contract.md
+  s_5f06c3d98e55ab::t_b63d873b346f62 3-5,8-10
+  s_5f06c3d98e55ab::t_1f93338d30365b 66
+  s_5f06c3d98e55ab::t_15d8b77c385dcc 71-73,123-125
+  s_5f06c3d98e55ab::t_2323216266f185 64-65
+  s_5f06c3d98e55ab::t_577bebe7c2ee0e 55
+  s_5f06c3d98e55ab::t_a55b9499541a12 44-50
+  s_5f06c3d98e55ab::t_adf8e0c157794b 97-121
+  s_5f06c3d98e55ab::t_232b22430864d8 74-96,122
+  s_5f06c3d98e55ab::t_78d12a129a45e1 61-63
+  s_3c4b15cf685750::t_ff69998a65b811 11,14-36,51-54,56-60,67-70
+server/framework/XiHan.Framework.Translation.OpenCC/XiHanOpenCcTranslationServiceCollectionExtensions.cs
+  s_5f06c3d98e55ab::t_32e74609220f34 1-33
+docker/docker-compose.yml
+  s_5f06c3d98e55ab::t_bd77d6a5d3c0b2 34-38
+  s_5f06c3d98e55ab::t_7bde0384085b1e 1-33,39-48
+server/framework/XiHan.Framework.Translation.Abstractions/Requests/TranslationRequest.cs
+  s_5f06c3d98e55ab::t_d96f4247efdccd 1-27
+server/TypeLab.Api/Data/SqlSugarSetup.cs
+  s_5f06c3d98e55ab::t_cb5f08edb3b9d8 1-16,18,21-27,30-64,67-68
+  s_5f06c3d98e55ab::t_624997a8ed8ab2 65
+  s_5f06c3d98e55ab::t_c3fde3824f791c 66
+  s_5f06c3d98e55ab::t_c2f0d9a2215fe0 19-20
+  s_5f06c3d98e55ab::t_060684eb34c1ac 28
+  s_5f06c3d98e55ab::t_a3ff091f656640 17
+  s_5f06c3d98e55ab::t_8cd377edf968a0 29
+server/framework/XiHan.Framework.Translation.Abstractions/Languages/TranslationLanguage.cs
+  s_5f06c3d98e55ab::t_0915ba7f9d1632 1-176
+server/framework/XiHan.Framework.Translation.Google/XiHanGoogleTranslationServiceCollectionExtensions.cs
+  s_5f06c3d98e55ab::t_68e6538e5c9489 1-38
+apps/README.md
+  s_5f06c3d98e55ab::t_7666a664d67227 4-5
+  s_5f06c3d98e55ab::t_413069daf79b58 35
+apps/src/api/index.ts
+  s_5f06c3d98e55ab::t_4fcc1c59f45735 15
+  s_5f06c3d98e55ab::t_6a914444ae9631 37,40-41,45,48-49,53,56-57,61,64-65,70,73-74,78,81,83,86,88,91,93,96-97,101,104,106,109,111,114-115,117-142,145,148,150,153,155-156,158-159
+  s_5f06c3d98e55ab::t_e1a358f8b7105c 1
+server/framework/XiHan.Framework.Translation.Google/Options/GoogleTranslationOptions.cs
+  s_5f06c3d98e55ab::t_0882e005f7ccf4 1-35
+server/TypeLab.Api/Properties/launchSettings.json
+  s_5f06c3d98e55ab::t_4cbfb9f9453484 17
+  s_5f06c3d98e55ab::t_1f062f4638aa34 8
+  s_5f06c3d98e55ab::t_447fd921719189 5-7
+  s_5f06c3d98e55ab::t_abbba07a8e620a 9-11,14-16
+  s_5f06c3d98e55ab::t_b88df119c92173 18-20
+  s_5f06c3d98e55ab::t_0afbfe20d944e8 1-4,12-13,21-23
+.prettierignore
+  s_5f06c3d98e55ab::t_4bcc91365d4cf3 6-7,10-11
+  s_5f06c3d98e55ab::t_14a357bdda3f5a 8-9
+server/TypeLab.Api/Data/ModelSeeds.cs
+  s_5f06c3d98e55ab::t_0090d349d1d0eb 1-98
+src-tauri/capabilities/default.json
+  s_5f06c3d98e55ab::t_4b79d5bb726d9f 1-7
+scripts/version.mjs
+  s_5f06c3d98e55ab::t_b14c702a988f33 73-74
+  s_5f06c3d98e55ab::t_205adb892720b5 1-72,75-94
+  s_5f06c3d98e55ab::t_e34139f19a251b 95-99
+apps/src/data/types.ts
+  s_5f06c3d98e55ab::t_790d81139013dd 51-52
+server/TypeLab.Api.Tests/TranslationServiceTests.cs
+  s_5f06c3d98e55ab::t_ab7b6b74433ebd 1-209
+server/TypeLab.Api/Program.cs
+  s_5f06c3d98e55ab::t_885e85de8c477c 1-3,7-11,13,21-55,61
+  s_5f06c3d98e55ab::t_d7d6a6ed429a7b 4-6
+  s_5f06c3d98e55ab::t_40302c071ceaef 14-20
+  s_5f06c3d98e55ab::t_38fdbb6ebe0531 56-58,60
+  s_5f06c3d98e55ab::t_a483585be959bd 59
+  s_5f06c3d98e55ab::t_f9d0636d48f616 12
+README.md
+  s_5f06c3d98e55ab::t_34ba27dc0fe6ce 119-137,139-141
+  s_5f06c3d98e55ab::t_6fea3ac0e63aa8 16-19
+  s_5f06c3d98e55ab::t_91e3ec5765da84 3-5,13-15,20,23-24,37-39,43-44,47-77,81-82,97,148-152
+  s_5f06c3d98e55ab::t_4a27102a75e263 79-80,83-96
+  s_5f06c3d98e55ab::t_3765c3ebdb7ca7 25-26
+  s_5f06c3d98e55ab::t_62e6fddff9aafc 98-118
+  s_3c4b15cf685750::t_9f8d8b20feb7c2 78,138
+apps/vite.config.ts
+  s_5f06c3d98e55ab::t_6e7e5449698aa2 16-17
+package.json
+  s_5f06c3d98e55ab::t_d9a1cea331720e 21-24
+  s_5f06c3d98e55ab::t_d757a72bf21091 8
+  s_5f06c3d98e55ab::t_cb090c2515f1a2 20,25-28,30-32
+  s_5f06c3d98e55ab::t_539c3edd8baaa4 29
+  s_5f06c3d98e55ab::t_34436a1fe8631c 4,35
+server/TypeLab.Api/Api/ModelEndpoints.cs
+  s_5f06c3d98e55ab::t_9292a9adc9c77e 1-74
+.github/workflows/ci.yml
+  s_5f06c3d98e55ab::t_6f5fcc0f04f218 40
+  s_5f06c3d98e55ab::t_764671d64dae9a 42-60
+apps/src/api/mock/fixtures.ts
+  s_5f06c3d98e55ab::t_273624bf3993be 15
+  s_5f06c3d98e55ab::t_3d5b08cb2b1bfe 1,5,370,376,504,550-569
+  s_3c4b15cf685750::t_107ec2eb82d0e4 570-604
+docker/api.Dockerfile
+  s_5f06c3d98e55ab::t_b2c8470892ded0 1-4,8,13-24,26-32
+  s_5f06c3d98e55ab::t_39926b62a3e4c4 5-7,9-12
+  s_5f06c3d98e55ab::t_8ec5ba7bbe5e58 25
+server/TypeLab.Api/Models/Entities.cs
+  s_5f06c3d98e55ab::t_742cc30f764068 114-181
+  s_5f06c3d98e55ab::t_d164ed1a133c65 1,3,5-15,18,20-27,29-30,33-36,39,42,44-45,47,52-53,68-69,71-72,76-78,81-82,85,88,90,92-98,101-105,107-111,182-183,186,188,190-191,194-196,199-202,206,208-212,216-217,220,222,225-228,233,236,238,240-243,248-249,252,254,256-259,262,265-266,269,271-275,277-278,280-281,283-284,286,289-290,293,296,298,300-304,308-309,312,314,318-320,460-461,464,466-472,476-477,480,482,485
+  s_5f06c3d98e55ab::t_bb381701fa98ae 48-51,54-67
+  s_5f06c3d98e55ab::t_44c98959c18a17 2,4,16-17,19,28,31-32,37-38,40-41,43,46,70,73-75,79-80,83-84,86-87,89,91,99-100,106,112-113,184-185,187,189,192-193,197-198,203-205,207,213-215,218-219,221,223-224,229-232,234-235,237,239,244-247,250-251,253,255,260-261,263-264,267-268,270,276,279,282,285,287-288,291-292,294-295,297,299,305-307,310-311,313,315-317,321-322,462-463,465,473-475,478-479,481,483-484,486
+  s_5f06c3d98e55ab::t_c2136bcafec17c 323,413-459
+  s_5f06c3d98e55ab::t_f42db66961fb17 324-361
+  s_5f06c3d98e55ab::t_56efaa35987fa1 362-412
+server/TypeLab.Api/Data/PromptSeeds.cs
+  s_5f06c3d98e55ab::t_585de2191a2a7c 1-10,16-22,63-130
+  s_5f06c3d98e55ab::t_f338e77048dfe2 11-15,23-62
+src-tauri/src/lib.rs
+  s_5f06c3d98e55ab::t_8201b60720a7e7 20-43,48
+  s_5f06c3d98e55ab::t_eed2d87957bd9e 1,3-19,44-47,49-51
+  s_5f06c3d98e55ab::t_e050dc0592fb5c 2
+server/TypeLab.Api/Api/TranslationEndpoints.cs
+  s_5f06c3d98e55ab::t_eed20b6635fd4a 1-85
+server/framework/XiHan.Framework.Translation.Google/GoogleTranslator.cs
+  s_5f06c3d98e55ab::t_203185676fa1ad 1-255
+src-tauri/Cargo.toml
+  s_5f06c3d98e55ab::t_d343380433780f 1-25
+docker/web.Dockerfile
+  s_5f06c3d98e55ab::t_a8996c1b85158b 1-22,31-34
+  s_5f06c3d98e55ab::t_a07d757d5cca60 23-30
+server/TypeLab.Api.Tests/OpenCcTranslatorTests.cs
+  s_5f06c3d98e55ab::t_dc490a325ec19d 1-78,106-115
+  s_5f06c3d98e55ab::t_16f813b8ab6570 79-105
+server/TypeLab.Api/TypeLab.Api.csproj
+  s_5f06c3d98e55ab::t_8eec0fc978b831 5
+  s_3c4b15cf685750::t_ba250ff201178f 1-4,6-21
+.github/workflows/version.yml
+  s_5f06c3d98e55ab::t_3ecfb63782e15d 1-44
+server/framework/XiHan.Framework.Translation/XiHanTranslationServiceCollectionExtensions.cs
+  s_5f06c3d98e55ab::t_90fe1aabcc73d9 1-60
+.gitignore
+  s_5f06c3d98e55ab::t_44307a3cdb5f49 13-14,17-22
+  s_5f06c3d98e55ab::t_052bd3b3bdebcb 16
+  s_3c4b15cf685750::t_2e3ed27562c5e7 23-25
+scripts/export-schema.mjs
+  s_5f06c3d98e55ab::t_f73ba63ab3b13a 1-71
+server/TypeLab.Api.Tests/ModelStorageTests.cs
+  s_5f06c3d98e55ab::t_804e7635c40134 1-125
+server/framework/XiHan.Framework.Translation/Routing/TranslationService.cs
+  s_5f06c3d98e55ab::t_8e8f8c6756c356 1-193
+src-tauri/build.rs
+  s_5f06c3d98e55ab::t_7d99cc1e24c106 1-3
+server/TypeLab.Api/appsettings.json
+  s_5f06c3d98e55ab::t_070fa72f8de143 15-20
+  s_5f06c3d98e55ab::t_f7b975f9192a24 12-14
+  s_5f06c3d98e55ab::t_b0e6841939f734 1-11,21-24
+docs/design/prototype/_ds/ant-design-system-c7cd0970-76c4-496a-91e1-3ff5443bbd2c/tokens/fonts.css
+  s_5f06c3d98e55ab::t_17a693151fdeda 7-11
+docs/architecture.md
+  s_5f06c3d98e55ab::t_fa7c21604d1259 51-79
+  s_5f06c3d98e55ab::t_6d5578f9602aba 21-26,28-50
+  s_5f06c3d98e55ab::t_984f49e3d603b0 6
+  s_5f06c3d98e55ab::t_cc9e30ab499673 134-138
+  s_3c4b15cf685750::t_3c6f808e202526 27
+src-tauri/src/main.rs
+  s_5f06c3d98e55ab::t_b0a990b4598ceb 1-7
+apps/src/api/types.ts
+  s_5f06c3d98e55ab::t_0a8ee9c0690094 1-190
+apps/src/api/desktop.ts
+  s_5f06c3d98e55ab::t_0286843f1a86a0 1-29
+server/framework/XiHan.Framework.Translation/README.md
+  s_5f06c3d98e55ab::t_4abe35356747de 1-87
+src-tauri/tauri.conf.json
+  s_5f06c3d98e55ab::t_3621ac7f3487c4 1-43
+server/framework/XiHan.Framework.Translation.Abstractions/ITranslator.cs
+  s_5f06c3d98e55ab::t_14cae7ce4e086f 1-70
+server/framework/XiHan.Framework.Translation/Options/TranslationOptions.cs
+  s_5f06c3d98e55ab::t_89671a60e50fdc 1-38
+docker/nginx.conf
+  s_5f06c3d98e55ab::t_7aec8feafb4cb7 3
+  s_5f06c3d98e55ab::t_fdc1585c353311 1-2,4-37
+server/TypeLab.Api/Api/CrudEndpoints.cs
+  s_5f06c3d98e55ab::t_40f5098cc5bb21 1-56
+server/framework/XiHan.Framework.Translation.Abstractions/Results/TranslationResult.cs
+  s_5f06c3d98e55ab::t_495b96b4fa3d06 1-89
+server/framework/XiHan.Framework.Translation.Abstractions/ITranslationService.cs
+  s_5f06c3d98e55ab::t_8dd9d5b1e609e1 1-49
+.dockerignore
+  s_5f06c3d98e55ab::t_5359e7ed5a728e 1-10,13-19
+  s_5f06c3d98e55ab::t_126b1e9cfe2ffb 11-12
+apps/src/views/ModelsView.vue
+  s_5f06c3d98e55ab::t_b4368ea3cf14ba 51-53
+  s_5f06c3d98e55ab::t_51503183cffa34 2-15
+  s_5f06c3d98e55ab::t_ce0d709fd31e5e 16
+server/framework/XiHan.Framework.Translation.OpenCC/OpenCcTranslator.cs
+  s_5f06c3d98e55ab::t_07c53411063fc1 143-150,165-170
+  s_5f06c3d98e55ab::t_134db2e8262bb8 1-142,151-164,171-174
+apps/src/stores/ai.ts
+  s_5f06c3d98e55ab::t_4562c2a42421c1 147-150
+  s_5f06c3d98e55ab::t_7a9df0522a5862 79-100,107,113,118,137,155
+  s_5f06c3d98e55ab::t_b0dc9a73912416 3
+  s_5f06c3d98e55ab::t_c2cb33ab5b0d95 120-136
+server/TypeLab.Api/Data/ModelStorage.cs
+  s_5f06c3d98e55ab::t_9f231ccf55da90 1-109
+.github/workflows/claude-review.yml
+  s_5f06c3d98e55ab::t_5e75ca4db7643e 1-56
+server/TypeLab.slnx
+  s_cfac1b7d026843::t_d5ee96df565316 1-10
+server/db/schema.sql
+  s_cfac1b7d026843::t_c6bd09c521e332 1-189
+server/framework/XiHan.Framework.Translation.Google/XiHan.Framework.Translation.Google.csproj
+  s_cfac1b7d026843::t_5a15d222fd3043 1-20
+apps/package.json
+  s_5f06c3d98e55ab::t_e8048bdec28b1f 4,18
+docs/design/prototype/_ds/ant-design-system-c7cd0970-76c4-496a-91e1-3ff5443bbd2c/_ds_manifest.json
+  s_5f06c3d98e55ab::t_c6d1969eeab228 1
+package-lock.json
+  s_5f06c3d98e55ab::t_c096973e5867ea 3,9,11,14,21,23,26,1317-1558,1560
+server/TypeLab.Api.Tests/TypeLab.Api.Tests.csproj
+  s_5f06c3d98e55ab::t_ef4a31b5f0c5a5 1-28
+server/TypeLab.Api/appsettings.Development.json
+  s_5f06c3d98e55ab::t_f2bd722df5585d 1-8
+server/framework/XiHan.Framework.Translation.Abstractions/XiHan.Framework.Translation.Abstractions.csproj
+  s_5f06c3d98e55ab::t_888a277a0f9b4e 1-9
+server/framework/XiHan.Framework.Translation.OpenCC/XiHan.Framework.Translation.OpenCC.csproj
+  s_5f06c3d98e55ab::t_340d9f67507903 1-18
+server/framework/XiHan.Framework.Translation/XiHan.Framework.Translation.csproj
+  s_5f06c3d98e55ab::t_5978ba622d3685 1-19
+src-tauri/Cargo.lock
+  s_5f06c3d98e55ab::t_d29f5fb4c5395d 1-4498
+src-tauri/icons/android/mipmap-anydpi-v26/ic_launcher.xml
+  s_5f06c3d98e55ab::t_8507f947182908 1-5
+src-tauri/icons/android/values/ic_launcher_background.xml
+  s_5f06c3d98e55ab::t_a74baab3a49391 1-4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "679ec2317c45cc6809070a4f76bc5b1dc138ad6f",
+  "prompts": {},
+  "sessions": {
+    "s_3c4b15cf685750": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d4170aeb-af03-4e31-beac-a4304e83c419",
+        "model": "claude-opus-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    },
+    "s_5f06c3d98e55ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "28fa3d9b-cf29-49a9-8055-cf6318579de0",
+        "model": "claude-opus-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    },
+    "s_cfac1b7d026843": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ac56b906-e7b2-4036-afe0-92c773e833d0",
+        "model": "claude-opus-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
