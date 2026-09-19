@@ -129,8 +129,15 @@ npm run version:minor    # 0.0.2 -> 0.1.0
 npm run version:major    # 0.1.0 -> 1.0.0
 ```
 
-合併進 `main` 後，`.github/workflows/version.yml` 會自動 patch 升版、提交並打上
-`v<版號>` tag；要升 minor／major 就在合併前先手動跑上面的指令。
+合併進 `main` 後，`.github/workflows/version.yml` 會自動 patch 升版並提交；
+要升 minor／major 就在合併前先手動跑上面的指令。
+
+**打 tag 與打包只在 commit 訊息含 `[release]` 時才發生。** 日常提交只推進版號，
+不會產生 tag，也不會花二十分鐘打三個平台的安裝檔：
+
+```bash
+git commit -m "Add the leaderboard endpoint [release]"
+```
 
 ## 發布 / Release
 
@@ -163,8 +170,8 @@ docker compose -f docker/docker-compose.yml build
 | ------------------- | ------------- | --------------------------------------------------- |
 | `ci.yml`            | push · PR     | format、lint、typecheck、test、build                |
 | `claude-review.yml` | PR 開啟／更新 | Claude Code 自動審查，需 `ANTHROPIC_API_KEY` secret |
-| `version.yml`       | push 到 main  | 自動 patch 升版並打 tag；已帶 tag 的 commit 會跳過  |
-| `release.yml`       | 推送 `v*` tag | 三平台桌面安裝檔 + 容器映像推上 GHCR                |
+| `version.yml`       | push 到 main  | 自動 patch 升版；訊息含 `[release]` 才打 tag 並發布 |
+| `release.yml`       | `v*` tag、手動、或由 `version.yml` 呼叫 | 三平台桌面安裝檔 + 容器映像推上 GHCR |
 
 ## 路線圖 / Roadmap
 

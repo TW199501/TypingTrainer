@@ -1,9 +1,14 @@
 name: Auto version
 
-# Every merge into main bumps the patch level and tags it, so the four
-# toolchains (npm, Cargo, Tauri, MSBuild) never drift apart. Bump minor/major
-# by hand with `npm run version:minor` before merging; this job only ever
-# advances the patch.
+# Every merge into main bumps the patch level, so the four toolchains (npm,
+# Cargo, Tauri, MSBuild) never drift apart. Bump minor/major by hand with
+# `npm run version:minor` before merging; this job only ever advances the patch.
+#
+# Tagging and building installers happen only when the commit message contains
+# [release]. Doing it on every commit produced a tag and three platforms' worth
+# of installers — roughly twenty minutes of CI — for changes as small as a
+# five-line workflow edit, and left a trail of tags that pointed at nothing
+# anyone had decided to publish.
 
 on:
   push:
@@ -20,6 +25,7 @@ jobs:
     outputs:
       released: ${{ steps.guard.outputs.release }}
       version: ${{ steps.bump.outputs.version }}
+      publish: ${{ steps.commit.outputs.publish }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,20 +54,30 @@ jobs:
           node scripts/version.mjs patch
           echo "version=$(node scripts/version.mjs)" >> "$GITHUB_OUTPUT"
 
-      - name: Commit and tag
+      - name: Commit, and tag only when publishing
+        id: commit
         if: steps.guard.outputs.release == 'false'
         env:
           VERSION: ${{ steps.bump.outputs.version }}
+          PUBLISH: ${{ contains(github.event.head_commit.message, '[release]') }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "chore(release): v$VERSION [skip ci]"
-          # Annotated, not lightweight: --follow-tags only pushes annotated
-          # tags, so a lightweight one is silently left behind and the release
-          # never happens.
-          git tag -a "v$VERSION" -m "TypeLab v$VERSION"
-          git push --follow-tags
+
+          if [ "$PUBLISH" = "true" ]; then
+            # Annotated, not lightweight: --follow-tags only pushes annotated
+            # tags, so a lightweight one is silently left behind and the
+            # release never happens.
+            git tag -a "v$VERSION" -m "TypeLab v$VERSION"
+            git push --follow-tags
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            git push
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "Version is now $VERSION. Add [release] to a commit message to tag and build it."
+          fi
 
   # The tag above was pushed with GITHUB_TOKEN, which GitHub deliberately does
   # not let trigger further workflows. So the release is invoked directly rather
@@ -69,7 +85,7 @@ jobs:
   release:
     name: release
     needs: bump
-    if: needs.bump.outputs.released == 'false'
+    if: needs.bump.outputs.publish == 'true'
     permissions:
       contents: write
       packages: write
