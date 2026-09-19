@@ -107,3 +107,7 @@ jobs:
     uses: ./.github/workflows/release.yml
     with:
       tag: v${{ needs.bump.outputs.version }}
+    # Required. A called workflow receives GITHUB_TOKEN automatically but no
+    # other secret, so without this the signing key arrives empty — and the
+    # failure reads like a malformed key rather than a missing one.
+    secrets: inherit

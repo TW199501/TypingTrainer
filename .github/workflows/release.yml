@@ -80,53 +80,21 @@ jobs:
 
       - run: npm ci
 
-      # Reports the shape of the stored key without revealing it. Three attempts
-      # to store this secret all failed identically with "Missing comment in
-      # secret key", which says the value reaching the build is not the two-line
-      # minisign file — but not why. Length and format distinguish "stored
-      # wrong" from "mangled in transit"; neither is visible from the outside.
-      - name: Check the shape of the signing key
+      # Fails loudly and immediately when the key did not reach this workflow.
+      # It arrives empty unless the caller passes `secrets: inherit`, and a
+      # build that gets an empty key spends ten minutes compiling before
+      # reporting something that reads like a malformed key rather than a
+      # missing one.
+      - name: Require the signing key
         shell: bash
         env:
           KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: |
           if [ -z "$KEY" ]; then
-            echo "The secret is empty or not readable from this job."
-            exit 0
+            echo "::error::TAURI_SIGNING_PRIVATE_KEY is empty. A called workflow only receives secrets when the caller passes 'secrets: inherit'."
+            exit 1
           fi
-          echo "characters: ${#KEY}"
-          echo "lines: $(printf '%s\n' "$KEY" | wc -l)"
-          if printf '%s' "$KEY" | grep -q 'untrusted comment'; then
-            echo "format: raw minisign file (has the comment line)"
-          elif printf '%s' "$KEY" | tr -d '\n' | grep -qE '^[A-Za-z0-9+/]+=*$'; then
-            echo "format: base64"
-            decoded=$(printf '%s' "$KEY" | tr -d '\n' | base64 -d 2>/dev/null | head -c 17 || true)
-            if [ "$decoded" = "untrusted comment" ]; then
-              echo "decodes to: a raw minisign file"
-            else
-              echo "decodes to: something else"
-            fi
-          else
-            echo "format: neither raw minisign nor clean base64"
-          fi
-
-      # Written to a file rather than passed as a string. Tauri base64-decodes
-      # TAURI_SIGNING_PRIVATE_KEY but reads _PATH verbatim, so the file route is
-      # immune to whichever encoding step has been eating the comment line.
-      - name: Restore the signing key to a file
-        shell: bash
-        env:
-          KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-        run: |
-          path="$RUNNER_TEMP/typelab.key"
-          if printf '%s' "$KEY" | grep -q 'untrusted comment'; then
-            printf '%s\n' "$KEY" > "$path"
-          else
-            printf '%s' "$KEY" | tr -d '\n' | base64 -d > "$path"
-          fi
-          echo "restored $(wc -l < "$path") lines"
-          head -c 17 "$path"; echo
-          echo "TAURI_SIGNING_PRIVATE_KEY_PATH=$path" >> "$GITHUB_ENV"
+          echo "Signing key present."
 
       # Runs `tauri build`, which triggers beforeBuildCommand (npm run build)
       # and uploads the resulting bundles to a draft release.
@@ -139,8 +107,7 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Deliberately not TAURI_SIGNING_PRIVATE_KEY: the path is set above.
-          # Leaving both set lets the string form win and reintroduces the bug.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ inputs.tag || github.ref_name }}
