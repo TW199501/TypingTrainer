@@ -1,0 +1,24 @@
+.gitignore
+  s_5f06c3d98e55ab::t_da621caf23d4a7 25-28
+apps/src/views/PracticeView.vue
+  s_5f06c3d98e55ab::t_0889734f5f2bc6 182-200
+  s_5f06c3d98e55ab::t_f6e6249bae9de2 205-207
+.github/workflows/version.yml
+  s_5f06c3d98e55ab::t_795d93b8325832 29-40,43,49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b8ef997996ed6f881ed3745434847a2b951bf1af",
+  "prompts": {},
+  "sessions": {
+    "s_5f06c3d98e55ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "28fa3d9b-cf29-49a9-8055-cf6318579de0",
+        "model": "claude-opus-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
