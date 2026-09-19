@@ -1,0 +1,427 @@
+{
+  "common": {
+    "cancel": "取消",
+    "create": "创建",
+    "save": "保存",
+    "test": "测试",
+    "close": "关闭",
+    "drill": "练这个",
+    "start": "开始",
+    "on": "开",
+    "off": "关",
+    "pending": "待判读",
+    "dash": "—"
+  },
+  "nav": {
+    "groups": {
+      "practice": "练习",
+      "content": "内容",
+      "data": "数据",
+      "system": "系统"
+    },
+    "practice": "打字练习",
+    "coach": "智能推荐",
+    "library": "题库管理",
+    "dict": "单词词典",
+    "stats": "统计与进度",
+    "ai": "AI 设置",
+    "models": "本地模型",
+    "settings": "设置",
+    "leaderboard": "成绩比较"
+  },
+  "shell": {
+    "streak": "连续 {days} 天",
+    "personalBest": "个人最佳 {speed} WPM",
+    "pinSidebar": "固定侧栏",
+    "toggleSidebar": "收起／展开侧栏",
+    "synced": "{minutes} 分钟前已同步",
+    "offline": "离线 · {count} 条待同步",
+    "shortcutHint": "Ctrl+Enter 开始 · Ctrl+N 换一篇"
+  },
+  "page": {
+    "practice": "练习",
+    "result": "结果",
+    "coachSub": "按能力等级自动生成",
+    "librarySub": "自定义文本与云端题库",
+    "dictSub": "任何一条都能直接练",
+    "aiSub": "自动标题、分类与难度",
+    "modelsSub": "分词、嵌入与重排序模型",
+    "statsSub": "近 30 天",
+    "progressWeek": "本周 vs 上周",
+    "progressMonth": "本月 vs 上月",
+    "settingsSub": "偏好设置与成就"
+  },
+  "practice": {
+    "category": "大类",
+    "topic": "子类",
+    "start": "开始",
+    "restart": "重新开始",
+    "nextText": "换一篇",
+    "timerHint": "开始输入即计时 · Backspace 可修正",
+    "getReady": "准备好——归零后开始计时",
+    "errorReview": "错字复习",
+    "reviewMeta": "刚才打错的字，各练四次",
+    "keyboard": "键盘",
+    "nextKey": "下一个键",
+    "misses": "错 {count} 次",
+    "typeThis": "请输入",
+    "useFinger": "，用{finger}",
+    "pressKey": " 按 {key} 键",
+    "vocabProgress": "第 {index} / {total} 个",
+    "chineseFirst": "先打中文",
+    "thenEnglish": "再打英文",
+    "fingers": {
+      "pinkyL": "左小指",
+      "ringL": "左无名指",
+      "midL": "左中指",
+      "idxL": "左食指",
+      "idxR": "右食指",
+      "midR": "右中指",
+      "ringR": "右无名指",
+      "pinkyR": "右小指",
+      "thumb": "拇指"
+    },
+    "legend": {
+      "pinky": "小指",
+      "ring": "无名指",
+      "middle": "中指",
+      "lIndex": "左食指",
+      "rIndex": "右食指"
+    },
+    "meta": {
+      "basic": "分阶段键位练习",
+      "english": "中等 · 约 210 字符",
+      "chinese": "注音／仓颉 · 以组字完成的字符比对",
+      "zhuyin": "大千键盘 · 逐符号练习",
+      "bilingual": "先中文后英文 · 中文走输入法",
+      "code": "JavaScript · 符号密集",
+      "timed": "60 秒 · 短篇英文",
+      "custom": "粘贴的内容 · 由 AI 分类"
+    }
+  },
+  "status": {
+    "wpm": "WPM",
+    "cpm": "CPM",
+    "cpmUnit": "字/分",
+    "accuracy": "准确率",
+    "elapsed": "已用时间",
+    "timeLeft": "剩余时间",
+    "ready": "等待输入",
+    "typing": "计时中",
+    "countingDown": "倒计时",
+    "done": "已完成",
+    "space": "空格键"
+  },
+  "result": {
+    "yourScore": "本次成绩",
+    "fast": "比 92% 的用户快",
+    "steady": "稳定——再加强准确率",
+    "keepGoing": "继续练习",
+    "accuracy": "准确率",
+    "time": "时间",
+    "errors": "错误数",
+    "characters": "字符数",
+    "mostMissed": "最常打错的键",
+    "addedToBook": "已加入错字本，明天复习",
+    "noMistakes": "这一轮没有错字，保持下去。",
+    "again": "再来一次",
+    "review": "复习错字",
+    "stats": "看统计"
+  },
+  "stats": {
+    "englishWpm": "英文 WPM",
+    "chineseCpm": "中文 CPM",
+    "avgAccuracy": "平均准确率",
+    "personalBest": "个人最佳",
+    "vsLastWeek": "较上周 {delta}",
+    "last30": "近 30 天",
+    "english": "英文",
+    "chinese": "中文",
+    "accuracy": "准确率",
+    "heatmap": "错误热力图",
+    "heatmapHint": "颜色越深错得越多",
+    "history": "历史记录"
+  },
+  "progress": {
+    "you": "与自己比",
+    "leaderboard": "社区排行",
+    "week": "周",
+    "month": "月",
+    "legend": "深色＝本期，浅色＝上期",
+    "overview": "整体表现",
+    "rows": {
+      "avgWpm": "平均 WPM",
+      "bestWpm": "最佳 WPM",
+      "chineseCpm": "中文 CPM",
+      "accuracy": "准确率",
+      "runs": "练习场次",
+      "time": "练习时间"
+    },
+    "bests": "各篇文本个人最佳",
+    "vsPrevious": "与上次记录比较",
+    "yourRank": "我的排名",
+    "rankDelta": "↑ {count} 名",
+    "gapToNext": "距前一名",
+    "user": "用户",
+    "runs": "场次"
+  },
+  "coach": {
+    "currentLevel": "当前等级",
+    "from": "来自 {days} 天内的 {sessions} 次练习",
+    "adapts": "难度会按速度、准确率与错误键位自动调整，今天的题目已经准备好。",
+    "suggestedLevel": "建议难度",
+    "projected": "预估 WPM",
+    "range": "区间 {range}",
+    "symbolsAndCaps": "符号与大写",
+    "todayTarget": "今日目标",
+    "minutes": "{count} 分钟",
+    "drills": "{count} 个短练习",
+    "recommended": "今日推荐",
+    "recommendedHint": "按弱点键位生成；每练完一轮重新评分",
+    "items": {
+      "symbols": {
+        "title": "符号练习：; / [ ] 混合",
+        "reason": "分号与斜杠的错误率是平均的 3.2 倍"
+      },
+      "arrow": {
+        "title": "JavaScript 箭头函数",
+        "reason": "你常练代码，但连续括号仍偏慢"
+      },
+      "banking": {
+        "title": "金融银行单词：先中后英",
+        "reason": "熟练度偏低——先从四组开始"
+      },
+      "timed": {
+        "title": "60 秒挑战",
+        "reason": "达到 70 WPM 即可升到 A 级"
+      }
+    },
+    "errorBook": "错字本",
+    "dueToday": "今日到期 {count}",
+    "srs": "间隔复习： 1 → 2 → 4 → 7 → 15 → 30 天",
+    "dueLabel": "今天到期",
+    "daysLeft": "还有 {count} 天",
+    "reviewKeys": "开始复习 {count} 个字",
+    "nothingDue": "今天没有到期的字"
+  },
+  "library": {
+    "texts": "文本",
+    "custom": "自定义",
+    "importFiles": "导入文件",
+    "addText": "新增文本",
+    "pasteTitle": "粘贴文字——AI 会自动命名与归档",
+    "pastePlaceholder": "粘贴任何段落、代码或中文文章；系统会判读语言、分类与难度",
+    "analyse": "开始判读",
+    "aiResult": "AI 判读结果（可修改）",
+    "fieldTitle": "标题",
+    "fieldCategory": "分类",
+    "fieldLevel": "难度",
+    "fieldChars": "字数",
+    "aiIdle": "粘贴内容后点「开始判读」，标题、分类与难度会自动填入且仍可修改。",
+    "categories": "分类管理",
+    "catCount": "{groups} 个大类 · {topics} 个子类",
+    "newCategory": "＋ 新增分类",
+    "deleteGroup": "删除大类",
+    "deleteTopic": "删除子类",
+    "colTitle": "标题",
+    "colLevel": "难度",
+    "colBest": "最佳",
+    "import": {
+      "title": "导入文件",
+      "drop": "把文件拖进来，或点击选择",
+      "release": "松开即可加入",
+      "accepts": ".txt / .md / .csv / .json · 单个文件上限 2 MB · 可多选",
+      "after": "导入后",
+      "modeAi": "AI 自动分类",
+      "modeManual": "全部放到自定义",
+      "hintAi": "每个文件都会得到标题、分类与难度",
+      "hintManual": "全部进入「自定义」，稍后人工归档",
+      "submit": "导入 {count} 个文件",
+      "submitEmpty": "导入",
+      "emptyFile": "空白文件"
+    },
+    "catModal": {
+      "title": "新增分类",
+      "level": "层级",
+      "topic": "子类",
+      "group": "大类",
+      "parent": "所属大类",
+      "name": "名称",
+      "placeholderGroup": "例如：日语、字卡",
+      "placeholderTopic": "例如：财经、网银、SQL"
+    }
+  },
+  "dict": {
+    "search": "搜索单词、中文或主题",
+    "count": "分类词典 · {count} 条",
+    "import": "导入词典",
+    "topics": "主题",
+    "all": "全部",
+    "colWord": "单词",
+    "colChinese": "中文",
+    "colMastery": "熟练度",
+    "importModal": {
+      "title": "导入词典",
+      "source": "来源",
+      "ecdict": "英中对照，约 77 万条，含词频标签",
+      "cedict": "中英对照，适合中翻英方向",
+      "wordnet": "补齐缺少的例句",
+      "customFile": "自定义文件",
+      "customNote": "你自己的单词表",
+      "drop": "把词典文件拖进来，或点击选择",
+      "release": "松开即可载入",
+      "another": "换一个文件",
+      "accepts": ".csv / .tsv / .json / .txt（ECDICT、CC-CEDICT 导出文件）",
+      "detected": "检测到 {count} 行",
+      "colWord": "单词列",
+      "colMeaning": "中文列",
+      "colPhonetic": "音标列",
+      "colTopic": "主题列",
+      "previewTopic": "主题",
+      "keepMastery": "重复单词沿用已有熟练度",
+      "submit": "导入 {count} 行",
+      "submitEmpty": "导入"
+    }
+  },
+  "ai": {
+    "tabConnection": "连接",
+    "tabParameters": "参数",
+    "tabAutomation": "自动化",
+    "connected": "已连接 · {minutes} 分钟前调用过",
+    "notTested": "尚未测试",
+    "provider": "供应商",
+    "model": "模型",
+    "searchModels": "搜索模型",
+    "noModel": "没有匹配的模型",
+    "baseUrl": "API 端点（Base URL）",
+    "apiKey": "API 密钥",
+    "storedLocally": "只保存在本地",
+    "temperature": "温度 {value}",
+    "maxChars": "单次字数上限",
+    "timeout": "超时（秒）",
+    "retries": "重试次数",
+    "concurrency": "并发数",
+    "outputLanguage": "输出语言",
+    "opts": {
+      "offlineFallback": {
+        "label": "无法连接时改用本地规则",
+        "hint": "离线时以关键词判读分类"
+      },
+      "sendStats": {
+        "label": "发送练习统计",
+        "hint": "只发送错误键分布，绝不发送文本内容"
+      }
+    },
+    "features": {
+      "autoTitle": {
+        "label": "自动标题",
+        "hint": "为粘贴的文字取 18 字以内的标题"
+      },
+      "autoCat": {
+        "label": "自动分类",
+        "hint": "归到大类与子类，随时可人工覆盖"
+      },
+      "autoLevel": {
+        "label": "自动难度",
+        "hint": "按符号、长度与生僻字评 L1–L6"
+      },
+      "genSentence": {
+        "label": "生成例句",
+        "hint": "缺例句时自动写一句可练习的句子"
+      },
+      "genVocab": {
+        "label": "抽取生词",
+        "hint": "把熟练度低的单词收进词典"
+      },
+      "rewrite": {
+        "label": "按弱点改写文本",
+        "hint": "把你常错的键自然写进练习文字"
+      }
+    },
+    "prompts": "判读提示词",
+    "newPrompt": "＋ 新增用途",
+    "promptName": "提示词 {index}",
+    "usage": {
+      "calls": {
+        "label": "本月判读次数",
+        "hint": "上限 {limit}"
+      },
+      "latency": {
+        "label": "平均耗时",
+        "hint": "含网络时间"
+      },
+      "override": {
+        "label": "人工覆盖率",
+        "hint": "分类判读相当准确"
+      }
+    }
+  },
+  "models": {
+    "storage": "存储",
+    "storageHint": "分词、嵌入与重排序模型在本地运行，离线也能分类与搜索。",
+    "location": "存储位置",
+    "used": "已使用",
+    "preferLocal": "优先使用本地模型；只有长篇摘要才会调用云端。",
+    "available": "可用模型",
+    "download": "下载",
+    "remove": "移除"
+  },
+  "settings": {
+    "preferences": "练习偏好",
+    "interfaceLanguage": "界面语言",
+    "keyboardLayout": "键盘布局",
+    "textSize": "练习字号",
+    "sizeS": "小",
+    "sizeM": "中",
+    "sizeL": "大",
+    "toggles": {
+      "kb": {
+        "label": "显示虚拟键盘",
+        "hint": "标示下一个键与对应手指"
+      },
+      "strict": {
+        "label": "严格模式",
+        "hint": "打错时停住，改对才能继续"
+      },
+      "sound": {
+        "label": "按键音效",
+        "hint": "每次按键发出轻微声响"
+      },
+      "countPunct": {
+        "label": "标点计入准确率",
+        "hint": "关闭时标点错误仍会记录，但不计分"
+      },
+      "ignoreWidth": {
+        "label": "忽略全角半角",
+        "hint": "全角与半角视为相同"
+      }
+    },
+    "localData": "本地数据",
+    "localDataHint": "文本、练习记录与错字本存在本地 SQLite（{path}）；离线可练，联网后自动同步。",
+    "shortcuts": "快捷键",
+    "shortcutStart": "开始／重新开始",
+    "shortcutNext": "换一篇",
+    "shortcutSidebar": "收起侧栏",
+    "shortcutReview": "开始复习",
+    "achievements": "成就徽章",
+    "unlocked": "已解锁",
+    "locked": "未解锁",
+    "progressOf": "进度 {done}/{total}",
+    "bestOf": "最佳 {value}",
+    "badges": {
+      "streak7": "连续 7 天",
+      "wpm60": "60 WPM",
+      "acc99": "准确率 99%",
+      "codeMaster": "代码达人",
+      "streak30": "连续 30 天",
+      "wpm80": "80 WPM",
+      "words50": "50 个单词",
+      "daily1": "每日第一"
+    }
+  },
+  "layoutLabel": {
+    "en": "英文",
+    "zh": "中文",
+    "zhuyin": "注音"
+  }
+}

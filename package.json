@@ -1,0 +1,29 @@
+{
+  "name": "typing-trainer",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "TypeLab — typing trainer for English, Chinese and code, packaged for desktop with Tauri.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @typelab/web",
+    "build": "npm run build --workspace @typelab/web",
+    "preview": "npm run preview --workspace @typelab/web",
+    "lint": "npm run lint --workspaces --if-present",
+    "lint:fix": "npm run lint:fix --workspaces --if-present",
+    "format": "prettier --write \"**/*.{ts,vue,json,md,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,vue,json,md,css}\"",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}

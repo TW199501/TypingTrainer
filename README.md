@@ -1,25 +1,50 @@
-# CODING AGENTS: READ THIS FIRST
+# TypeLab — 打字練習軟體 / Typing Trainer
 
-This is a **handoff bundle** from Claude Design (claude.ai/design).
+英文、中文（注音／倉頡）、程式碼與單字練習，最終以 Tauri 包成桌面端。
+Typing practice for English, Chinese (bopomofo / cangjie), code and vocabulary,
+packaged for the desktop with Tauri.
 
-A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.
+介面預設英文，繁體中文與简体中文可即時切換（`en.json` 為 source of truth）。
 
-## What you should do — IMPORTANT
+## 結構 / Layout
 
-**Read the chat transcripts first.** There are 1 chat transcript(s) in `chats/`. The transcripts show the full back-and-forth between the user and the design assistant — they tell you **what the user actually wants** and **where they landed** after iterating. Don't skip them. The final HTML files are the output, but the chat is where the intent lives.
+```
+.
+├─ apps/
+│  └─ web/          Vue 3 + TypeScript 前端（Vite、Pinia、vue-router、vue-i18n、Ant Design Vue）
+├─ design/
+│  ├─ prototype/    Claude Design 匯出的 HTML 原型（實作的視覺依據，原樣保留）
+│  ├─ chats/        設計過程的對話紀錄
+│  └─ HANDOFF.md    原始交接說明
+├─ docs/
+│  ├─ architecture.md   前後端分層、打字引擎、版面規則
+│  └─ api-contract.md   後端 API 與 MSSQL 資料表
+└─ .github/workflows/ci.yml
+```
 
-**Read `project/TypingTrainer.dc.html` in full.** The user had this file open when they triggered the handoff, so it's almost certainly the primary design they want built. Read it top to bottom — don't skim. Then **follow its imports**: open every file it pulls in (shared components, CSS, scripts) so you understand how the pieces fit together before you start implementing.
+## 開發 / Getting started
 
-**If anything is ambiguous, ask the user to confirm before you start implementing.** It's much cheaper to clarify scope up front than to build the wrong thing.
+```bash
+npm install          # workspace 安裝（Node >= 20.19）
+npm run dev          # http://localhost:5173
+npm run verify       # format + lint + typecheck + test + build（CI 跑的同一組）
+```
 
-## About the design files
+預設不需要後端：`VITE_USE_MOCK=true` 時所有資料來自 `apps/web/src/api/mock/fixtures.ts`。
+要接真的 API，複製 `apps/web/.env.example` 成 `.env.local`，設定 `VITE_API_BASE_URL` 並把
+`VITE_USE_MOCK` 改成 `false`。
 
-The design medium is **HTML/CSS/JS** — these are prototypes, not production code. Your job is to **recreate them pixel-perfectly** in whatever technology makes sense for the target codebase (React, Vue, native, whatever fits). Match the visual output; don't copy the prototype's internal structure unless it happens to fit.
+| 指令                              | 說明                                    |
+| --------------------------------- | --------------------------------------- |
+| `npm run dev`                     | 開發伺服器                              |
+| `npm run build`                   | 型別檢查後打包到 `apps/web/dist`        |
+| `npm run test`                    | Vitest（打字引擎、錯字簿、AI 判讀規則） |
+| `npm run lint` / `npm run format` | ESLint / Prettier                       |
 
-**Don't render these files in a browser or take screenshots unless the user asks you to.** Everything you need — dimensions, colors, layout rules — is spelled out in the source. Read the HTML and CSS directly; a screenshot won't tell you anything they don't.
+## 路線圖 / Roadmap
 
-## Bundle contents
-
-- `README.md` — this file
-- `chats/` — conversation transcripts (read these!)
-- `project/` — the `打字練習軟體設計` project files (HTML prototypes, assets, components)
+- [x] 前端打字引擎與單頁練習（英文／中文／注音／單字／程式碼／限時）
+- [x] 錯字簿與間隔複習、統計、排行與成績比較、AI 設定、題庫與字典管理
+- [x] 前端工程化：i18n、API 層（mock 可切換）、單元測試、CI
+- [ ] 後端 ASP.NET Core 8 + MSSQL（`docs/api-contract.md` 已定義介面）
+- [ ] Tauri 桌面殼：本機 SQLite、離線可練、全域快捷鍵、視窗最小尺寸 900×640
