@@ -1,0 +1,84 @@
+server/TypeLab.Api.Tests/CatalogueTranslationSeedsTests.cs
+  s_b8b6478b28c17a::t_4e9db2696c67b3 2-112
+  s_b8b6478b28c17a::t_cc172b3fe89fcd 1
+server/TypeLab.Api.Tests/TestDb.cs
+  s_b8b6478b28c17a::t_ba8bdd926cb5e8 1-32
+apps/src/api/mock/fixtures.test.ts
+  s_b8b6478b28c17a::t_6c83552cb8facf 1-23
+server/TypeLab.Api/Data/CatalogueTranslationSeeds.cs
+  s_b8b6478b28c17a::t_025933e87840c4 1-116
+server/TypeLab.Api.Tests/CatalogueLocalizerTests.cs
+  s_5f06c3d98e55ab::t_24ac53a25fa1fb 25-44
+  s_b8b6478b28c17a::t_c4630c5f49e5a6 2-24,45-72
+  s_b8b6478b28c17a::t_eda9ae7e87e936 1
+server/TypeLab.Api/Api/PromptEndpoints.cs
+  s_b8b6478b28c17a::t_950da1cd0c3f7f 1-48
+server/TypeLab.Api/Data/CatalogueLocalizer.cs
+  s_5f06c3d98e55ab::t_634ea589cd4df3 19-31,33,38-60
+  s_5f06c3d98e55ab::t_847982eeb5d1fc 1
+  s_b8b6478b28c17a::t_bd9683fabd756c 2-18,32,34-37,61-118
+docs/api-contract.md
+  s_3c4b15cf685750::t_ab7cac030d4fcd 33,35,111-118
+server/TypeLab.Api/Program.cs
+  s_cfac1b7d026843::t_141c7f3926528f 59
+apps/src/api/index.ts
+  s_5f06c3d98e55ab::t_d50a5113dad32a 17,124,126-127,144-151
+apps/src/api/mock/fixtures.ts
+  s_5f06c3d98e55ab::t_dd2e12b5bd5f07 17,557,559-624,626-634,636-644,646-654,656-663,665-678
+apps/src/data/types.ts
+  s_5f06c3d98e55ab::t_5ebb32ec1de32b 61-62
+apps/src/stores/ai.ts
+  s_5f06c3d98e55ab::t_0b8439bca37402 1,6-7,33-34,63,65,76,103-120,122-125,129-136,163-164
+apps/src/views/ModelsView.vue
+  s_5f06c3d98e55ab::t_361133816aee07 66-68
+server/TypeLab.Api/Api/ModelEndpoints.cs
+  s_5f06c3d98e55ab::t_ce6605d7421a3e 33-37,39,41-42,47-53
+server/TypeLab.Api/Data/SqlSugarSetup.cs
+  s_5f06c3d98e55ab::t_8404ebc1686c27 67
+server/TypeLab.Api/Models/Entities.cs
+  s_5f06c3d98e55ab::t_bd07ccad4d6672 324-327
+apps/src/api/types.ts
+  s_b8b6478b28c17a::t_6e3837c03f825a 181-188
+apps/src/views/AiView.vue
+  s_b8b6478b28c17a::t_65b6302e82bd00 2,61-64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "6563a3145b3cb0b37acb647d2230dc983c559082",
+  "prompts": {},
+  "sessions": {
+    "s_3c4b15cf685750": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d4170aeb-af03-4e31-beac-a4304e83c419",
+        "model": "claude-opus-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    },
+    "s_5f06c3d98e55ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "28fa3d9b-cf29-49a9-8055-cf6318579de0",
+        "model": "claude-opus-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    },
+    "s_b8b6478b28c17a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01a0bab5-ecf5-7cd2-986d-cbda66a2d6e8",
+        "model": "unknown"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    },
+    "s_cfac1b7d026843": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ac56b906-e7b2-4036-afe0-92c773e833d0",
+        "model": "claude-opus-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
