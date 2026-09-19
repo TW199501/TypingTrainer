@@ -7,8 +7,6 @@
 //   node scripts/version.mjs minor      → 0.0.2 -> 0.1.0
 //   node scripts/version.mjs major      → 0.1.0 -> 1.0.0
 //   node scripts/version.mjs 1.2.3      → set explicitly
-//
-// Cargo.lock is left to cargo: the next build refreshes it.
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -41,6 +39,14 @@ const TARGETS = [
   {
     file: p('server', 'TypeLab.Api', 'TypeLab.Api.csproj'),
     find: /(<Version>)([^<]+)(<\/Version>)/,
+  },
+  {
+    // The lock file records the crate's own version too. Leaving it to cargo
+    // means it lags by however many bumps happened since the last build, which
+    // breaks `cargo build --locked` and leaves an uncommitted change sitting in
+    // the tree after every release.
+    file: p('src-tauri', 'Cargo.lock'),
+    find: /(name = "typelab"\r?\nversion = ")([^"]+)(")/,
   },
 ]
 
