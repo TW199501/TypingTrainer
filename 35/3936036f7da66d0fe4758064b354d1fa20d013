@@ -1,0 +1,43 @@
+apps/tsconfig.json
+  s_5f06c3d98e55ab::t_85532f74a6c60b 18
+.gitignore
+  s_3c4b15cf685750::t_99494effe29474 35-40
+.claude/skills/github-issue-planning-en/SKILL.md
+  s_5f06c3d98e55ab::t_3c1a9804c035eb 1-611
+apps/package.json
+  s_5f06c3d98e55ab::t_023603a204c566 4
+package.json
+  s_5f06c3d98e55ab::t_bd2727df9d1999 4
+server/TypeLab.Api/TypeLab.Api.csproj
+  s_5f06c3d98e55ab::t_4b5df3533be5b0 5
+src-tauri/Cargo.lock
+  s_5f06c3d98e55ab::t_43d53512d860aa 4029
+src-tauri/tauri.conf.json
+  s_5f06c3d98e55ab::t_dd7365170fe351 4
+src-tauri/Cargo.toml
+  s_5f06c3d98e55ab::t_f84610d60b8b3c 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "353936036f7da66d0fe4758064b354d1fa20d013",
+  "prompts": {},
+  "sessions": {
+    "s_3c4b15cf685750": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d4170aeb-af03-4e31-beac-a4304e83c419",
+        "model": "claude-opus-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    },
+    "s_5f06c3d98e55ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "28fa3d9b-cf29-49a9-8055-cf6318579de0",
+        "model": "claude-opus-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
