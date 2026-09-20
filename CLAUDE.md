@@ -18,10 +18,19 @@ against code that was already broken.
 
 ## CI and releases
 
-The chain runs end to end as of v0.1.9: commit → version bump → tag → three
-signed desktop builds → container images → manifest check → published release →
-an installed copy updates itself. Everything below is a step that broke on the
-way there.
+The chain was walked end to end on v0.1.9 and v0.1.10: commit → version bump →
+tag → three signed desktop builds → container images → manifest check →
+published release → an installed Windows copy fetched it, verified the
+signature, installed itself and relaunched. `installMode: "passive"` behaves as
+documented — a progress window, no prompt to click.
+
+**macOS is signed and notarised but has not been opened on a Mac.** The build
+log says `Signing and notarisation credentials present.` and the job carries no
+warning, which proves the credentials arrived, not that Gatekeeper accepts the
+result. Until someone runs `spctl -a -vvv -t install` on the bundle, treat that
+half as unverified.
+
+Everything below is a step that broke on the way there.
 
 **A published release is not the same as a built one.** `releaseDraft: true`
 leaves the release as a draft on purpose, so the assets can be checked before
@@ -137,6 +146,14 @@ accident and fails for anyone else. `q=0` means "not acceptable".
 
 - Front-end tests sit beside the file they cover: `foo.ts` → `foo.test.ts`.
   End-to-end tests live in `e2e/*.spec.ts`.
+- **The e2e suite renders in English.** A fresh Playwright context has no saved
+  locale, so `initialLocale()` returns `en`. Asserting that a Chinese string is
+  absent therefore passes no matter what the page does — two such assertions
+  shipped green here and could never have failed. Assert the English copy.
+- **Assertions about the desktop-only UI need `__TAURI_INTERNALS__` stubbed**
+  via `page.addInitScript`, or the `v-if="IS_DESKTOP"` blocks never render and
+  the test measures a page a third shorter than the real one. Stubbing is safe:
+  the Tauri modules are imported inside the handlers, not at module scope.
 - Reusable server modules go under `server/framework` as `XiHan.Framework.*`,
   written to that framework's conventions: version header, file-scoped
   namespace, Simplified Chinese XML docs, `.Abstractions` split, one package

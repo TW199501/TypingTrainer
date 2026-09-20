@@ -15,6 +15,18 @@ export default ts.config(
     },
   },
   {
+    // Substituted by Vite's `define`, so it exists at runtime but in no scope
+    // ESLint can see. Declared in apps/env.d.ts for TypeScript's benefit.
+    //
+    // Scoped to the bundled sources on purpose: Node-side code (this file,
+    // vite.config.ts, scripts) never gets the substitution, so a reference
+    // there should still fail no-undef.
+    files: ['**/*.vue', 'src/**/*.ts'],
+    languageOptions: {
+      globals: { __APP_VERSION__: 'readonly' },
+    },
+  },
+  {
     rules: {
       // Views are single-word by design (Practice, Result, Stats…).
       'vue/multi-word-component-names': 'off',

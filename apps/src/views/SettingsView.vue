@@ -9,7 +9,7 @@ import ToggleSwitch from '@/components/ToggleSwitch.vue'
 
 const { t } = useI18n()
 const settings = useSettingsStore()
-const { aiCols, aiRows } = useGridLayout()
+const { aiCols, aiRows, stacked } = useGridLayout()
 
 type PrefKey = 'uiLang' | 'layoutPref' | 'fontSize'
 
@@ -104,6 +104,16 @@ const updateAction = computed(() =>
     : { label: t('settings.update.check'), primary: false, run: checkForUpdate },
 )
 
+// Stands in for the section heading. "Software update" said nothing the hint
+// line below does not already say, whereas which version is installed is the
+// one thing this block could not otherwise tell you.
+const appVersion = __APP_VERSION__
+
+// Visually the version replaces the heading, but a bare "v0.1.9" names nothing
+// to a screen reader the way the two sibling blocks do, so the old label
+// survives as the accessible name.
+const versionAria = computed(() => `${t('settings.update.title')} v${appVersion}`)
+
 const reason = (e: unknown) => (e instanceof Error ? e.message : String(e))
 
 async function checkForUpdate() {
@@ -140,8 +150,9 @@ async function installUpdate() {
 
 <template>
   <div class="page">
+    <!-- No heading here: the page header already reads 設定 / 偏好設定與成就, and
+         repeating it cost a line of height the toggles needed. -->
     <div class="card prefs">
-      <div class="card-title" style="margin-bottom: 8px; flex-shrink: 0">{{ t('settings.preferences') }}</div>
       <div class="pickers">
         <div v-for="p in pickers" :key="p.key" class="picker">
           <span class="card-sub">{{ p.label }}</span>
@@ -158,7 +169,7 @@ async function installUpdate() {
           </div>
         </div>
       </div>
-      <div class="toggles">
+      <div class="toggles" :class="{ 'toggles--split': !stacked }">
         <div v-for="k in toggles" :key="k" class="toggle-row">
           <div>
             <div style="font-size: 14px">{{ t(`settings.toggles.${k}.label`) }}</div>
@@ -193,7 +204,7 @@ async function installUpdate() {
         </div>
 
         <div v-if="IS_DESKTOP" class="block">
-          <span class="card-title">{{ t('settings.update.title') }}</span>
+          <span class="card-title mono" :aria-label="versionAria">v{{ appVersion }}</span>
           <div class="update-row">
             <span class="card-sub" style="line-height: 18px">{{ updateHint }}</span>
             <div class="btn-slot" style="width: 118px" @click="updateAction.run">
@@ -222,9 +233,17 @@ async function installUpdate() {
 </template>
 
 <style scoped>
+/* Sized by its content, not by a share of the viewport. The old `flex: 1.1 1 0`
+   handed this card a fixed slice of the height, so the toggles were clipped and
+   scrolled inside it however much room the window actually had.
+
+   The `min-height: 120px` floor that used to sit here is deliberately gone: it
+   would fight `flex-shrink` on a short window and push `.page` into overflow.
+   `overflow: hidden` below is what lets this shrink at all — it resolves the
+   flex item's automatic minimum size to 0. The shell enforces a 640px window
+   minimum, well above where this starts to bite. */
 .prefs {
-  flex: 1.1 1 0;
-  min-height: 120px;
+  flex: 0 1 auto;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -256,9 +275,24 @@ async function installUpdate() {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  flex: 1;
   min-height: 0;
+  /* Only bites on a window too short for even two columns. At any normal size
+     nothing overflows, so no scrollbar is drawn. */
   overflow-y: auto;
+}
+/* Two columns halve the rows, which is what lets the card fit without
+   scrolling and leaves the height below to the cards that need it. */
+.toggles--split {
+  display: grid;
+  /* minmax(0,…) rather than a bare 1fr, whose floor is the item's min-content
+     width: one unbreakable label would widen the grid past the card, which is
+     `overflow: hidden` and would clip it silently. Same idiom as useGridLayout. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 28px;
+}
+/* An odd count would leave the final row half-bordered; span it instead. */
+.toggles--split > .toggle-row:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
 }
 .toggle-row {
   display: flex;
@@ -266,6 +300,13 @@ async function installUpdate() {
   justify-content: space-between;
   padding: 9px 0;
   border-bottom: 1px solid var(--line);
+}
+/* Holding the grid track at minmax(0,…) is only half of it: without this the
+   label still pushes past the track, because a flex item's automatic minimum
+   size is its min-content width. No current string is long enough to show it. */
+.toggle-row > div:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .toggle-right {
   cursor: pointer;
