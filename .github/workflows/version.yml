@@ -33,7 +33,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       # A commit that already carries a tag was released deliberately — bumping
       # it would immediately supersede the version that was just published.

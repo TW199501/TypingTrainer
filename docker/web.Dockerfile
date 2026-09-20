@@ -1,5 +1,5 @@
 # Build context is the repo root: docker compose -f docker/docker-compose.yml build
-FROM node:22-alpine AS build
+FROM node:24-alpine AS build
 WORKDIR /repo
 
 # Manifests first so a source-only change does not re-run the install.

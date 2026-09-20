@@ -29,7 +29,7 @@ shipped as a Docker web deployment and as a Tauri desktop app.
 ## 開發 / Getting started
 
 ```bash
-npm install          # workspace 安裝（Node >= 20.19）
+npm install          # workspace 安裝（Node >= 24.18）
 npm run dev          # http://localhost:5173
 npm run verify       # format + lint + typecheck + test + build（CI 跑的同一組）
 ```
