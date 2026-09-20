@@ -20,15 +20,18 @@ against code that was already broken.
 
 The chain was walked end to end on v0.1.9 and v0.1.10: commit → version bump →
 tag → three signed desktop builds → container images → manifest check →
-published release → an installed Windows copy fetched it, verified the
-signature, installed itself and relaunched. `installMode: "passive"` behaves as
-documented — a progress window, no prompt to click.
+published release → an installed copy updates itself.
 
-**macOS is signed and notarised but has not been opened on a Mac.** The build
-log says `Signing and notarisation credentials present.` and the job carries no
-warning, which proves the credentials arrived, not that Gatekeeper accepts the
-result. Until someone runs `spctl -a -vvv -t install` on the bundle, treat that
-half as unverified.
+Verified on real machines, not inferred from green jobs:
+
+- **Windows** fetched the update, verified the signature, installed and
+  relaunched. `installMode: "passive"` behaves as documented — a progress
+  window, nothing to click.
+- **macOS on Apple Silicon** installed from `universal.dmg` and opened with no
+  Gatekeeper warning, which is the part a build log cannot tell you: the log
+  only proves the credentials arrived, never that Apple accepted the result.
+  The universal bundle carries both `arm64` and `x86_64`, so there is no
+  separate Apple Silicon download and no Rosetta involved.
 
 Everything below is a step that broke on the way there.
 
