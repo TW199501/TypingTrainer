@@ -67,6 +67,9 @@ After rotating the key, re-store the secret. A mismatched pair passes every
 gate — build, publish, manifest check — and only surfaces when a user presses
 "download and install".
 
+`docs/signing-and-keys.md` has the full procedure for all three, including the
+Apple certificate and notarisation steps.
+
 ## Versions
 
 Six files carry the version; `scripts/version.mjs` rewrites all of them.

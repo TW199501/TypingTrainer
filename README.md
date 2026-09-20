@@ -208,6 +208,9 @@ npm run tauri signer generate -- -w ~/.tauri/typelab.key
   就比對 `gh secret list` 的時間戳是否晚於金鑰檔。
 - **私鑰遺失 = 已安裝的舊版永遠收不到更新**，請離線備份。
 
+完整步驟、以及 macOS 公證與 Windows 程式碼簽章的申請流程，見
+[`docs/signing-and-keys.md`](docs/signing-and-keys.md)。
+
 注意 `release.yml` 仍用 `releaseDraft: true`：GitHub 的 `/releases/latest/` 會跳過
 草稿，所以更新對使用者來說是在你手動 Publish 之後才生效（這是與「草稿＋人工
 發佈」那道閘門取的捨，不是漏掉）。
