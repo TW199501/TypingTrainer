@@ -18,6 +18,19 @@ against code that was already broken.
 
 ## CI and releases
 
+The chain runs end to end as of v0.1.9: commit → version bump → tag → three
+signed desktop builds → container images → manifest check → published release →
+an installed copy updates itself. Everything below is a step that broke on the
+way there.
+
+**A published release is not the same as a built one.** `releaseDraft: true`
+leaves the release as a draft on purpose, so the assets can be checked before
+they go out — but `/releases/latest/download/latest.json` resolves only against
+published releases, and a draft is invisible to an anonymous request. The app
+reports _"Could not fetch a valid release JSON from the remote"_, which sounds
+like a broken manifest rather than a release nobody pressed Publish on. The last
+step is `gh release edit vX.Y.Z --draft=false --latest`.
+
 **A called workflow receives no secrets unless the caller passes them.**
 `version.yml` invokes `release.yml` with `uses:`, so it needs
 `secrets: inherit`. Without it every secret except `GITHUB_TOKEN` arrives
@@ -48,6 +61,15 @@ three platform jobs must run `max-parallel: 1`; in parallel the last writer
 wins, the other platforms vanish from the manifest, and all three jobs still
 report success. The `updater-manifest` job asserts the four platform keys
 afterwards rather than trusting the colours.
+
+**Only x86-64 is built for Windows and Linux.** macOS is covered on both
+architectures because the job builds `universal-apple-darwin`, which the action
+expands into `darwin-aarch64` and `darwin-x86_64` — so Apple Silicon is not a
+gap. Windows ARM runs the x64 build under emulation and Linux ARM has no
+audience here yet. Adding them means two more rows in the matrix
+(`windows-11-arm`, `ubuntu-24.04-arm`, both free for public repositories) and
+roughly sixteen more minutes per release, since `max-parallel: 1` cannot be
+relaxed. Deferred until someone asks.
 
 ## Desktop signing
 

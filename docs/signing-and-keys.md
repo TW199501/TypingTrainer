@@ -264,10 +264,26 @@ buying one does not silence SmartScreen immediately.
 | Secret                                | Purpose                  | Set up? |
 | ------------------------------------- | ------------------------ | ------- |
 | `TAURI_SIGNING_PRIVATE_KEY`           | Updater signatures       | ✅      |
-| `APPLE_CERTIFICATE` + `_PASSWORD`     | macOS code signing       | ❌      |
-| `APPLE_SIGNING_IDENTITY`              | Which certificate to use | ❌      |
-| `APPLE_ID` + `_PASSWORD` + `_TEAM_ID` | Notarization             | ❌      |
+| `APPLE_CERTIFICATE` + `_PASSWORD`     | macOS code signing       | ✅      |
+| `APPLE_SIGNING_IDENTITY`              | Which certificate to use | ✅      |
+| `APPLE_ID` + `_PASSWORD` + `_TEAM_ID` | Notarization             | ✅      |
 | `WINDOWS_CERTIFICATE` + `_PASSWORD`   | SmartScreen              | ❌      |
 
 The updater key is the only one that is not optional. Without it the release
 build fails outright — deliberately, so an unsigned update can never ship.
+
+## Publishing
+
+Signing is not the last step. `release.yml` leaves the release as a **draft** so
+the assets can be checked first, and the updater endpoint
+(`/releases/latest/download/latest.json`) cannot see drafts — an unpublished
+release looks to the app exactly like a missing manifest:
+
+```bash
+gh release edit v0.1.9 --draft=false --latest
+curl -sSL -o /dev/null -w '%{http_code}\n' \
+  https://github.com/TW199501/TypingTrainer/releases/latest/download/latest.json
+```
+
+`200` means installed copies can now see the update. `404` means it is still a
+draft.
