@@ -1,0 +1,34 @@
+docker/web.Dockerfile
+  s_5f06c3d98e55ab::t_9eacf9180e16ae 2
+README.md
+  s_5f06c3d98e55ab::t_62a01fcb790f3d 32
+package-lock.json
+  s_5f06c3d98e55ab::t_cee155fb9d3b83 3,9,24
+  46dd48ca9fe18a77 19
+.github/workflows/version.yml
+  s_5f06c3d98e55ab::t_c34d6717b4c025 36
+.npmrc
+  s_5f06c3d98e55ab::t_6ed12afae98353 1-7
+package.json
+  s_5f06c3d98e55ab::t_bb74a8979308a0 43
+.github/workflows/ci.yml
+  s_5f06c3d98e55ab::t_073d6d47735f4b 17,51
+.github/workflows/release.yml
+  s_5f06c3d98e55ab::t_5dd0caadcbbe1f 59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "8aa2019306b9271c64cabd97304c1ead000726be",
+  "prompts": {},
+  "sessions": {
+    "s_5f06c3d98e55ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "28fa3d9b-cf29-49a9-8055-cf6318579de0",
+        "model": "claude-opus-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
