@@ -1,0 +1,19 @@
+CLAUDE.md
+  s_5f06c3d98e55ab::t_f0fd5fd917c7f7 23-34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ee8737e80a442b822c36b1078790a52d73b3e97c",
+  "prompts": {},
+  "sessions": {
+    "s_5f06c3d98e55ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "28fa3d9b-cf29-49a9-8055-cf6318579de0",
+        "model": "claude-opus-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
