@@ -22,12 +22,11 @@ jobs:
         with:
           fetch-depth: 1
 
-      # Either credential works; whichever secret is left unset is ignored.
-      # ANTHROPIC_API_KEY bills the API account, CLAUDE_CODE_OAUTH_TOKEN draws
-      # on a Claude subscription instead.
+      # Draws on the Claude subscription. Swap to `anthropic_api_key` with an
+      # ANTHROPIC_API_KEY secret to bill an API account instead — passing both
+      # only earns a warning for whichever secret does not exist.
       - uses: anthropics/claude-code-action@v1
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
             REPO: ${{ github.repository }}
