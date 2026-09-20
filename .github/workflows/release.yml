@@ -96,6 +96,35 @@ jobs:
           fi
           echo "Signing key present."
 
+      # Notarisation submits to Apple and waits, so a missing credential is
+      # worth catching before the build rather than after it. Signing without
+      # notarising produces a bundle macOS still refuses to open, which looks
+      # like a successful release until someone downloads it.
+      - name: Check the Apple credentials
+        if: matrix.platform == 'macos-latest'
+        shell: bash
+        env:
+          CERT: ${{ secrets.APPLE_CERTIFICATE }}
+          IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          missing=""
+          [ -z "$CERT" ] && missing="$missing APPLE_CERTIFICATE"
+          [ -z "$IDENTITY" ] && missing="$missing APPLE_SIGNING_IDENTITY"
+          [ -z "$APPLE_ID" ] && missing="$missing APPLE_ID"
+          [ -z "$APPLE_PASSWORD" ] && missing="$missing APPLE_PASSWORD"
+          [ -z "$TEAM_ID" ] && missing="$missing APPLE_TEAM_ID"
+
+          if [ -n "$missing" ]; then
+            # Not fatal: an unsigned macOS build is still a usable release for
+            # everyone who is willing to right-click → Open.
+            echo "::warning::Unsigned macOS build — missing:$missing"
+          else
+            echo "Signing and notarisation credentials present."
+          fi
+
       # Runs `tauri build`, which triggers beforeBuildCommand (npm run build)
       # and uploads the resulting bundles to a draft release.
       #
@@ -109,6 +138,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # macOS only; the other platforms ignore these. Code signing lets
+          # Gatekeeper open the app at all, which is separate from the updater
+          # signature above — that one only proves an update came from us.
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: ${{ inputs.tag || github.ref_name }}
           releaseName: 'TypeLab ${{ inputs.tag || github.ref_name }}'
