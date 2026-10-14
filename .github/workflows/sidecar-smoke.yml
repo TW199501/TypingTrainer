@@ -144,7 +144,12 @@ jobs:
             case "$archs" in *x86_64*) ;; *) echo "::error::x86_64 slice missing"; exit 1 ;; esac
           fi
           if [ "$RUNNER_OS" = Linux ]; then
-            dpkg-deb -c src-tauri/target/release/bundle/deb/*.deb | grep -q '/usr/bin/typelab-api$' \
-              || { echo "::error::sidecar missing from the .deb"; exit 1; }
+            deb="$(ls src-tauri/target/release/bundle/deb/*.deb | head -n 1)"
+            listing="$(dpkg-deb -c "$deb")"
+            echo "$listing"
+            if ! grep -q '/usr/bin/typelab-api$' <<<"$listing"; then
+              echo "::error::sidecar missing from the .deb"
+              exit 1
+            fi
           fi
           echo "Sidecar present: $f"

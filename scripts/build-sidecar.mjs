@@ -2,7 +2,8 @@
 // places it where Tauri's bundle.externalBin expects it:
 //   src-tauri/binaries/typelab-api-<target-triple>[.exe]
 // The triple comes from TAURI_ENV_TARGET_TRIPLE, else the host triple of rustc.
-// universal-apple-darwin publishes both macOS RIDs and merges them with lipo.
+// universal-apple-darwin publishes both macOS RIDs, merges them with lipo, and
+// also keeps the per-arch files that Tauri's per-architecture passes look for.
 import { spawnSync } from 'node:child_process'
 import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -84,6 +85,13 @@ try {
   if (triple === UNIVERSAL) {
     const parts = UNIVERSAL_PARTS.map((part) => publish(part, scratch))
     run('lipo', ['-create', '-output', target, ...parts])
+    // `tauri build --target universal-apple-darwin` compiles each architecture
+    // on its own, and each pass needs its own externalBin file.
+    UNIVERSAL_PARTS.forEach((part, i) => {
+      const perArch = join(outDir, `typelab-api-${part}`)
+      copyFileSync(parts[i], perArch)
+      chmodSync(perArch, 0o755)
+    })
   } else {
     copyFileSync(publish(triple, scratch), target)
   }
