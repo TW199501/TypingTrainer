@@ -1,0 +1,23 @@
+scripts/smoke-sidecar.mjs
+  s_17f9718f56f12f::t_12f691f346fa5a 2,14-15,17,72-73,110
+src-tauri/src/sidecar.rs
+  s_17f9718f56f12f::t_edb0d490305471 21-24,264-268,404-406,415-418,421
+  s_17f9718f56f12f::t_887bd96e037dfd 530,625,627-629,633-669
+  s_17f9718f56f12f::t_0908c065dae73b 670
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4dc8c30f1a5bea79434050c23b45c953553b6a01",
+  "prompts": {},
+  "sessions": {
+    "s_17f9718f56f12f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2a55c47-cd6b-48db-b0ab-2b142d09c647",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
