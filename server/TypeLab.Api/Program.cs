@@ -61,7 +61,7 @@ const string WebCors = "web";
 builder.Services.AddCors(o => o.AddPolicy(WebCors, p => p
     .WithOrigins(
         builder.Configuration.GetSection("Cors:Origins").Get<string[]>()
-            ?? ["http://localhost:5173", "http://tauri.localhost", "https://tauri.localhost", "tauri://localhost"])
+            ?? ["http://localhost:5173", "http://tauri.localhost", "tauri://localhost"])
     .AllowAnyHeader()
     .AllowAnyMethod()));
 

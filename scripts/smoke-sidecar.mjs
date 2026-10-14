@@ -129,6 +129,19 @@ async function check(port, handshakeMs) {
     if (allowed !== 'tauri://localhost') {
       return finish(1, 'smoke-sidecar: CORS does not allow tauri://localhost')
     }
+
+    // https://tauri.localhost is in appsettings.json only, not in the in-code
+    // fallback, so this passes only if the bundled config was actually loaded.
+    const configOrigin = 'https://tauri.localhost'
+    const configured = await fetch(`http://127.0.0.1:${port}/api/health`, {
+      headers: { Origin: configOrigin },
+      signal: AbortSignal.timeout(5000),
+    })
+    const configAllowed = configured.headers.get('access-control-allow-origin')
+    console.log(`smoke-sidecar: Access-Control-Allow-Origin for ${configOrigin} -> ${configAllowed}`)
+    if (configAllowed !== configOrigin) {
+      return finish(1, 'smoke-sidecar: appsettings.json was not loaded (config-only origin not allowed)')
+    }
   } catch (error) {
     return finish(1, `smoke-sidecar: health request failed: ${error.message}`)
   }

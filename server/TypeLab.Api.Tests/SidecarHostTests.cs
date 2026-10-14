@@ -89,6 +89,22 @@ public sealed class SidecarHostTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Cors_origin_only_in_appsettings_proves_config_loads_from_a_foreign_cwd()
+    {
+        // https://tauri.localhost is absent from the in-code fallback, so it is allowed
+        // only if appsettings.json was read from the sidecar's own folder.
+        var sidecar = await StartAsync();
+        using var http = NoRedirectClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"http://127.0.0.1:{sidecar.Port}/api/health");
+        request.Headers.Add("Origin", "https://tauri.localhost");
+
+        var response = await http.SendAsync(request);
+
+        Assert.True(response.Headers.TryGetValues("Access-Control-Allow-Origin", out var values));
+        Assert.Equal("https://tauri.localhost", Assert.Single(values));
+    }
+
+    [Fact]
     public async Task Foreign_host_header_is_rejected()
     {
         // A page on evil.example whose DNS later resolves to 127.0.0.1 still sends its own name.
