@@ -1,5 +1,5 @@
 // Starts a built sidecar the way the desktop shell does and checks the
-// handshake: ELF_SIDECAR_PORT within 10 s, GET /api/health -> 200, and a clean
+// handshake: ELF_SIDECAR_PORT within 15 s, GET /api/health -> 200, and a clean
 // exit once stdin is closed.
 //   node scripts/smoke-sidecar.mjs [path-to-binary] [-- <command prefix...>]
 // Anything after `--` is a command prefix (e.g. `arch -x86_64`) the binary is
@@ -10,7 +10,10 @@ import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const HANDSHAKE_MS = 10_000
+// A handshake slower than the warning threshold is reported but passes; only
+// the fail limit stops the run. 15 s mirrors the shell's api_base_url wait.
+const HANDSHAKE_WARN_MS = 10_000
+const HANDSHAKE_FAIL_MS = 15_000
 const EXIT_MS = 10_000
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -65,8 +68,8 @@ child = spawn(command, commandArgs, {
 child.on('error', (error) => finish(1, `smoke-sidecar: could not start: ${error.message}`))
 
 const handshakeTimer = setTimeout(
-  () => finish(1, `smoke-sidecar: no ELF_SIDECAR_PORT within ${HANDSHAKE_MS / 1000} s`),
-  HANDSHAKE_MS,
+  () => finish(1, `smoke-sidecar: no ELF_SIDECAR_PORT within ${HANDSHAKE_FAIL_MS / 1000} s`),
+  HANDSHAKE_FAIL_MS,
 )
 
 let buffered = ''
@@ -101,6 +104,11 @@ child.on('exit', (code) => {
 
 async function check(port, handshakeMs) {
   console.log(`smoke-sidecar: handshake on port ${port} after ${handshakeMs} ms`)
+  if (handshakeMs > HANDSHAKE_WARN_MS) {
+    console.log(
+      `::warning::sidecar handshake took ${handshakeMs} ms (over ${HANDSHAKE_WARN_MS / 1000} s; the app gives up at ${HANDSHAKE_FAIL_MS / 1000} s)`,
+    )
+  }
   try {
     const response = await fetch(`http://127.0.0.1:${port}/api/health`, {
       signal: AbortSignal.timeout(5000),

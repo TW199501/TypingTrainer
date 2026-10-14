@@ -147,7 +147,7 @@ jobs:
             deb="$(ls src-tauri/target/release/bundle/deb/*.deb | head -n 1)"
             listing="$(dpkg-deb -c "$deb")"
             echo "$listing"
-            if ! grep -q '/usr/bin/typelab-api$' <<<"$listing"; then
+            if ! grep -Eq '(^|[[:space:]])(\./)?usr/bin/typelab-api$' <<<"$listing"; then
               echo "::error::sidecar missing from the .deb"
               exit 1
             fi
