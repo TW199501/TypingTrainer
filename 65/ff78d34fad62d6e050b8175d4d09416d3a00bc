@@ -1,0 +1,30 @@
+apps/src/i18n/locales/zh-CN.json
+  s_17f9718f56f12f::t_5aad9b8e956053 21
+  s_17f9718f56f12f::t_10e39eeae12d56 18-20,22-27
+apps/src/i18n/locales/zh-TW.json
+  s_17f9718f56f12f::t_10e39eeae12d56 18-27
+apps/src/i18n/locales/en.json
+  s_17f9718f56f12f::t_10e39eeae12d56 18-27
+apps/src/components/BackendError.vue
+  s_17f9718f56f12f::t_027f279ed2a86a 2,4,10-39,41-49,60-65,67-78,107-122,131-132,135-138
+  s_17f9718f56f12f::t_c96027ba5682da 66
+  s_17f9718f56f12f::t_13ad93bd51ce71 40
+apps/src/components/BackendError.test.ts
+  s_17f9718f56f12f::t_71779d6c99488f 1-11,14-15,17-53,57-60,63-65,68-69,72,76-149,151-153,155-156
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "65ff78d34fad62d6e050b8175d4d09416d3a00bc",
+  "prompts": {},
+  "sessions": {
+    "s_17f9718f56f12f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2a55c47-cd6b-48db-b0ab-2b142d09c647",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
