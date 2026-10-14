@@ -1,0 +1,36 @@
+apps/src/i18n/locales/en.json
+  s_17f9718f56f12f::t_579af545dc9453 32-33
+apps/src/api/desktop.ts
+  s_17f9718f56f12f::t_981e0747cb262b 43-55,57,61-75,78,80-81,93-96,99,109-110,128,132-134,139-140,170-182,184
+apps/src/api/desktop.test.ts
+  s_17f9718f56f12f::t_4e47644010aedc 255,260-334
+apps/src/i18n/locales/zh-CN.json
+  s_17f9718f56f12f::t_579af545dc9453 32-33
+apps/src/views/SettingsView.vue
+  s_17f9718f56f12f::t_2f10fdb630629b 80,87,97-99,103-104,146,171-174
+apps/src/components/BackendError.test.ts
+  s_17f9718f56f12f::t_10767fc244192a 215,221-257
+apps/src/views/SettingsView.test.ts
+  s_17f9718f56f12f::t_29d10329cedef7 1-72,76-113
+  s_17f9718f56f12f::t_981e0747cb262b 73-75
+apps/src/i18n/locales/zh-TW.json
+  s_17f9718f56f12f::t_579af545dc9453 32-33
+apps/src/components/BackendError.vue
+  s_17f9718f56f12f::t_10767fc244192a 29,59-62,86-93,105
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "05a8fe1b212eb4c5d11fcd1006072ed01a1dcc66",
+  "prompts": {},
+  "sessions": {
+    "s_17f9718f56f12f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2a55c47-cd6b-48db-b0ab-2b142d09c647",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
