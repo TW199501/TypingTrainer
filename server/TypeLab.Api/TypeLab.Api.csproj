@@ -8,6 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- The Web SDK leaves appsettings.json beside a single-file executable, but the
+         sidecar ships as that executable alone. Bundling it lets self-extract put it
+         next to AppContext.BaseDirectory, where the sidecar content root points. -->
+    <Content Update="appsettings.json" ExcludeFromSingleFile="false" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="ELF.Modules.Hosting.Sidecar" Version="0.8.1" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
     <PackageReference Include="SqlSugarCore" Version="5.1.4.221" />

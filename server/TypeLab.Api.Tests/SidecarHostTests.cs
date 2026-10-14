@@ -185,6 +185,8 @@ public sealed class SidecarHostTests : IAsyncLifetime
             }
         }
 
+        private static readonly string ForeignDirectory = Directory.CreateTempSubdirectory("typelab-cwd-").FullName;
+
         public SidecarProcess(string dbPath)
         {
             var dll = Path.Combine(AppContext.BaseDirectory, "TypeLab.Api.dll");
@@ -195,7 +197,9 @@ public sealed class SidecarHostTests : IAsyncLifetime
                 RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                WorkingDirectory = AppContext.BaseDirectory,
+                // The shell sets no working directory, so the process inherits the app's
+                // (`/` from Finder, $HOME on Linux) — never the folder holding appsettings.json.
+                WorkingDirectory = ForeignDirectory,
             };
             info.ArgumentList.Add(dll);
             info.Environment["ELF_SIDECAR"] = "1";

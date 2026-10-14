@@ -8,7 +8,19 @@ using XiHan.Framework.Translation;
 using XiHan.Framework.Translation.Google;
 using XiHan.Framework.Translation.OpenCC;
 
-var builder = WebApplication.CreateBuilder(args);
+// The shell starts the sidecar without a working directory, so it inherits the
+// app's (`/` from Finder, $HOME on Linux). The content root, and with it
+// appsettings.json, must come from the executable's folder instead. Same signal
+// as UseElfSidecar: ELF_SIDECAR=1 or Elf:Hosting:Sidecar:Enabled.
+var signal = new ConfigurationBuilder().AddEnvironmentVariables().AddCommandLine(args).Build();
+var sidecarRequested = signal["ELF_SIDECAR"] == "1"
+    || signal.GetValue<bool>("Elf:Hosting:Sidecar:Enabled");
+
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = sidecarRequested ? AppContext.BaseDirectory : null,
+});
 
 // Sidecar mode (ELF_SIDECAR=1): the desktop shell launches this process, binds it
 // to 127.0.0.1 on a free port and stops it by closing stdin.
@@ -49,7 +61,7 @@ const string WebCors = "web";
 builder.Services.AddCors(o => o.AddPolicy(WebCors, p => p
     .WithOrigins(
         builder.Configuration.GetSection("Cors:Origins").Get<string[]>()
-            ?? ["http://localhost:5173", "http://tauri.localhost"])
+            ?? ["http://localhost:5173", "http://tauri.localhost", "https://tauri.localhost", "tauri://localhost"])
     .AllowAnyHeader()
     .AllowAnyMethod()));
 

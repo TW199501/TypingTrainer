@@ -38,6 +38,7 @@ function defaultBinary() {
 
 const binary = resolve(positional[0] ?? defaultBinary())
 const dataDir = mkdtempSync(join(tmpdir(), 'typelab-smoke-'))
+const workDir = mkdtempSync(join(tmpdir(), 'typelab-smoke-cwd-'))
 let child
 
 function finish(code, message) {
@@ -45,6 +46,7 @@ function finish(code, message) {
   if (child && child.exitCode === null) child.kill('SIGKILL')
   try {
     rmSync(dataDir, { recursive: true, force: true })
+    rmSync(workDir, { recursive: true, force: true })
   } catch {
     // The database may still be locked on Windows; the OS temp cleaner owns it.
   }
@@ -65,6 +67,10 @@ const started = Date.now()
 child = spawn(command, commandArgs, {
   env: { ...process.env, ELF_SIDECAR: '1', TYPELAB_DB_PATH: join(dataDir, 'typelab.db') },
   stdio: ['pipe', 'pipe', 'inherit'],
+  // The shell sets no working directory, so the sidecar inherits the app's. Run
+  // from a folder that is neither the binary's nor the repo's, so anything that
+  // resolves against the working directory fails here too.
+  cwd: workDir,
 })
 child.on('error', (error) => finish(1, `smoke-sidecar: could not start: ${error.message}`))
 
@@ -112,10 +118,17 @@ async function check(port, handshakeMs) {
   }
   try {
     const response = await fetch(`http://127.0.0.1:${port}/api/health`, {
+      // The webview origin on macOS and Linux; Windows uses http://tauri.localhost.
+      headers: { Origin: 'tauri://localhost' },
       signal: AbortSignal.timeout(5000),
     })
     console.log(`smoke-sidecar: /api/health -> ${response.status}`)
     if (response.status !== 200) return finish(1, 'smoke-sidecar: health check did not return 200')
+    const allowed = response.headers.get('access-control-allow-origin')
+    console.log(`smoke-sidecar: Access-Control-Allow-Origin -> ${allowed}`)
+    if (allowed !== 'tauri://localhost') {
+      return finish(1, 'smoke-sidecar: CORS does not allow tauri://localhost')
+    }
   } catch (error) {
     return finish(1, `smoke-sidecar: health request failed: ${error.message}`)
   }
