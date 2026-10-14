@@ -100,6 +100,8 @@ jobs:
       - name: Smoke test in a container without libicu
         run: |
           docker run --rm             -v "$PWD:/work:ro"             -v "$(command -v node):/usr/local/bin/node:ro"             debian:bookworm-slim bash -euxc '
+              apt-get update
+              apt-get install -y --no-install-recommends libssl3
               count="$(ldconfig -p | grep -c libicu || true)"
               [ "$count" = "0" ] || { echo "::error::the container already has libicu"; exit 1; }
               cp /work/src-tauri/binaries/typelab-api-x86_64-unknown-linux-gnu /tmp/typelab-api
