@@ -1,0 +1,23 @@
+scripts/smoke-sidecar.mjs
+  s_17f9718f56f12f::t_e192bbc46eb0fc 132-144
+server/TypeLab.Api.Tests/SidecarHostTests.cs
+  s_17f9718f56f12f::t_e192bbc46eb0fc 91-106
+server/TypeLab.Api/Program.cs
+  s_17f9718f56f12f::t_91b4a4900d232a 64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d6e95c37e70d9f28ad3dc4feb63dbacabef895e3",
+  "prompts": {},
+  "sessions": {
+    "s_17f9718f56f12f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2a55c47-cd6b-48db-b0ab-2b142d09c647",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
