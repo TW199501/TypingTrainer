@@ -167,10 +167,11 @@ h1 {
   font: inherit;
   cursor: pointer;
 }
-.restart:hover,
+.restart:hover:not(:disabled),
 .install:hover:not(:disabled) {
   background: #e08a6c;
 }
+.restart:disabled,
 .install:disabled {
   opacity: 0.7;
   cursor: default;
