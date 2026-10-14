@@ -20,8 +20,10 @@ use tauri_plugin_shell::ShellExt;
 
 /// Cold start measured at 8.6 s on a Windows CI runner, so 15 s leaves margin.
 pub const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(15);
-/// How long `stop` waits for `Terminated` after killing the child.
-pub const STOP_TIMEOUT: Duration = Duration::from_secs(5);
+/// How long `stop` waits for the sidecar to exit after closing its stdin.
+pub const STOP_GRACE: Duration = Duration::from_secs(5);
+/// How long `stop` then waits for `Terminated` after force-killing it.
+pub const KILL_TIMEOUT: Duration = Duration::from_secs(2);
 const POLL_INTERVAL: Duration = Duration::from_millis(50);
 const STDERR_TAIL_LINES: usize = 50;
 const PORT_PREFIX: &str = "ELF_SIDECAR_PORT=";
@@ -133,14 +135,68 @@ pub fn announcement_for(handshake: &Handshake) -> Option<Announcement> {
     }
 }
 
-/// Something that can be killed once; stands in for `CommandChild`.
-pub trait Killable {
-    fn kill(self) -> Result<(), String>;
+/// A running child that `stop` ends: gently first, by force if it must.
+pub trait Stoppable {
+    type Killer: ForceKill;
+    /// Closes the child's stdin, on which the sidecar exits by itself, and
+    /// returns what can still kill it.
+    fn close_stdin(self) -> Self::Killer;
 }
 
-impl Killable for CommandChild {
-    fn kill(self) -> Result<(), String> {
-        CommandChild::kill(self).map_err(|e| e.to_string())
+/// Ends a process that ignored its stdin closing.
+pub trait ForceKill {
+    fn force_kill(self) -> Result<(), String>;
+}
+
+impl Stoppable for CommandChild {
+    type Killer = Pid;
+
+    fn close_stdin(self) -> Pid {
+        let pid = Pid(self.pid());
+        // The plugin has no call that closes stdin alone: the parent's end of
+        // the pipe lives in `CommandChild` and closes when it is dropped.
+        drop(self);
+        pid
+    }
+}
+
+/// A child known only by its process id, once its `CommandChild` is gone.
+pub struct Pid(u32);
+
+impl ForceKill for Pid {
+    fn force_kill(self) -> Result<(), String> {
+        kill_pid(self.0)
+    }
+}
+
+/// Kills a process by id with the OS tool, without opening a console window.
+fn kill_pid(pid: u32) -> Result<(), String> {
+    #[cfg(windows)]
+    let mut command = {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        let mut command = std::process::Command::new("taskkill");
+        command
+            .args(["/PID", &pid.to_string(), "/F"])
+            .creation_flags(CREATE_NO_WINDOW);
+        command
+    };
+    #[cfg(not(windows))]
+    let mut command = {
+        let mut command = std::process::Command::new("kill");
+        command.args(["-KILL", &pid.to_string()]);
+        command
+    };
+    let status = command
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status()
+        .map_err(|e| format!("cannot run the kill command: {e}"))?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!("kill of process {pid} failed ({status})"))
     }
 }
 
@@ -214,28 +270,49 @@ impl<C> Lifecycle<C> {
 }
 
 /// Stops the child, then waits until that specific generation has ended.
-pub fn stop_lifecycle<C: Killable>(
+pub fn stop_lifecycle<C: Stoppable>(
     life: &Mutex<Lifecycle<C>>,
-    timeout: Duration,
+    grace: Duration,
+    kill_timeout: Duration,
 ) -> Result<(), String> {
     let Some((generation, child)) = life.lock().unwrap().begin_stop() else {
         return Ok(());
     };
+    let killer = child.close_stdin();
+    if wait_until_terminated(life, generation, grace) {
+        return Ok(());
+    }
     // A failed kill usually means the process is already gone; the wait below
     // still decides whether it really ended.
-    let kill_error = child.kill().err();
+    let kill_error = killer.force_kill().err();
+    if wait_until_terminated(life, generation, kill_timeout) {
+        return Ok(());
+    }
+    Err(match kill_error {
+        Some(e) => format!("cannot stop the backend: {e}"),
+        None => format!(
+            "the backend did not exit within {} s",
+            (grace + kill_timeout).as_secs()
+        ),
+    })
+}
 
+/// Polls until generation `generation` has ended; false once `timeout` passed.
+fn wait_until_terminated<C>(
+    life: &Mutex<Lifecycle<C>>,
+    generation: u64,
+    timeout: Duration,
+) -> bool {
     let start = Instant::now();
-    while !life.lock().unwrap().has_terminated(generation) {
+    loop {
+        if life.lock().unwrap().has_terminated(generation) {
+            return true;
+        }
         if start.elapsed() >= timeout {
-            return Err(match kill_error {
-                Some(e) => format!("cannot stop the backend: {e}"),
-                None => format!("the backend did not exit within {} s", timeout.as_secs()),
-            });
+            return false;
         }
         std::thread::sleep(POLL_INTERVAL);
     }
-    Ok(())
 }
 
 #[derive(Default)]
@@ -339,7 +416,7 @@ pub fn wait_for_handshake(state: &BackendState, timeout: Duration) -> Result<u16
 
 /// Stops the sidecar. Having no child is not an error.
 pub fn stop(state: &BackendState) -> Result<(), String> {
-    stop_lifecycle(&state.life, STOP_TIMEOUT)
+    stop_lifecycle(&state.life, STOP_GRACE, KILL_TIMEOUT)
 }
 
 fn emit(app: &AppHandle, announcement: &Announcement) {
@@ -356,7 +433,7 @@ pub fn spawn(app: &AppHandle) -> Result<(), String> {
 }
 
 /// Spawns while holding the lifecycle lock, so a concurrent `stop` either
-/// runs before (and the start is refused) or after (and kills this child).
+/// runs before (and the start is refused) or after (and stops this child).
 fn start_backend(app: &AppHandle, state: &BackendState) -> Result<(), String> {
     state.reset_for_spawn();
     state
@@ -600,19 +677,50 @@ mod tests {
         assert_eq!(tail.front().map(String::as_str), Some("line 30"));
     }
 
-    /// Stand-in for `CommandChild`; `kill` records that it happened.
-    struct FakeChild(std::sync::Arc<AtomicU8>);
+    /// What a fake child saw, in order: "close" (stdin) and "kill".
+    type Log = std::sync::Arc<Mutex<Vec<&'static str>>>;
 
-    impl Killable for FakeChild {
-        fn kill(self) -> Result<(), String> {
-            self.0.fetch_add(1, Ordering::SeqCst);
-            Ok(())
+    /// Stand-in for `CommandChild`; records the stop steps it receives.
+    struct FakeChild(Log);
+
+    struct FakeKiller(Log, Result<(), String>);
+
+    impl Stoppable for FakeChild {
+        type Killer = FakeKiller;
+
+        fn close_stdin(self) -> FakeKiller {
+            self.0.lock().unwrap().push("close");
+            FakeKiller(self.0, Ok(()))
         }
     }
 
-    fn fake() -> (FakeChild, std::sync::Arc<AtomicU8>) {
-        let kills = std::sync::Arc::new(AtomicU8::new(0));
-        (FakeChild(kills.clone()), kills)
+    impl ForceKill for FakeKiller {
+        fn force_kill(self) -> Result<(), String> {
+            self.0.lock().unwrap().push("kill");
+            self.1
+        }
+    }
+
+    fn fake() -> (FakeChild, Log) {
+        let log = Log::default();
+        (FakeChild(log.clone()), log)
+    }
+
+    const SHORT: Duration = Duration::from_millis(100);
+
+    /// Ends generation 1 once `step` shows up in `log`, as the event loop would.
+    fn end_after(
+        life: &std::sync::Arc<Mutex<Lifecycle<FakeChild>>>,
+        log: &Log,
+        step: &'static str,
+    ) -> std::thread::JoinHandle<()> {
+        let (life, log) = (life.clone(), log.clone());
+        std::thread::spawn(move || {
+            while !log.lock().unwrap().contains(&step) {
+                std::thread::sleep(Duration::from_millis(5));
+            }
+            life.lock().unwrap().ended(1);
+        })
     }
 
     #[test]
@@ -622,7 +730,7 @@ mod tests {
         life.lock().unwrap().start(|_| Ok(fake().0)).unwrap();
         assert!(!life.lock().unwrap().ended(1));
 
-        assert_eq!(stop_lifecycle(&life, Duration::from_millis(200)), Ok(()));
+        assert_eq!(stop_lifecycle(&life, SHORT, SHORT), Ok(()));
 
         let mut spawned = false;
         let started = life.lock().unwrap().start(|_| {
@@ -642,38 +750,77 @@ mod tests {
         life.lock().unwrap().ended(1);
         assert!(!life.lock().unwrap().has_child());
 
-        assert_eq!(stop_lifecycle(&life, Duration::from_millis(200)), Ok(()));
+        assert_eq!(stop_lifecycle(&life, SHORT, SHORT), Ok(()));
 
         assert_eq!(life.lock().unwrap().start(|_| Ok(fake().0)), Ok(None));
         assert!(!life.lock().unwrap().has_child());
     }
 
     #[test]
-    fn stop_waits_for_the_child_it_killed_not_an_earlier_one() {
+    fn stop_closes_stdin_and_never_kills_a_child_that_exits() {
+        let life = std::sync::Arc::new(Mutex::new(Lifecycle::<FakeChild>::default()));
+        let (child, log) = fake();
+        life.lock().unwrap().start(|_| Ok(child)).unwrap();
+        let exits = end_after(&life, &log, "close");
+
+        assert_eq!(stop_lifecycle(&life, Duration::from_secs(5), SHORT), Ok(()));
+
+        exits.join().unwrap();
+        assert_eq!(*log.lock().unwrap(), vec!["close"]);
+    }
+
+    #[test]
+    fn stop_kills_a_child_that_ignores_its_stdin_closing() {
+        let life = std::sync::Arc::new(Mutex::new(Lifecycle::<FakeChild>::default()));
+        let (child, log) = fake();
+        life.lock().unwrap().start(|_| Ok(child)).unwrap();
+        let dies = end_after(&life, &log, "kill");
+
+        let started = Instant::now();
+        assert_eq!(stop_lifecycle(&life, SHORT, Duration::from_secs(5)), Ok(()));
+
+        dies.join().unwrap();
+        assert_eq!(*log.lock().unwrap(), vec!["close", "kill"]);
+        // The kill waited for the grace period first.
+        assert!(started.elapsed() >= SHORT);
+    }
+
+    #[test]
+    fn stop_reports_a_failed_kill_when_the_child_survives() {
+        let life = Mutex::new(Lifecycle::<FakeKillFails>::default());
+        life.lock().unwrap().start(|_| Ok(FakeKillFails)).unwrap();
+
+        let result = stop_lifecycle(&life, SHORT, SHORT);
+
+        assert_eq!(
+            result,
+            Err("cannot stop the backend: access denied".to_string())
+        );
+    }
+
+    struct FakeKillFails;
+
+    impl Stoppable for FakeKillFails {
+        type Killer = FakeKiller;
+
+        fn close_stdin(self) -> FakeKiller {
+            FakeKiller(Log::default(), Err("access denied".to_string()))
+        }
+    }
+
+    #[test]
+    fn stop_waits_for_the_child_it_stopped_not_an_earlier_one() {
         let life = std::sync::Arc::new(Mutex::new(Lifecycle::<FakeChild>::default()));
         // Generation 1 crashed earlier; generation 2 is the live one.
         life.lock().unwrap().start(|_| Ok(fake().0)).unwrap();
         life.lock().unwrap().ended(1);
-        let (child, kills) = fake();
+        let (child, log) = fake();
         life.lock().unwrap().start(|_| Ok(child)).unwrap();
 
         // The stale "generation 1 ended" must not satisfy the wait.
-        let result = stop_lifecycle(&life, Duration::from_millis(150));
+        let result = stop_lifecycle(&life, SHORT, SHORT);
         assert!(result.unwrap_err().contains("did not exit"));
-        assert_eq!(kills.load(Ordering::SeqCst), 1);
-    }
-
-    #[test]
-    fn stop_returns_once_the_killed_generation_ends() {
-        let life = std::sync::Arc::new(Mutex::new(Lifecycle::<FakeChild>::default()));
-        life.lock().unwrap().start(|_| Ok(fake().0)).unwrap();
-        let reader = life.clone();
-        let handle = std::thread::spawn(move || {
-            std::thread::sleep(Duration::from_millis(100));
-            assert!(reader.lock().unwrap().ended(1));
-        });
-        assert_eq!(stop_lifecycle(&life, Duration::from_secs(5)), Ok(()));
-        handle.join().unwrap();
+        assert_eq!(*log.lock().unwrap(), vec!["close", "kill"]);
     }
 
     #[test]
