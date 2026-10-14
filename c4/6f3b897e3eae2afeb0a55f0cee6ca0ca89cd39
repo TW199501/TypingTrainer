@@ -1,0 +1,41 @@
+apps/src/api/desktop.ts
+  s_17f9718f56f12f::t_a6fb774a7da7c3 31-36
+  s_17f9718f56f12f::t_5a33df77b3a8ac 63-64
+apps/src/components/BackendError.test.ts
+  s_17f9718f56f12f::t_c0b8b006596561 1-32
+apps/src/api/desktop.test.ts
+  s_17f9718f56f12f::t_a4d0f74c9cd97a 13,15
+  s_17f9718f56f12f::t_f16fe558657911 161-191
+apps/src/components/BackendError.vue
+  s_17f9718f56f12f::t_c47aa3192a11a9 1-58
+apps/src/App.vue
+  s_17f9718f56f12f::t_46d8ddf8145cda 2,4,9,40-42,48,83-93,102,110-111
+apps/src/i18n/locales/zh-CN.json
+  s_17f9718f56f12f::t_46d8ddf8145cda 15-18
+e2e/settings-layout.spec.ts
+  s_17f9718f56f12f::t_f040c4e10a4f8c 38-39,41-44,46
+apps/src/api/backend.test.ts
+  s_17f9718f56f12f::t_928bc1489c6b59 1-158
+apps/src/i18n/locales/en.json
+  s_17f9718f56f12f::t_46d8ddf8145cda 15-18
+apps/src/api/backend.ts
+  s_17f9718f56f12f::t_816c379d1cb8e4 1-70
+apps/src/i18n/locales/zh-TW.json
+  s_17f9718f56f12f::t_46d8ddf8145cda 15-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c46f3b897e3eae2afeb0a55f0cee6ca0ca89cd39",
+  "prompts": {},
+  "sessions": {
+    "s_17f9718f56f12f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2a55c47-cd6b-48db-b0ab-2b142d09c647",
+        "model": "unknown"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
