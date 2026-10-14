@@ -10,11 +10,11 @@
 
 use std::collections::VecDeque;
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
+use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 
@@ -93,14 +93,157 @@ pub enum TerminatedAction {
     Failed,
 }
 
+/// Tauri event emitted with the base URL after every successful handshake.
+pub const EVENT_READY: &str = "backend://ready";
+/// Tauri event emitted with the reason once the backend has finally failed.
+pub const EVENT_FAILED: &str = "backend://failed";
+
+/// What the web layer is told; the payload is always a plain string.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Announcement {
+    Ready(String),
+    Failed(String),
+}
+
+impl Announcement {
+    pub fn event(&self) -> &'static str {
+        match self {
+            Announcement::Ready(_) => EVENT_READY,
+            Announcement::Failed(_) => EVENT_FAILED,
+        }
+    }
+
+    pub fn payload(&self) -> &str {
+        match self {
+            Announcement::Ready(payload) | Announcement::Failed(payload) => payload,
+        }
+    }
+}
+
+pub fn base_url(port: u16) -> String {
+    format!("http://127.0.0.1:{port}/api")
+}
+
+/// Only a port handshake is announced; a handshake error is not final, since
+/// the process may still be restarted.
+pub fn announcement_for(handshake: &Handshake) -> Option<Announcement> {
+    match handshake {
+        Handshake::Port(port) => Some(Announcement::Ready(base_url(*port))),
+        Handshake::Error(_) => None,
+    }
+}
+
+/// Something that can be killed once; stands in for `CommandChild`.
+pub trait Killable {
+    fn kill(self) -> Result<(), String>;
+}
+
+impl Killable for CommandChild {
+    fn kill(self) -> Result<(), String> {
+        CommandChild::kill(self).map_err(|e| e.to_string())
+    }
+}
+
+/// The child handle and everything that decides whether a child may exist.
+///
+/// `stopping`, the handle and the generation counters live behind one lock so
+/// "stop" and "(re)start" cannot interleave: a start that sees `stopping` never
+/// spawns, and a stop that returns has seen every child that will ever exist.
+pub struct Lifecycle<C> {
+    child: Option<(u64, C)>,
+    stopping: bool,
+    last_started: u64,
+    last_terminated: u64,
+}
+
+impl<C> Default for Lifecycle<C> {
+    fn default() -> Self {
+        Self {
+            child: None,
+            stopping: false,
+            last_started: 0,
+            last_terminated: 0,
+        }
+    }
+}
+
+impl<C> Lifecycle<C> {
+    /// Runs `spawn` (given the new generation) unless a stop was requested.
+    /// `Ok(None)` means the start was refused and `spawn` was not called.
+    pub fn start(
+        &mut self,
+        spawn: impl FnOnce(u64) -> Result<C, String>,
+    ) -> Result<Option<u64>, String> {
+        if self.stopping {
+            return Ok(None);
+        }
+        let generation = self.last_started + 1;
+        let child = spawn(generation)?;
+        self.last_started = generation;
+        self.child = Some((generation, child));
+        Ok(Some(generation))
+    }
+
+    /// Records that generation `generation` ended. Returns whether a stop is
+    /// in progress, in which case nobody should restart.
+    pub fn ended(&mut self, generation: u64) -> bool {
+        self.last_terminated = self.last_terminated.max(generation);
+        if self.stopping {
+            return true;
+        }
+        if matches!(self.child, Some((g, _)) if g == generation) {
+            self.child = None;
+        }
+        false
+    }
+
+    /// Forbids any further start and hands out the current child, if any.
+    pub fn begin_stop(&mut self) -> Option<(u64, C)> {
+        self.stopping = true;
+        self.child.take()
+    }
+
+    #[cfg(test)]
+    pub fn has_child(&self) -> bool {
+        self.child.is_some()
+    }
+
+    pub fn has_terminated(&self, generation: u64) -> bool {
+        self.last_terminated >= generation
+    }
+}
+
+/// Stops the child, then waits until that specific generation has ended.
+pub fn stop_lifecycle<C: Killable>(
+    life: &Mutex<Lifecycle<C>>,
+    timeout: Duration,
+) -> Result<(), String> {
+    let Some((generation, child)) = life.lock().unwrap().begin_stop() else {
+        return Ok(());
+    };
+    // A failed kill usually means the process is already gone; the wait below
+    // still decides whether it really ended.
+    let kill_error = child.kill().err();
+
+    let start = Instant::now();
+    while !life.lock().unwrap().has_terminated(generation) {
+        if start.elapsed() >= timeout {
+            return Err(match kill_error {
+                Some(e) => format!("cannot stop the backend: {e}"),
+                None => format!("the backend did not exit within {} s", timeout.as_secs()),
+            });
+        }
+        std::thread::sleep(POLL_INTERVAL);
+    }
+    Ok(())
+}
+
 #[derive(Default)]
 pub struct BackendState {
     port: Mutex<Option<u16>>,
     error: Mutex<Option<String>>,
-    child: Mutex<Option<CommandChild>>,
-    stopping: AtomicBool,
+    life: Mutex<Lifecycle<CommandChild>>,
     restarts: AtomicU8,
-    terminated: AtomicBool,
     stderr_tail: Mutex<VecDeque<String>>,
 }
 
@@ -134,17 +277,14 @@ impl BackendState {
     fn reset_for_spawn(&self) {
         *self.port.lock().unwrap() = None;
         *self.error.lock().unwrap() = None;
-        self.terminated.store(false, Ordering::SeqCst);
     }
 
-    /// Decides what follows the end of the process and updates the state.
-    fn on_terminated(&self, code: Option<i32>) -> TerminatedAction {
-        self.terminated.store(true, Ordering::SeqCst);
-        if self.stopping.load(Ordering::SeqCst) {
+    /// Decides what follows the end of generation `generation`.
+    fn on_terminated(&self, generation: u64, code: Option<i32>) -> TerminatedAction {
+        if self.life.lock().unwrap().ended(generation) {
             return TerminatedAction::Ignore;
         }
-        // The process is gone; drop its handle and the port it announced.
-        *self.child.lock().unwrap() = None;
+        // The process is gone; drop the port it announced.
         *self.port.lock().unwrap() = None;
 
         if self
@@ -164,6 +304,16 @@ impl BackendState {
             });
         }
         TerminatedAction::Failed
+    }
+
+    fn failure_announcement(&self) -> Announcement {
+        Announcement::Failed(
+            self.error
+                .lock()
+                .unwrap()
+                .clone()
+                .unwrap_or_else(|| "the backend failed".to_string()),
+        )
     }
 }
 
@@ -189,43 +339,35 @@ pub fn wait_for_handshake(state: &BackendState, timeout: Duration) -> Result<u16
 
 /// Stops the sidecar. Having no child is not an error.
 pub fn stop(state: &BackendState) -> Result<(), String> {
-    stop_with_timeout(state, STOP_TIMEOUT)
+    stop_lifecycle(&state.life, STOP_TIMEOUT)
 }
 
-fn stop_with_timeout(state: &BackendState, timeout: Duration) -> Result<(), String> {
-    state.stopping.store(true, Ordering::SeqCst);
-    let Some(child) = state.child.lock().unwrap().take() else {
-        return Ok(());
-    };
-    child
-        .kill()
-        .map_err(|e| format!("cannot stop the backend: {e}"))?;
-
-    let start = Instant::now();
-    while !state.terminated.load(Ordering::SeqCst) {
-        if start.elapsed() >= timeout {
-            return Err(format!(
-                "the backend did not exit within {} s",
-                timeout.as_secs()
-            ));
-        }
-        std::thread::sleep(POLL_INTERVAL);
-    }
-    *state.port.lock().unwrap() = None;
-    Ok(())
+fn emit(app: &AppHandle, announcement: &Announcement) {
+    let _ = app.emit(announcement.event(), announcement.payload());
 }
 
 /// Starts the sidecar and the task that reads its output. On failure the
 /// reason is also stored in the state so `api_base_url` can report it.
 pub fn spawn(app: &AppHandle) -> Result<(), String> {
     let state = app.state::<BackendState>();
-    state.reset_for_spawn();
-    spawn_inner(app, &state).inspect_err(|reason| {
+    start_backend(app, &state).inspect_err(|reason| {
         *state.error.lock().unwrap() = Some(reason.clone());
     })
 }
 
-fn spawn_inner(app: &AppHandle, state: &BackendState) -> Result<(), String> {
+/// Spawns while holding the lifecycle lock, so a concurrent `stop` either
+/// runs before (and the start is refused) or after (and kills this child).
+fn start_backend(app: &AppHandle, state: &BackendState) -> Result<(), String> {
+    state.reset_for_spawn();
+    state
+        .life
+        .lock()
+        .unwrap()
+        .start(|generation| launch(app, generation))
+        .map(|_| ())
+}
+
+fn launch(app: &AppHandle, generation: u64) -> Result<CommandChild, String> {
     let model_dir = crate::resolve_model_dir(app)?;
     let db_path: PathBuf = crate::local_data_dir(app)?.join("typelab.db");
 
@@ -241,21 +383,28 @@ fn spawn_inner(app: &AppHandle, state: &BackendState) -> Result<(), String> {
         .env("TYPELAB_MODEL_DIR", &model_dir)
         .spawn()
         .map_err(|e| format!("cannot start the backend: {e}"))?;
-    *state.child.lock().unwrap() = Some(child);
 
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         let state = app.state::<BackendState>();
         let mut stdout = LineBuffer::default();
         let mut stderr = LineBuffer::default();
+        let handle_stdout_line = |line: String| {
+            if let Some(handshake) = parse_handshake(&line) {
+                let announcement = announcement_for(&handshake);
+                state.record_handshake(handshake);
+                if let Some(announcement) = announcement {
+                    emit(&app, &announcement);
+                }
+            }
+        };
         while let Some(event) = rx.recv().await {
             match event {
                 CommandEvent::Stdout(chunk) => {
-                    for line in stdout.push(&chunk) {
-                        if let Some(handshake) = parse_handshake(&line) {
-                            state.record_handshake(handshake);
-                        }
-                    }
+                    stdout
+                        .push(&chunk)
+                        .into_iter()
+                        .for_each(&handle_stdout_line);
                 }
                 CommandEvent::Stderr(chunk) => {
                     for line in stderr.push(&chunk) {
@@ -263,16 +412,18 @@ fn spawn_inner(app: &AppHandle, state: &BackendState) -> Result<(), String> {
                     }
                 }
                 CommandEvent::Terminated(payload) => {
-                    if let Some(handshake) = stdout.finish().as_deref().and_then(parse_handshake) {
-                        state.record_handshake(handshake);
-                    }
+                    stdout.finish().into_iter().for_each(&handle_stdout_line);
                     if let Some(line) = stderr.finish() {
                         state.record_stderr(line);
                     }
-                    if state.on_terminated(payload.code) == TerminatedAction::Restart {
-                        state.reset_for_spawn();
-                        if let Err(reason) = spawn_inner(&app, &state) {
-                            *state.error.lock().unwrap() = Some(reason);
+                    match state.on_terminated(generation, payload.code) {
+                        TerminatedAction::Ignore => {}
+                        TerminatedAction::Failed => emit(&app, &state.failure_announcement()),
+                        TerminatedAction::Restart => {
+                            if let Err(reason) = start_backend(&app, &state) {
+                                *state.error.lock().unwrap() = Some(reason);
+                                emit(&app, &state.failure_announcement());
+                            }
                         }
                     }
                     break;
@@ -281,15 +432,14 @@ fn spawn_inner(app: &AppHandle, state: &BackendState) -> Result<(), String> {
             }
         }
     });
-    Ok(())
+    Ok(child)
 }
 
 /// Waits for the handshake off the async runtime's worker threads.
 pub async fn api_base_url(app: AppHandle) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<BackendState>();
-        wait_for_handshake(&state, HANDSHAKE_TIMEOUT)
-            .map(|port| format!("http://127.0.0.1:{port}/api"))
+        wait_for_handshake(&state, HANDSHAKE_TIMEOUT).map(base_url)
     })
     .await
     .map_err(|e| format!("backend wait task failed: {e}"))?
@@ -406,13 +556,13 @@ mod tests {
     fn first_unexpected_exit_restarts_and_the_second_fails_with_stderr() {
         let state = BackendState::default();
         state.record_handshake(Handshake::Port(5123));
-        assert_eq!(state.on_terminated(Some(1)), TerminatedAction::Restart);
+        assert_eq!(state.on_terminated(1, Some(1)), TerminatedAction::Restart);
         assert_eq!(*state.port.lock().unwrap(), None);
 
         state.reset_for_spawn();
         state.record_stderr("Unhandled exception: boom".to_string());
         state.record_stderr(String::new());
-        assert_eq!(state.on_terminated(Some(134)), TerminatedAction::Failed);
+        assert_eq!(state.on_terminated(2, Some(134)), TerminatedAction::Failed);
         assert_eq!(
             wait_for_handshake(&state, Duration::from_millis(10)),
             Err("backend exited unexpectedly (code 134): Unhandled exception: boom".to_string())
@@ -424,7 +574,7 @@ mod tests {
         let state = BackendState::default();
         state.restarts.store(1, Ordering::SeqCst);
         state.record_handshake(Handshake::Error("database is locked".to_string()));
-        assert_eq!(state.on_terminated(Some(1)), TerminatedAction::Failed);
+        assert_eq!(state.on_terminated(1, Some(1)), TerminatedAction::Failed);
         assert_eq!(
             wait_for_handshake(&state, Duration::from_millis(10)),
             Err("database is locked".to_string())
@@ -434,9 +584,9 @@ mod tests {
     #[test]
     fn exit_while_stopping_is_not_restarted() {
         let state = BackendState::default();
-        state.stopping.store(true, Ordering::SeqCst);
-        assert_eq!(state.on_terminated(Some(0)), TerminatedAction::Ignore);
-        assert!(state.terminated.load(Ordering::SeqCst));
+        assert_eq!(stop(&state), Ok(()));
+        assert_eq!(state.on_terminated(1, Some(0)), TerminatedAction::Ignore);
+        assert!(state.life.lock().unwrap().has_terminated(1));
     }
 
     #[test]
@@ -448,5 +598,112 @@ mod tests {
         let tail = state.stderr_tail.lock().unwrap();
         assert_eq!(tail.len(), 50);
         assert_eq!(tail.front().map(String::as_str), Some("line 30"));
+    }
+
+    /// Stand-in for `CommandChild`; `kill` records that it happened.
+    struct FakeChild(std::sync::Arc<AtomicU8>);
+
+    impl Killable for FakeChild {
+        fn kill(self) -> Result<(), String> {
+            self.0.fetch_add(1, Ordering::SeqCst);
+            Ok(())
+        }
+    }
+
+    fn fake() -> (FakeChild, std::sync::Arc<AtomicU8>) {
+        let kills = std::sync::Arc::new(AtomicU8::new(0));
+        (FakeChild(kills.clone()), kills)
+    }
+
+    #[test]
+    fn stop_after_crash_before_restart_blocks_the_restart() {
+        // Race A: the process died and was judged "restart", then stop ran.
+        let life = Mutex::new(Lifecycle::<FakeChild>::default());
+        life.lock().unwrap().start(|_| Ok(fake().0)).unwrap();
+        assert!(!life.lock().unwrap().ended(1));
+
+        assert_eq!(stop_lifecycle(&life, Duration::from_millis(200)), Ok(()));
+
+        let mut spawned = false;
+        let started = life.lock().unwrap().start(|_| {
+            spawned = true;
+            Ok(fake().0)
+        });
+        assert_eq!(started, Ok(None));
+        assert!(!spawned);
+        assert!(!life.lock().unwrap().has_child());
+    }
+
+    #[test]
+    fn stop_between_clear_and_store_blocks_the_restart() {
+        // Race B: the child slot is empty while the restart is pending.
+        let life = Mutex::new(Lifecycle::<FakeChild>::default());
+        life.lock().unwrap().start(|_| Ok(fake().0)).unwrap();
+        life.lock().unwrap().ended(1);
+        assert!(!life.lock().unwrap().has_child());
+
+        assert_eq!(stop_lifecycle(&life, Duration::from_millis(200)), Ok(()));
+
+        assert_eq!(life.lock().unwrap().start(|_| Ok(fake().0)), Ok(None));
+        assert!(!life.lock().unwrap().has_child());
+    }
+
+    #[test]
+    fn stop_waits_for_the_child_it_killed_not_an_earlier_one() {
+        let life = std::sync::Arc::new(Mutex::new(Lifecycle::<FakeChild>::default()));
+        // Generation 1 crashed earlier; generation 2 is the live one.
+        life.lock().unwrap().start(|_| Ok(fake().0)).unwrap();
+        life.lock().unwrap().ended(1);
+        let (child, kills) = fake();
+        life.lock().unwrap().start(|_| Ok(child)).unwrap();
+
+        // The stale "generation 1 ended" must not satisfy the wait.
+        let result = stop_lifecycle(&life, Duration::from_millis(150));
+        assert!(result.unwrap_err().contains("did not exit"));
+        assert_eq!(kills.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn stop_returns_once_the_killed_generation_ends() {
+        let life = std::sync::Arc::new(Mutex::new(Lifecycle::<FakeChild>::default()));
+        life.lock().unwrap().start(|_| Ok(fake().0)).unwrap();
+        let reader = life.clone();
+        let handle = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(100));
+            assert!(reader.lock().unwrap().ended(1));
+        });
+        assert_eq!(stop_lifecycle(&life, Duration::from_secs(5)), Ok(()));
+        handle.join().unwrap();
+    }
+
+    #[test]
+    fn announces_the_base_url_on_a_port_handshake_only() {
+        assert_eq!(
+            announcement_for(&Handshake::Port(5123)),
+            Some(Announcement::Ready("http://127.0.0.1:5123/api".to_string()))
+        );
+        assert_eq!(announcement_for(&Handshake::Error("x".to_string())), None);
+    }
+
+    #[test]
+    fn announcement_event_names_and_payloads() {
+        let ready = Announcement::Ready("http://127.0.0.1:1/api".to_string());
+        assert_eq!(ready.event(), "backend://ready");
+        assert_eq!(ready.payload(), "http://127.0.0.1:1/api");
+        let failed = Announcement::Failed("boom".to_string());
+        assert_eq!(failed.event(), "backend://failed");
+        assert_eq!(failed.payload(), "boom");
+    }
+
+    #[test]
+    fn final_failure_announces_the_stored_reason() {
+        let state = BackendState::default();
+        state.restarts.store(1, Ordering::SeqCst);
+        state.record_stderr("boom".to_string());
+        assert_eq!(state.on_terminated(1, Some(2)), TerminatedAction::Failed);
+        assert_eq!(
+            state.failure_announcement(),
+            Announcement::Failed("backend exited unexpectedly (code 2): boom".to_string())
+        );
     }
 }
