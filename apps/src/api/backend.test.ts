@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AxiosRequestConfig } from 'axios'
+import { createServer, type Server } from 'node:http'
+import { createServer as createTcpServer, type AddressInfo, type Socket } from 'node:net'
 
 /**
  * Reaching the bundled API.
@@ -166,5 +168,103 @@ describe('stopBackend', () => {
     await stopBackend()
 
     expect(invoke).not.toHaveBeenCalled()
+  })
+})
+
+/**
+ * Real requests over loopback, the way the webview reaches the sidecar. The
+ * fake adapter is swapped back for axios' own so connection errors and the
+ * timeout come from the network stack, not from the test.
+ */
+describe('requests across a sidecar restart', () => {
+  const servers: { close: (cb: () => void) => void }[] = []
+
+  afterEach(async () => {
+    await Promise.all(servers.splice(0).map((s) => new Promise<void>((r) => s.close(() => r()))))
+  })
+
+  /** An API stand-in that answers every request with the port it listens on. */
+  async function apiOn(): Promise<number> {
+    const server: Server = createServer((req, res) => {
+      res.writeHead(200, {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json',
+      })
+      res.end(JSON.stringify({ port: (server.address() as AddressInfo).port, url: req.url }))
+    })
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', r))
+    servers.push(server)
+    return (server.address() as AddressInfo).port
+  }
+
+  /** A port nothing listens on, as while the old process is gone. */
+  async function closedPort(): Promise<number> {
+    const probe = createTcpServer()
+    await new Promise<void>((r) => probe.listen(0, '127.0.0.1', r))
+    const { port } = probe.address() as AddressInfo
+    await new Promise<void>((r) => probe.close(() => r()))
+    return port
+  }
+
+  /** Accepts connections and never answers, as a process stuck shutting down. */
+  async function silentPort(): Promise<number> {
+    const sockets: Socket[] = []
+    const server = createTcpServer((socket) => sockets.push(socket))
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', r))
+    // close() waits for open connections, and this one never ends by itself.
+    servers.push({
+      close: (cb) => {
+        sockets.forEach((socket) => socket.destroy())
+        server.close(cb)
+      },
+    })
+    return (server.address() as AddressInfo).port
+  }
+
+  async function loadReal(firstPort: number) {
+    invoke.mockResolvedValue(`http://127.0.0.1:${firstPort}/api`)
+    const loaded = await load(true)
+    loaded.http.defaults.adapter = ['xhr', 'http', 'fetch']
+    return loaded
+  }
+
+  it('sends the next request to the port backend://ready announced', async () => {
+    const before = await apiOn()
+    const after = await apiOn()
+    const { initBackend, http } = await loadReal(before)
+    expect(await initBackend()).toEqual({ ok: true })
+
+    listeners.get('backend://ready')!({ payload: `http://127.0.0.1:${after}/api` })
+    const { data } = await http.get('/categories')
+
+    expect(data).toEqual({ port: after, url: '/api/categories' })
+  })
+
+  it('rejects with an ApiError at once while nothing listens on the port', async () => {
+    const live = await apiOn()
+    const { initBackend, http } = await loadReal(live)
+    await initBackend()
+    http.defaults.baseURL = `http://127.0.0.1:${await closedPort()}/api`
+    const { ApiError } = await import('./http')
+
+    // jsdom also prints the refused connection to stderr; that is expected.
+    const started = Date.now()
+    const error = await http.get('/categories').catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect(Date.now() - started).toBeLessThan(http.defaults.timeout!)
+  })
+
+  it('rejects with an ApiError at the timeout when the port never answers', async () => {
+    const live = await apiOn()
+    const { initBackend, http } = await loadReal(live)
+    await initBackend()
+    http.defaults.baseURL = `http://127.0.0.1:${await silentPort()}/api`
+    const { ApiError } = await import('./http')
+
+    const error = await http.get('/categories', { timeout: 300 }).catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect((error as Error).message).toContain('timeout')
   })
 })
