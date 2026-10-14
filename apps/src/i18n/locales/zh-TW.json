@@ -12,6 +12,27 @@
     "pending": "待判讀",
     "dash": "—"
   },
+  "backend": {
+    "starting": "正在啟動 TypeLab…",
+    "unavailable": "TypeLab 無法連上本機服務",
+    "restart": "重新啟動 TypeLab",
+    "update": {
+      "checking": "正在檢查更新…",
+      "none": "目前沒有可用的更新。",
+      "found": "有新版本 {version}。",
+      "install": "安裝更新",
+      "installing": "安裝中… {percent}%",
+      "checkFailed": "檢查更新失敗：{reason}",
+      "installFailed": "更新失敗：{reason}"
+    }
+  },
+  "update": {
+    "installFailedRestarting": "更新安裝失敗，正在重新啟動 TypeLab…",
+    "lastFailed": "上次安裝 v{version} 失敗。",
+    "lastFailedReason": "上次安裝 v{version} 失敗：{reason}",
+    "reopenManually": "請手動重新開啟 TypeLab。",
+    "retry": "重試"
+  },
   "nav": {
     "groups": {
       "practice": "練習",

@@ -26,6 +26,9 @@ serde_json = "1"
 tauri-plugin-updater = "2"
 # Supplies `relaunch`, which the installer needs after a successful update.
 tauri-plugin-process = "2"
+# Launches the bundled API sidecar. Spawned from Rust only; no `shell:*`
+# capability is granted, so the web layer cannot execute processes.
+tauri-plugin-shell = "2"
 
 [features]
 # Used by `tauri dev`/`tauri build` to strip the devtools from release bundles.

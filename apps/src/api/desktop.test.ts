@@ -10,7 +10,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const relaunch = vi.fn()
 const check = vi.fn()
+const invoke = vi.fn()
 
+vi.mock('@tauri-apps/api/core', () => ({ invoke }))
 vi.mock('@tauri-apps/plugin-updater', () => ({ check }))
 vi.mock('@tauri-apps/plugin-process', () => ({ relaunch }))
 
@@ -25,19 +27,31 @@ async function importDesktop(inShell: boolean) {
   return import('./desktop')
 }
 
+/** Steps the fake update and the backend stop record, in order. */
+const steps: string[] = []
+
 /** Minimal stand-in for the plugin's Update object. */
 function fakeUpdate(events: { event: string; data: Record<string, number> }[]) {
   return {
     version: '1.2.3',
     body: 'Fixes the thing',
-    downloadAndInstall: vi.fn(async (onEvent: (e: unknown) => void) => {
+    download: vi.fn(async (onEvent: (e: unknown) => void) => {
       for (const e of events) onEvent(e)
+      steps.push('downloaded')
+    }),
+    install: vi.fn(async () => {
+      steps.push('installed')
     }),
   }
 }
 
 beforeEach(() => {
+  localStorage.clear()
   vi.clearAllMocks()
+  steps.length = 0
+  invoke.mockImplementation(async (cmd: string) => {
+    steps.push(cmd)
+  })
 })
 
 afterEach(() => {
@@ -154,5 +168,220 @@ describe('install progress', () => {
     // Only reached on macOS and Linux; on Windows the installer takes over and
     // the process is gone before this line.
     expect(relaunch).toHaveBeenCalledOnce()
+  })
+})
+
+describe('stopping the backend before an update', () => {
+  it('stops the backend after the download and before the install', async () => {
+    check.mockResolvedValue(fakeUpdate([]))
+    const { checkDesktopUpdate } = await importDesktop(true)
+    const found = await checkDesktopUpdate()
+
+    await found!.install(() => {})
+
+    // The installer replaces files the running API holds open, so it must be
+    // gone first; a download that fails must leave it running.
+    expect(steps).toEqual(['downloaded', 'stop_backend', 'installed'])
+  })
+
+  it('leaves the backend running when the download fails', async () => {
+    const update = fakeUpdate([])
+    update.download.mockRejectedValue(new Error('signature mismatch'))
+    check.mockResolvedValue(update)
+    const { checkDesktopUpdate } = await importDesktop(true)
+    const found = await checkDesktopUpdate()
+
+    await expect(found!.install(() => {})).rejects.toThrow('signature mismatch')
+
+    expect(invoke).not.toHaveBeenCalled()
+    expect(update.install).not.toHaveBeenCalled()
+  })
+
+  it('still installs when stop_backend fails', async () => {
+    const update = fakeUpdate([])
+    check.mockResolvedValue(update)
+    invoke.mockRejectedValue('the backend did not exit within 7 s')
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { checkDesktopUpdate } = await importDesktop(true)
+    const found = await checkDesktopUpdate()
+
+    await found!.install(() => {})
+
+    expect(update.install).toHaveBeenCalledOnce()
+    expect(relaunch).toHaveBeenCalledOnce()
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
+  })
+})
+
+describe('an install that fails after the backend was stopped', () => {
+  const KEY = 'typelab.update.failedVersion'
+
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  async function failingInstall() {
+    const update = fakeUpdate([])
+    update.install.mockRejectedValue(new Error('disk full'))
+    check.mockResolvedValue(update)
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const desktop = await importDesktop(true)
+    const found = await desktop.checkDesktopUpdate()
+    return { desktop, found: found!, error }
+  }
+
+  it('relaunches the app, logging the reason first', async () => {
+    const { desktop, found, error } = await failingInstall()
+
+    await expect(found.install(() => {})).rejects.toBeInstanceOf(desktop.InstallFailedRestartingError)
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('TypeLab update'), expect.any(Error))
+    expect(relaunch).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(2000)
+
+    expect(relaunch).toHaveBeenCalledOnce()
+    error.mockRestore()
+  })
+
+  it('remembers the failed version before relaunching', async () => {
+    const { found, error } = await failingInstall()
+
+    await expect(found.install(() => {})).rejects.toThrow('disk full')
+
+    expect(JSON.parse(localStorage.getItem(KEY)!).version).toBe('1.2.3')
+    expect(relaunch).not.toHaveBeenCalled()
+    error.mockRestore()
+  })
+
+  it('stores the reason with the version, in full', async () => {
+    const long = 'x'.repeat(500)
+    const update = fakeUpdate([])
+    update.install.mockRejectedValue(new Error(long))
+    check.mockResolvedValue(update)
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const desktop = await importDesktop(true)
+    const found = await desktop.checkDesktopUpdate()
+
+    await expect(found!.install(() => {})).rejects.toThrow()
+
+    const marker = JSON.parse(localStorage.getItem(KEY)!)
+    expect(marker.version).toBe('1.2.3')
+    expect(marker.reason).toBe(long)
+    expect(typeof marker.at).toBe('string')
+    error.mockRestore()
+  })
+
+  it('exposes a truncated reason for display after the relaunch', async () => {
+    localStorage.setItem(KEY, JSON.stringify({ version: '1.2.3', reason: 'y'.repeat(500), at: 'now' }))
+    check.mockResolvedValue(fakeUpdate([]))
+    const { checkDesktopUpdate } = await importDesktop(true)
+
+    const found = await checkDesktopUpdate()
+
+    expect(found?.previouslyFailed).toBe(true)
+    expect(found?.previousFailureReason).toBe(`${'y'.repeat(160)}…`)
+    expect(JSON.parse(localStorage.getItem(KEY)!).reason).toHaveLength(500)
+  })
+
+  it('keeps a short reason as is', async () => {
+    localStorage.setItem(KEY, JSON.stringify({ version: '1.2.3', reason: 'disk full', at: 'now' }))
+    check.mockResolvedValue(fakeUpdate([]))
+    const { checkDesktopUpdate } = await importDesktop(true)
+
+    expect((await checkDesktopUpdate())?.previousFailureReason).toBe('disk full')
+  })
+
+  it('still recognises the legacy plain-string marker', async () => {
+    localStorage.setItem(KEY, '1.2.3')
+    check.mockResolvedValue(fakeUpdate([]))
+    const { checkDesktopUpdate } = await importDesktop(true)
+
+    const found = await checkDesktopUpdate()
+
+    expect(found?.previouslyFailed).toBe(true)
+    expect(found?.previousFailureReason).toBeNull()
+  })
+
+  it('clears a JSON marker for a different version', async () => {
+    localStorage.setItem(KEY, JSON.stringify({ version: '1.0.0', reason: 'r', at: 'now' }))
+    check.mockResolvedValue(fakeUpdate([]))
+    const { checkDesktopUpdate } = await importDesktop(true)
+
+    expect((await checkDesktopUpdate())?.previouslyFailed).toBe(false)
+    expect(localStorage.getItem(KEY)).toBeNull()
+  })
+
+  it('reports a rejected relaunch through the error and keeps the marker', async () => {
+    const { desktop, found, error } = await failingInstall()
+    relaunch.mockRejectedValueOnce(new Error('no relaunch'))
+
+    const failure = await found.install(() => {}).catch((e) => e)
+    expect(failure).toBeInstanceOf(desktop.InstallFailedRestartingError)
+    let settled = false
+    failure.relaunchFailed.then(() => (settled = true))
+    await vi.advanceTimersByTimeAsync(100)
+    expect(settled).toBe(false)
+    await vi.advanceTimersByTimeAsync(2000)
+
+    expect(settled).toBe(true)
+    expect(localStorage.getItem(KEY)).not.toBeNull()
+    error.mockRestore()
+  })
+
+  it('does not relaunch or remember anything when the download fails', async () => {
+    const update = fakeUpdate([])
+    update.download.mockRejectedValue(new Error('signature mismatch'))
+    check.mockResolvedValue(update)
+    const { checkDesktopUpdate } = await importDesktop(true)
+    const found = await checkDesktopUpdate()
+
+    await expect(found!.install(() => {})).rejects.toThrow('signature mismatch')
+    await vi.advanceTimersByTimeAsync(5000)
+
+    expect(relaunch).not.toHaveBeenCalled()
+    expect(localStorage.getItem(KEY)).toBeNull()
+  })
+
+  it('flags the same version after the relaunch and never installs by itself', async () => {
+    localStorage.setItem(KEY, '1.2.3')
+    const update = fakeUpdate([])
+    check.mockResolvedValue(update)
+    const { checkDesktopUpdate } = await importDesktop(true)
+
+    const found = await checkDesktopUpdate()
+
+    expect(found?.previouslyFailed).toBe(true)
+    expect(update.download).not.toHaveBeenCalled()
+    expect(update.install).not.toHaveBeenCalled()
+  })
+
+  it('clears the marker when a different version turns up or none is left', async () => {
+    localStorage.setItem(KEY, '1.0.0')
+    check.mockResolvedValue(fakeUpdate([]))
+    let desktop = await importDesktop(true)
+
+    expect((await desktop.checkDesktopUpdate())?.previouslyFailed).toBe(false)
+    expect(localStorage.getItem(KEY)).toBeNull()
+
+    localStorage.setItem(KEY, '1.2.3')
+    check.mockResolvedValue(null)
+    desktop = await importDesktop(true)
+    await desktop.checkDesktopUpdate()
+    expect(localStorage.getItem(KEY)).toBeNull()
+  })
+
+  it('clears the marker after a successful install', async () => {
+    localStorage.setItem(KEY, '1.2.3')
+    check.mockResolvedValue(fakeUpdate([]))
+    const { checkDesktopUpdate } = await importDesktop(true)
+    const found = await checkDesktopUpdate()
+
+    await found!.install(() => {})
+
+    expect(localStorage.getItem(KEY)).toBeNull()
   })
 })

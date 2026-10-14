@@ -15,6 +15,9 @@ coverage
 target
 src-tauri/gen/schemas
 
+# Sidecar executables, built by scripts/build-sidecar.mjs
+src-tauri/binaries/
+
 # .NET
 server/**/bin/
 server/**/obj/
