@@ -25,6 +25,7 @@
     "tauri": "tauri",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build",
+    "sidecar:build": "node scripts/build-sidecar.mjs",
     "api:dev": "dotnet run --project server/TypeLab.Api --launch-profile https",
     "db:schema": "node scripts/export-schema.mjs",
     "docker:up": "docker compose -f docker/docker-compose.yml up --build -d",

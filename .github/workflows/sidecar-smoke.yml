@@ -1,0 +1,64 @@
+name: Sidecar smoke
+
+# Publishes the API as a per-platform single-file sidecar and starts it, the
+# way the desktop shell does, on all three desktop platforms.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'server/**'
+      - 'scripts/build-sidecar.mjs'
+      - 'scripts/smoke-sidecar.mjs'
+      - '.github/workflows/sidecar-smoke.yml'
+
+jobs:
+  smoke:
+    name: smoke (${{ matrix.triple }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            triple: x86_64-pc-windows-msvc
+          - os: ubuntu-latest
+            triple: x86_64-unknown-linux-gnu
+          - os: macos-latest
+            triple: universal-apple-darwin
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build sidecar
+        env:
+          TAURI_ENV_TARGET_TRIPLE: ${{ matrix.triple }}
+        run: npm run sidecar:build
+
+      - name: Smoke test
+        env:
+          TAURI_ENV_TARGET_TRIPLE: ${{ matrix.triple }}
+        run: node scripts/smoke-sidecar.mjs
+
+      - name: Check both architectures are present
+        if: runner.os == 'macOS'
+        run: |
+          archs="$(lipo -archs "src-tauri/binaries/typelab-api-${{ matrix.triple }}")"
+          echo "archs: $archs"
+          case "$archs" in *arm64*) ;; *) echo "::error::arm64 slice missing"; exit 1 ;; esac
+          case "$archs" in *x86_64*) ;; *) echo "::error::x86_64 slice missing"; exit 1 ;; esac
+
+      - name: Smoke test under Rosetta (x86_64)
+        if: runner.os == 'macOS'
+        run: |
+          softwareupdate --install-rosetta --agree-to-license || true
+          node scripts/smoke-sidecar.mjs "src-tauri/binaries/typelab-api-${{ matrix.triple }}" -- arch -x86_64
