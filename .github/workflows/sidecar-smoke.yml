@@ -60,5 +60,9 @@ jobs:
       - name: Smoke test under Rosetta (x86_64)
         if: runner.os == 'macOS'
         run: |
-          softwareupdate --install-rosetta --agree-to-license || true
+          sudo softwareupdate --install-rosetta --agree-to-license
+          if ! arch -x86_64 /usr/bin/true; then
+            echo "::error::Rosetta is not available, so the x86_64 slice cannot be run"
+            exit 1
+          fi
           node scripts/smoke-sidecar.mjs "src-tauri/binaries/typelab-api-${{ matrix.triple }}" -- arch -x86_64
