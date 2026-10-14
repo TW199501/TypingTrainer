@@ -1,0 +1,34 @@
+server/TypeLab.Api.Tests/SqlSugarSetupTests.cs
+  s_17f9718f56f12f::t_e56bdd679dc83e 1-58
+server/TypeLab.Api.Tests/SidecarHostTests.cs
+  s_17f9718f56f12f::t_5c7fafe81cf31f 1-133,137-225
+  s_17f9718f56f12f::t_5650532294a196 134-136
+server/TypeLab.Api/appsettings.json
+  s_17f9718f56f12f::t_e909dc46504dbe 22
+server/TypeLab.Api/Data/LocalUserSeeds.cs
+  s_17f9718f56f12f::t_e909dc46504dbe 1-25
+server/TypeLab.Api/Data/SqlSugarSetup.cs
+  s_17f9718f56f12f::t_e909dc46504dbe 1,35,37-38,60-95,102
+server/TypeLab.Api.Tests/LocalUserSeedsTests.cs
+  s_17f9718f56f12f::t_4b12317ea5d537 1-24
+server/TypeLab.Api/Program.cs
+  s_17f9718f56f12f::t_e909dc46504dbe 1-2,12-22,24,53-58,80
+server/TypeLab.Api/TypeLab.Api.csproj
+  s_17f9718f56f12f::t_9fe8de6c1ce578 11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a9b1a5802b6f648c212e05def893061b526c28b7",
+  "prompts": {},
+  "sessions": {
+    "s_17f9718f56f12f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2a55c47-cd6b-48db-b0ab-2b142d09c647",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
