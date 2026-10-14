@@ -1,0 +1,3 @@
+# Store and check out text as LF everywhere. Without this a global
+# core.autocrlf=true checks a worktree out as CRLF and Prettier rejects it.
+* text=auto eol=lf

@@ -5,7 +5,8 @@ name: Release
 # records a version — without this, a release has nothing to download.
 
 on:
-  # Covers a tag pushed by a person.
+  # A tag pushed by a person on the release branch. A tag pushed with
+  # GITHUB_TOKEN triggers nothing, so no workflow tags on anyone's behalf.
   push:
     tags: ['v*']
 
@@ -17,18 +18,39 @@ on:
         required: true
         type: string
 
-  # How version.yml reaches this workflow. A tag pushed with GITHUB_TOKEN does
-  # not trigger anything — GitHub suppresses it to avoid recursive runs — so the
-  # auto-version job has to call this directly instead of relying on `push`.
-  workflow_call:
-    inputs:
-      tag:
-        required: true
-        type: string
-
 jobs:
+  # Every other job waits on this. A tag on an untested dev commit, or one that
+  # does not match the version in package.json, stops here before anything is
+  # built or published.
+  verify:
+    name: verify tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          # Full history, so origin/release is there to compare against.
+          fetch-depth: 0
+
+      - name: Tag must match the version and sit on release
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "v$version" != "$TAG" ]; then
+            echo "::error::tag $TAG does not match package.json version $version"
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$(git rev-parse "$TAG^{commit}")" origin/release; then
+            echo "::error::$TAG is not on release. Fast-forward release first, then tag the commit it points to."
+            exit 1
+          fi
+
   desktop:
     name: desktop (${{ matrix.platform }})
+    needs: verify
     permissions:
       contents: write
     strategy:
@@ -81,8 +103,7 @@ jobs:
       - run: npm ci
 
       # Fails loudly and immediately when the key did not reach this workflow.
-      # It arrives empty unless the caller passes `secrets: inherit`, and a
-      # build that gets an empty key spends ten minutes compiling before
+      # A build that gets an empty key spends ten minutes compiling before
       # reporting something that reads like a malformed key rather than a
       # missing one.
       - name: Require the signing key
@@ -91,7 +112,7 @@ jobs:
           KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: |
           if [ -z "$KEY" ]; then
-            echo "::error::TAURI_SIGNING_PRIVATE_KEY is empty. A called workflow only receives secrets when the caller passes 'secrets: inherit'."
+            echo "::error::TAURI_SIGNING_PRIVATE_KEY is empty. Check the repository secrets."
             exit 1
           fi
           echo "Signing key present."
@@ -206,7 +227,7 @@ jobs:
   # seeing updates. Assert the keys rather than trusting the colours.
   updater-manifest:
     name: verify updater manifest
-    needs: desktop
+    needs: [verify, desktop]
     runs-on: ubuntu-latest
     permissions:
       # write, not read: the release is still a draft at this point, and a
@@ -237,6 +258,7 @@ jobs:
 
   docker:
     name: container images
+    needs: verify
     runs-on: ubuntu-latest
     permissions:
       contents: read

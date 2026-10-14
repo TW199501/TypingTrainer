@@ -1,8 +1,10 @@
 name: CI
 
 on:
+  # PRs target dev; release is fast-forwarded from a tested dev, and main only
+  # from release, so main runs nothing of its own.
   push:
-    branches: [main]
+    branches: [dev, release, 'hotfix/**']
   pull_request:
 
 jobs:
@@ -85,3 +87,24 @@ jobs:
 
       - name: Tests
         run: dotnet test server/TypeLab.slnx --no-build --configuration Release --verbosity normal
+
+  # The one check branch protection requires. It fails when any job above
+  # failed, was cancelled or was skipped, so adding a job only means adding it
+  # to `needs`.
+  ci:
+    name: ci
+    if: always()
+    needs: [web, e2e, server]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every job passed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "results: $RESULTS"
+          for result in $RESULTS; do
+            if [ "$result" != "success" ]; then
+              echo "::error::a job ended with $result"
+              exit 1
+            fi
+          done
