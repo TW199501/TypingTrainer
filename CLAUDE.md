@@ -4,6 +4,8 @@ Things that cost real time to discover. `README.md` covers how to run the
 project; this file covers what is not obvious from reading the code, and what
 has already gone wrong once.
 
+動手前先讀 BRANCHING.md，依 elf-team-rule 規範操作分支。
+
 ## Before you start
 
 ```bash
