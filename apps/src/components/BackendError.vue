@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { IS_DESKTOP, checkDesktopUpdate, type DesktopUpdate } from '@/api/desktop'
 
 defineProps<{ reason: string }>()
+/** True while an update installs, false if it fails; the app keeps this screen meanwhile. */
+const emit = defineEmits<{ installing: [active: boolean] }>()
 
 const { t } = useI18n()
 
@@ -38,12 +40,14 @@ async function install() {
   const state = update.value
   if (state?.kind !== 'found') return
   update.value = { kind: 'installing', update: state.update, percent: 0 }
+  emit('installing', true)
   try {
     await state.update.install((percent) => {
       update.value = { kind: 'installing', update: state.update, percent }
     })
   } catch (e) {
     update.value = { kind: 'installFailed', reason: describe(e) }
+    emit('installing', false)
   }
 }
 

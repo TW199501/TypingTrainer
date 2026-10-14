@@ -2,7 +2,7 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { initBackend, onBackendFailed, onBackendReady } from '@/api/backend'
+import { checkHealth, initBackend, onBackendFailed, onBackendReady } from '@/api/backend'
 import { IS_DESKTOP } from '@/api/desktop'
 import { useDictionaryStore } from '@/stores/dictionary'
 import { useLibraryStore } from '@/stores/library'
@@ -46,6 +46,8 @@ const backendError = ref<string | null>(null)
 const ready = ref(false)
 /** Set by backend://failed: the shell gave up, so the error stays. */
 let backendFailed = false
+/** An update is installing from the error screen; it keeps the screen until it ends. */
+let updateInstalling = false
 
 function goPractice() {
   if (route.name !== 'practice') router.push({ name: 'practice' })
@@ -109,9 +111,13 @@ onMounted(async () => {
     backendError.value = reason
   })
   // A handshake announced after the check failed (e.g. a start slower than the
-  // wait) means the API is up after all.
-  stopWatchingReady = onBackendReady(() => {
-    if (backendError.value && !backendFailed) start()
+  // wait) may mean the API is up after all; /health decides.
+  stopWatchingReady = onBackendReady(async () => {
+    if (!backendError.value || backendFailed || updateInstalling) return
+    const health = await checkHealth()
+    if (ready.value || backendFailed || updateInstalling) return
+    if (health.ok) start()
+    else backendError.value = health.reason
   })
   const backend = await initBackend()
   // A failure announced while the check was still running wins over its result.
@@ -132,7 +138,11 @@ onBeforeUnmount(() => {
 
 <template>
   <a-config-provider :theme="theme">
-    <BackendError v-if="backendError" :reason="backendError" />
+    <BackendError
+      v-if="backendError"
+      :reason="backendError"
+      @installing="(active) => (updateInstalling = active)"
+    />
     <div v-else-if="ready" class="shell">
       <AppSider />
       <div class="main">

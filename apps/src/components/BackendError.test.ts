@@ -148,6 +148,18 @@ describe('updating from the error screen', () => {
     expect(restartButton(wrapper)).toBeDefined()
   })
 
+  it('tells the app an install started, and that it ended when it fails', async () => {
+    const update = fakeUpdate()
+    update.download.mockRejectedValue(new Error('signature mismatch'))
+    check.mockResolvedValue(update)
+    const wrapper = await render('boom', true)
+
+    await wrapper.get('.update button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.emitted('installing')).toEqual([[true], [false]])
+  })
+
   it('shows why the check failed and keeps Restart usable', async () => {
     check.mockRejectedValue(new Error('endpoint unreachable'))
     const wrapper = await render('boom', true)

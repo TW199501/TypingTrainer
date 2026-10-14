@@ -114,6 +114,28 @@ describe('initBackend', () => {
   })
 })
 
+describe('checkHealth', () => {
+  it('asks /health at the current base URL', async () => {
+    invoke.mockResolvedValue('http://127.0.0.1:5123/api')
+    const { initBackend, checkHealth, http, requested } = await load(true)
+    await initBackend()
+    http.defaults.baseURL = 'http://127.0.0.1:6000/api'
+
+    expect(await checkHealth()).toEqual({ ok: true })
+    expect(requested.at(-1)).toBe('http://127.0.0.1:6000/api/health')
+  })
+
+  it('reports the reason instead of throwing when /health fails', async () => {
+    invoke.mockResolvedValue('http://127.0.0.1:5123/api')
+    const { checkHealth, setHealth } = await load(true)
+    setHealth(() => ({ status: 503 }))
+
+    const status = await checkHealth()
+
+    expect(status.ok === false && status.reason).toContain('503')
+  })
+})
+
 describe('backend events', () => {
   it('updates baseURL when backend://ready announces a new port', async () => {
     invoke.mockResolvedValue('http://127.0.0.1:5123/api')

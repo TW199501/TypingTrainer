@@ -9,10 +9,12 @@ import { i18n } from '@/i18n'
  */
 
 const initBackend = vi.fn()
+const checkHealth = vi.fn()
 const failedHandlers: ((reason: string) => void)[] = []
 const readyHandlers: ((baseUrl: string) => void)[] = []
 vi.mock('@/api/backend', () => ({
   initBackend: () => initBackend(),
+  checkHealth: () => checkHealth(),
   onBackendFailed: (cb: (reason: string) => void) => {
     failedHandlers.push(cb)
     return () => {}
@@ -23,13 +25,13 @@ vi.mock('@/api/backend', () => ({
   },
 }))
 
-/** Whether the app believes it runs in the desktop shell. */
-const shell = vi.hoisted(() => ({ desktop: false }))
+/** Whether the app runs in the desktop shell, and the update the shell offers. */
+const shell = vi.hoisted(() => ({ desktop: false, update: null as unknown }))
 vi.mock('@/api/desktop', () => ({
   get IS_DESKTOP() {
     return shell.desktop
   },
-  checkDesktopUpdate: async () => null,
+  checkDesktopUpdate: async () => shell.update,
 }))
 
 const session = {
@@ -74,6 +76,8 @@ beforeEach(() => {
   failedHandlers.length = 0
   readyHandlers.length = 0
   shell.desktop = false
+  shell.update = null
+  checkHealth.mockResolvedValue({ ok: true })
 })
 
 function expectStartedOnce() {
@@ -163,14 +167,22 @@ describe('App startup', () => {
     expect(session.startClock).toHaveBeenCalledOnce()
   })
 
-  it('recovers when backend://ready arrives after the check timed out', async () => {
+  it('recovers when backend://ready arrives after the check timed out and /health passes', async () => {
     shell.desktop = true
     initBackend.mockResolvedValue({ ok: false, reason: 'timed out after 60 s' })
+    let healthy!: (v: { ok: true }) => void
+    checkHealth.mockReturnValue(new Promise((r) => (healthy = r)))
     const wrapper = render()
     await flushPromises()
     expect(wrapper.find('.backend-error').exists()).toBe(true)
 
     readyHandlers[0]('http://127.0.0.1:6000/api')
+    await flushPromises()
+    // Nothing switches until the new API has answered /health.
+    expect(checkHealth).toHaveBeenCalledOnce()
+    expect(wrapper.find('.backend-error').exists()).toBe(true)
+    expect(library.load).not.toHaveBeenCalled()
+    healthy({ ok: true })
     await flushPromises()
 
     expect(wrapper.find('.backend-error').exists()).toBe(false)
@@ -213,6 +225,37 @@ describe('App startup', () => {
 
     expect(wrapper.find('.backend-error').text()).toContain('exited twice')
     expect(wrapper.find('.routed-view').exists()).toBe(false)
+    expect(library.load).not.toHaveBeenCalled()
+  })
+
+  it('stays on the error screen when backend://ready arrives but /health fails', async () => {
+    initBackend.mockResolvedValue({ ok: false, reason: 'timed out after 60 s' })
+    checkHealth.mockResolvedValue({ ok: false, reason: 'Request failed with status code 503' })
+    const wrapper = render()
+    await flushPromises()
+
+    readyHandlers[0]('http://127.0.0.1:6000/api')
+    await flushPromises()
+
+    expect(wrapper.find('.backend-error').text()).toContain('Request failed with status code 503')
+    expect(wrapper.find('.routed-view').exists()).toBe(false)
+    expect(library.load).not.toHaveBeenCalled()
+  })
+
+  it('does not leave the error screen while an update is installing', async () => {
+    shell.desktop = true
+    shell.update = { version: '1.2.3', notes: '', install: () => new Promise(() => {}) }
+    initBackend.mockResolvedValue({ ok: false, reason: 'timed out after 60 s' })
+    const wrapper = render()
+    await flushPromises()
+    await wrapper.get('.update button').trigger('click')
+    await flushPromises()
+
+    readyHandlers[0]('http://127.0.0.1:6000/api')
+    await flushPromises()
+
+    expect(wrapper.find('.backend-error').exists()).toBe(true)
+    expect(wrapper.get('.update button').text()).toBe('Installing… 0%')
     expect(library.load).not.toHaveBeenCalled()
   })
 })

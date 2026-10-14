@@ -53,6 +53,16 @@ function describeFailure(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
+/** Asks the API at the current base URL whether it answers; never throws. */
+export async function checkHealth(): Promise<BackendStatus> {
+  try {
+    await http.get('/health')
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, reason: describeFailure(error) }
+  }
+}
+
 /**
  * Points the HTTP client at the API and checks it answers.
  *
@@ -63,11 +73,10 @@ export async function initBackend(): Promise<BackendStatus> {
   try {
     await listenForBackendEvents()
     http.defaults.baseURL = await resolveBaseUrl()
-    await http.get('/health')
-    return { ok: true }
   } catch (error) {
     return { ok: false, reason: describeFailure(error) }
   }
+  return checkHealth()
 }
 
 /** Stops the bundled API; a no-op in a browser and when none is running. */
