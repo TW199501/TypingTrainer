@@ -1,0 +1,21 @@
+apps/src/components/BackendError.vue
+  s_17f9718f56f12f::t_ea8f1d04108614 170,174
+e2e/backend-error.spec.ts
+  s_17f9718f56f12f::t_b38a3871ca35e9 1-48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9957dfd0be2cc49201e92a98c0fd0c58e4ac54bd",
+  "prompts": {},
+  "sessions": {
+    "s_17f9718f56f12f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2a55c47-cd6b-48db-b0ab-2b142d09c647",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
