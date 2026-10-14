@@ -1,0 +1,31 @@
+server/TypeLab.Api.Tests/SidecarHostTests.cs
+  s_17f9718f56f12f::t_28ca95eb5733bf 92-119
+  s_b7a445bdf1004e::t_bebd7c4e957057 91
+server/TypeLab.Api/Program.cs
+  s_17f9718f56f12f::t_77097037841eaf 3,17-26
+  s_17f9718f56f12f::t_f4b11602881b29 27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "361ae67e793ef52d83ead6d411afaaee2903fd3c",
+  "prompts": {},
+  "sessions": {
+    "s_17f9718f56f12f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2a55c47-cd6b-48db-b0ab-2b142d09c647",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    },
+    "s_b7a445bdf1004e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a12a6f-2fe6-7bd3-b56a-3e4dabcb07b7",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
