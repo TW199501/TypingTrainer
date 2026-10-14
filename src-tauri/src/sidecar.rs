@@ -18,8 +18,10 @@ use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 
-/// Cold start measured at 8.6 s on a Windows CI runner, so 15 s leaves margin.
-pub const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(15);
+/// Longest `api_base_url` waits for a live sidecar's handshake. Cold starts
+/// measured 6-11 s on CI runners; a failed or stopped backend ends the wait at
+/// once instead.
+pub const HANDSHAKE_CAP: Duration = Duration::from_secs(60);
 /// How long `stop` waits for the sidecar to exit after closing its stdin.
 pub const STOP_GRACE: Duration = Duration::from_secs(5);
 /// How long `stop` then waits for `Terminated` after force-killing it.
@@ -259,6 +261,11 @@ impl<C> Lifecycle<C> {
         self.child.take()
     }
 
+    /// True once `begin_stop` ran; no child will run again.
+    pub fn is_stopping(&self) -> bool {
+        self.stopping
+    }
+
     #[cfg(test)]
     pub fn has_child(&self) -> bool {
         self.child.is_some()
@@ -394,8 +401,9 @@ impl BackendState {
     }
 }
 
-/// Blocks until the sidecar reported its port, reported an error, or `timeout`.
-pub fn wait_for_handshake(state: &BackendState, timeout: Duration) -> Result<u16, String> {
+/// Blocks until the sidecar reported its port, until it failed for good or
+/// was stopped (both end the wait at once), or until `cap`.
+pub fn wait_for_handshake(state: &BackendState, cap: Duration) -> Result<u16, String> {
     let start = Instant::now();
     loop {
         if let Some(port) = *state.port.lock().unwrap() {
@@ -404,10 +412,13 @@ pub fn wait_for_handshake(state: &BackendState, timeout: Duration) -> Result<u16
         if let Some(error) = state.error.lock().unwrap().clone() {
             return Err(error);
         }
-        if start.elapsed() >= timeout {
+        if state.life.lock().unwrap().is_stopping() {
+            return Err("the backend was stopped".to_string());
+        }
+        if start.elapsed() >= cap {
             return Err(format!(
                 "timed out (逾時) after {} s waiting for the backend to start",
-                timeout.as_secs()
+                cap.as_secs()
             ));
         }
         std::thread::sleep(POLL_INTERVAL);
@@ -516,7 +527,7 @@ fn launch(app: &AppHandle, generation: u64) -> Result<CommandChild, String> {
 pub async fn api_base_url(app: AppHandle) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<BackendState>();
-        wait_for_handshake(&state, HANDSHAKE_TIMEOUT).map(base_url)
+        wait_for_handshake(&state, HANDSHAKE_CAP).map(base_url)
     })
     .await
     .map_err(|e| format!("backend wait task failed: {e}"))?
@@ -611,10 +622,50 @@ mod tests {
     }
 
     #[test]
-    fn wait_times_out_without_handshake() {
+    fn keeps_waiting_while_alive_until_the_cap() {
         let state = BackendState::default();
-        let result = wait_for_handshake(&state, Duration::from_millis(120));
+        let started = Instant::now();
+        let result = wait_for_handshake(&state, Duration::from_millis(300));
+        assert!(started.elapsed() >= Duration::from_millis(300));
         assert!(result.unwrap_err().contains("timed out"));
+    }
+
+    #[test]
+    fn the_cap_is_sixty_seconds() {
+        assert_eq!(HANDSHAKE_CAP, Duration::from_secs(60));
+    }
+
+    #[test]
+    fn returns_immediately_when_the_process_exits() {
+        let state = std::sync::Arc::new(BackendState::default());
+        let events = state.clone();
+        let handle = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(100));
+            // First exit restarts; the restarted process exits too.
+            assert_eq!(events.on_terminated(1, Some(1)), TerminatedAction::Restart);
+            events.reset_for_spawn();
+            assert_eq!(events.on_terminated(2, Some(1)), TerminatedAction::Failed);
+        });
+        let started = Instant::now();
+        let result = wait_for_handshake(&state, Duration::from_secs(5));
+        handle.join().unwrap();
+        assert!(started.elapsed() < Duration::from_secs(2));
+        assert!(result.unwrap_err().contains("exited unexpectedly"));
+    }
+
+    #[test]
+    fn returns_immediately_when_the_backend_is_stopped() {
+        let state = std::sync::Arc::new(BackendState::default());
+        let stopper = state.clone();
+        let handle = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(100));
+            assert_eq!(stop(&stopper), Ok(()));
+        });
+        let started = Instant::now();
+        let result = wait_for_handshake(&state, Duration::from_secs(5));
+        handle.join().unwrap();
+        assert!(started.elapsed() < Duration::from_secs(2));
+        assert!(result.unwrap_err().contains("stopped"));
     }
 
     #[test]
