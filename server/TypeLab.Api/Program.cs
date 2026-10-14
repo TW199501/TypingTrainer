@@ -1,5 +1,6 @@
 using ELF.Modules.Hosting.Sidecar;
 using ELF.Modules.Hosting.Sidecar.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.HostFiltering;
 using TypeLab.Api.Api;
 using TypeLab.Api.Data;
 using TypeLab.Api.Models;
@@ -12,6 +13,17 @@ var builder = WebApplication.CreateBuilder(args);
 // Sidecar mode (ELF_SIDECAR=1): the desktop shell launches this process, binds it
 // to 127.0.0.1 on a free port and stops it by closing stdin.
 builder.UseElfSidecar();
+
+// A sidecar answers only to loopback names, so a page whose DNS rebinds to
+// 127.0.0.1 is refused. Server mode keeps the configured AllowedHosts.
+builder.Services.AddOptions<HostFilteringOptions>()
+    .Configure<ISidecarContext>((options, sidecar) =>
+    {
+        if (sidecar.IsSidecar)
+        {
+            options.AllowedHosts = ["127.0.0.1", "localhost"];
+        }
+    });
 
 // The shell tells the API where the models live on this machine.
 var modelDir = builder.Configuration["TYPELAB_MODEL_DIR"];

@@ -89,6 +89,35 @@ public sealed class SidecarHostTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Foreign_host_header_is_rejected()
+    {
+        // A page on evil.example whose DNS later resolves to 127.0.0.1 still sends its own name.
+        var sidecar = await StartAsync();
+        using var http = NoRedirectClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"http://127.0.0.1:{sidecar.Port}/api/health");
+        request.Headers.Host = "evil.example";
+
+        var response = await http.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("127.0.0.1")]
+    [InlineData("localhost")]
+    public async Task Loopback_host_header_is_accepted(string host)
+    {
+        var sidecar = await StartAsync();
+        using var http = NoRedirectClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"http://127.0.0.1:{sidecar.Port}/api/health");
+        request.Headers.Host = $"{host}:{sidecar.Port}";
+
+        var response = await http.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Closing_stdin_stops_the_process()
     {
         var sidecar = await StartAsync();
