@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using SqlSugar;
 using TypeLab.Api.Models;
 
@@ -31,10 +32,10 @@ public static class SqlSugarSetup
         typeof(UserAchievement),
     ];
 
-    public static IServiceCollection AddSqlSugar(this IServiceCollection services, IConfiguration config)
+    public static IServiceCollection AddSqlSugar(this IServiceCollection services, IConfiguration config, IHostEnvironment env)
     {
-        var connection = config.GetConnectionString("Default")
-            ?? "DataSource=app.db";
+        var connection = ResolveConnectionString(config, env.ContentRootPath);
+        EnsureDirectory(connection);
 
         // SqlSugarScope is the thread-safe wrapper, so a singleton is correct
         // here — a plain SqlSugarClient is not safe to share across requests.
@@ -56,12 +57,49 @@ public static class SqlSugarSetup
         return services;
     }
 
+    /// <summary>
+    /// Works out the SQLite connection string. <c>TYPELAB_DB_PATH</c> (set by the
+    /// desktop shell) wins; otherwise <c>ConnectionStrings:Default</c> is used,
+    /// with a relative data source anchored at the content root so the database
+    /// does not depend on the working directory.
+    /// </summary>
+    public static string ResolveConnectionString(IConfiguration config, string contentRoot)
+    {
+        var dbPath = config["TYPELAB_DB_PATH"];
+        if (!string.IsNullOrWhiteSpace(dbPath))
+        {
+            return $"DataSource={dbPath}";
+        }
+
+        var configured = config.GetConnectionString("Default") ?? "DataSource=app.db";
+        var dataSource = new SqliteConnectionStringBuilder(configured).DataSource;
+        if (string.IsNullOrEmpty(dataSource) || dataSource == ":memory:")
+        {
+            return configured;
+        }
+
+        return $"DataSource={Path.GetFullPath(dataSource, contentRoot)}";
+    }
+
+    private static void EnsureDirectory(string connection)
+    {
+        var dataSource = new SqliteConnectionStringBuilder(connection).DataSource;
+        var directory = string.IsNullOrEmpty(dataSource) || dataSource == ":memory:"
+            ? null
+            : Path.GetDirectoryName(Path.GetFullPath(dataSource));
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+    }
+
     /// <summary>Creates the SQLite file and any missing tables/columns on start.</summary>
     public static void InitDatabase(this IServiceProvider services)
     {
         var db = services.GetRequiredService<ISqlSugarClient>();
         db.DbMaintenance.CreateDatabase();
         db.CodeFirst.InitTables(Entities);
+        LocalUserSeeds.Seed(db);
         PromptSeeds.Seed(db);
         ModelSeeds.Seed(db);
         CatalogueTranslationSeeds.Seed(db);

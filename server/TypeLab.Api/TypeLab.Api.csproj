@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ELF.Modules.Hosting.Sidecar" Version="0.8.1" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
     <PackageReference Include="SqlSugarCore" Version="5.1.4.221" />
   </ItemGroup>

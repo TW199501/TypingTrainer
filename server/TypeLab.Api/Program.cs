@@ -1,3 +1,5 @@
+using ELF.Modules.Hosting.Sidecar;
+using ELF.Modules.Hosting.Sidecar.Extensions.DependencyInjection;
 using TypeLab.Api.Api;
 using TypeLab.Api.Data;
 using TypeLab.Api.Models;
@@ -7,8 +9,19 @@ using XiHan.Framework.Translation.OpenCC;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Sidecar mode (ELF_SIDECAR=1): the desktop shell launches this process, binds it
+// to 127.0.0.1 on a free port and stops it by closing stdin.
+builder.UseElfSidecar();
+
+// The shell tells the API where the models live on this machine.
+var modelDir = builder.Configuration["TYPELAB_MODEL_DIR"];
+if (!string.IsNullOrWhiteSpace(modelDir))
+{
+    builder.Configuration["Models:Directory"] = modelDir;
+}
+
 builder.Services.AddOpenApi();
-builder.Services.AddSqlSugar(builder.Configuration);
+builder.Services.AddSqlSugar(builder.Configuration, builder.Environment);
 builder.Services.AddSingleton<ModelStorage>();
 
 // Translation: the router plus its providers. OpenCC handles Chinese script
@@ -37,7 +50,12 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+// A loopback sidecar has no certificate, so redirecting would break every call.
+if (!app.Services.GetRequiredService<ISidecarContext>().IsSidecar)
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseCors(WebCors);
 
 // VITE_API_BASE_URL points at this prefix.
@@ -59,4 +77,4 @@ api.MapModels();
 api.MapPrompts();
 api.MapTranslation();
 
-app.Run();
+return await app.RunElfSidecarAsync();
