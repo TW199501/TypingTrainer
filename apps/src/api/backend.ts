@@ -78,10 +78,3 @@ export async function initBackend(): Promise<BackendStatus> {
   }
   return checkHealth()
 }
-
-/** Stops the bundled API; a no-op in a browser and when none is running. */
-export async function stopBackend(): Promise<void> {
-  if (!IS_DESKTOP) return
-  const { invoke } = await import('@tauri-apps/api/core')
-  await invoke('stop_backend')
-}

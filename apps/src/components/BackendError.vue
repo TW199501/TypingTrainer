@@ -80,7 +80,9 @@ async function restart() {
       </p>
       <p v-else class="quiet">{{ t('backend.update.installFailed', { reason: update.reason }) }}</p>
     </div>
-    <button type="button" class="restart" @click="restart">{{ t('backend.restart') }}</button>
+    <button type="button" class="restart" :disabled="update?.kind === 'installing'" @click="restart">
+      {{ t('backend.restart') }}
+    </button>
   </div>
 </template>
 

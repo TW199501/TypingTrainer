@@ -172,25 +172,6 @@ describe('backend events', () => {
   })
 })
 
-describe('stopBackend', () => {
-  it('invokes stop_backend on desktop', async () => {
-    invoke.mockResolvedValue(undefined)
-    const { stopBackend } = await load(true)
-
-    await stopBackend()
-
-    expect(invoke).toHaveBeenCalledWith('stop_backend')
-  })
-
-  it('does nothing in a browser', async () => {
-    const { stopBackend } = await load(false)
-
-    await stopBackend()
-
-    expect(invoke).not.toHaveBeenCalled()
-  })
-})
-
 /**
  * Real requests over loopback, the way the webview reaches the sidecar. The
  * fake adapter is swapped back for axios' own so connection errors and the

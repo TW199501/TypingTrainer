@@ -135,6 +135,27 @@ describe('updating from the error screen', () => {
     expect(relaunch).toHaveBeenCalledOnce()
   })
 
+  it('disables Restart while an update installs, and re-enables it if the install fails', async () => {
+    let failInstall!: (error: Error) => void
+    const update = fakeUpdate()
+    update.install.mockImplementation(
+      () =>
+        new Promise<void>((_, reject) => {
+          failInstall = reject
+        }),
+    )
+    check.mockResolvedValue(update)
+    const wrapper = await render('boom', true)
+
+    await wrapper.get('.update button').trigger('click')
+    await flushPromises()
+
+    expect(restartButton(wrapper)!.attributes('disabled')).toBeDefined()
+    failInstall(new Error('nope'))
+    await flushPromises()
+    expect(restartButton(wrapper)!.attributes('disabled')).toBeUndefined()
+  })
+
   it('shows why an install failed and keeps Restart', async () => {
     const update = fakeUpdate()
     update.download.mockRejectedValue(new Error('signature mismatch'))
