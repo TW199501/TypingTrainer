@@ -1,0 +1,23 @@
+.github/workflows/ci.yml
+  s_17f9718f56f12f::t_7d485ef6e3bf4d 19,53
+.github/workflows/release.yml
+  s_17f9718f56f12f::t_f4eb53b7eabec3 81
+.nvmrc
+  s_17f9718f56f12f::t_30fb67bdf0c808 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f38f4f9579a69d783a71fee9463bacb006d52eba",
+  "prompts": {},
+  "sessions": {
+    "s_17f9718f56f12f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2a55c47-cd6b-48db-b0ab-2b142d09c647",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
