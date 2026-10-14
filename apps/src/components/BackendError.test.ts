@@ -53,6 +53,7 @@ const restartButton = (wrapper: Awaited<ReturnType<typeof render>>) =>
   wrapper.findAll('button').find((b) => b.text() === 'Restart TypeLab')
 
 beforeEach(() => {
+  localStorage.clear()
   vi.clearAllMocks()
   steps.length = 0
   invoke.mockImplementation(async (cmd: string) => {
@@ -138,7 +139,8 @@ describe('updating from the error screen', () => {
   it('disables Restart while an update installs, and re-enables it if the install fails', async () => {
     let failInstall!: (error: Error) => void
     const update = fakeUpdate()
-    update.install.mockImplementation(
+    // A download failure is the one that leaves the backend running.
+    update.download.mockImplementation(
       () =>
         new Promise<void>((_, reject) => {
           failInstall = reject
@@ -188,5 +190,52 @@ describe('updating from the error screen', () => {
     expect(wrapper.find('.update').text()).toBe('Update check failed: endpoint unreachable')
     await restartButton(wrapper)!.trigger('click')
     await vi.waitFor(() => expect(relaunch).toHaveBeenCalledOnce())
+  })
+})
+
+describe('a failed install on the error screen', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('says it is restarting, keeps Restart locked, then relaunches', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout'] })
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const update = fakeUpdate()
+    update.install.mockRejectedValue(new Error('disk full'))
+    check.mockResolvedValue(update)
+    const wrapper = await render('boom', true)
+
+    await wrapper.get('.update button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.update').text()).toBe('Update failed to install — restarting TypeLab…')
+    expect(restartButton(wrapper)!.attributes('disabled')).toBeDefined()
+    expect(wrapper.emitted('installing')).toEqual([[true]])
+    expect(localStorage.getItem('typelab.update.failedVersion')).toBe('1.2.3')
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(relaunch).toHaveBeenCalledOnce()
+    error.mockRestore()
+  })
+
+  it('shows the notice and a Retry button for a version that failed before', async () => {
+    localStorage.setItem('typelab.update.failedVersion', '1.2.3')
+    const update = fakeUpdate()
+    check.mockResolvedValue(update)
+    const wrapper = await render('boom', true)
+
+    expect(wrapper.find('.update').text()).toContain('The last attempt to install v1.2.3 failed.')
+    expect(wrapper.get('.update button').text()).toBe('Retry')
+    expect(update.download).not.toHaveBeenCalled()
+    expect(update.install).not.toHaveBeenCalled()
+  })
+
+  it('offers the normal install for a different version', async () => {
+    localStorage.setItem('typelab.update.failedVersion', '1.0.0')
+    check.mockResolvedValue(fakeUpdate())
+    const wrapper = await render('boom', true)
+
+    expect(wrapper.get('.update button').text()).toBe('Install update')
+    expect(localStorage.getItem('typelab.update.failedVersion')).toBeNull()
   })
 })

@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { IS_DESKTOP, checkDesktopUpdate, type DesktopUpdate } from '@/api/desktop'
+import {
+  IS_DESKTOP,
+  InstallFailedRestartingError,
+  checkDesktopUpdate,
+  type DesktopUpdate,
+} from '@/api/desktop'
 
 defineProps<{ reason: string }>()
 /** True while an update installs, false if it fails; the app keeps this screen meanwhile. */
@@ -20,6 +25,7 @@ type UpdateState =
   | { kind: 'installing'; update: DesktopUpdate; percent: number }
   | { kind: 'checkFailed'; reason: string }
   | { kind: 'installFailed'; reason: string }
+  | { kind: 'restarting' }
 
 /** Null in a browser, where the web deployment updates by pulling new images. */
 const update = ref<UpdateState | null>(IS_DESKTOP ? { kind: 'checking' } : null)
@@ -46,6 +52,11 @@ async function install() {
       update.value = { kind: 'installing', update: state.update, percent }
     })
   } catch (e) {
+    if (e instanceof InstallFailedRestartingError) {
+      // The app relaunches by itself; the screen stays locked until it does.
+      update.value = { kind: 'restarting' }
+      return
+    }
     update.value = { kind: 'installFailed', reason: describe(e) }
     emit('installing', false)
   }
@@ -66,21 +77,30 @@ async function restart() {
         {{ t(update.kind === 'checking' ? 'backend.update.checking' : 'backend.update.none') }}
       </p>
       <template v-else-if="update.kind === 'found' || update.kind === 'installing'">
-        <p>{{ t('backend.update.found', { version: update.update.version }) }}</p>
+        <p v-if="update.update.previouslyFailed">
+          {{ t('update.lastFailed', { version: update.update.version }) }}
+        </p>
+        <p v-else>{{ t('backend.update.found', { version: update.update.version }) }}</p>
         <button type="button" class="install" :disabled="update.kind === 'installing'" @click="install">
           {{
             update.kind === 'installing'
               ? t('backend.update.installing', { percent: update.percent })
-              : t('backend.update.install')
+              : t(update.update.previouslyFailed ? 'update.retry' : 'backend.update.install')
           }}
         </button>
       </template>
+      <p v-else-if="update.kind === 'restarting'" class="quiet">{{ t('update.installFailedRestarting') }}</p>
       <p v-else-if="update.kind === 'checkFailed'" class="quiet">
         {{ t('backend.update.checkFailed', { reason: update.reason }) }}
       </p>
       <p v-else class="quiet">{{ t('backend.update.installFailed', { reason: update.reason }) }}</p>
     </div>
-    <button type="button" class="restart" :disabled="update?.kind === 'installing'" @click="restart">
+    <button
+      type="button"
+      class="restart"
+      :disabled="update?.kind === 'installing' || update?.kind === 'restarting'"
+      @click="restart"
+    >
       {{ t('backend.restart') }}
     </button>
   </div>

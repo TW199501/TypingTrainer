@@ -26,6 +26,11 @@
       "installFailed": "更新失敗：{reason}"
     }
   },
+  "update": {
+    "installFailedRestarting": "更新安裝失敗，正在重新啟動 TypeLab…",
+    "lastFailed": "上次安裝 v{version} 失敗。",
+    "retry": "重試"
+  },
   "nav": {
     "groups": {
       "practice": "練習",

@@ -26,6 +26,11 @@
       "installFailed": "Update failed: {reason}"
     }
   },
+  "update": {
+    "installFailedRestarting": "Update failed to install — restarting TypeLab…",
+    "lastFailed": "The last attempt to install v{version} failed.",
+    "retry": "Retry"
+  },
   "nav": {
     "groups": {
       "practice": "Practice",

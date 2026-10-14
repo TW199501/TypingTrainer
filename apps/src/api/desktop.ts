@@ -34,10 +34,47 @@ async function stopBackend(): Promise<void> {
   await invoke('stop_backend')
 }
 
+/** Remembers the version whose install failed, so the next launch does not offer it blindly. */
+const FAILED_VERSION_KEY = 'typelab.update.failedVersion'
+
+/** How long the "restarting" notice stays up before the app relaunches. */
+const RELAUNCH_DELAY_MS = 1500
+
+function readFailedVersion(): string | null {
+  try {
+    return localStorage.getItem(FAILED_VERSION_KEY)
+  } catch {
+    return null
+  }
+}
+
+function writeFailedVersion(version: string | null) {
+  try {
+    if (version === null) localStorage.removeItem(FAILED_VERSION_KEY)
+    else localStorage.setItem(FAILED_VERSION_KEY, version)
+  } catch {
+    // Storage that is unavailable only costs the retry notice.
+  }
+}
+
+/**
+ * Thrown when the installer failed after the local service had been stopped.
+ * The app relaunches itself shortly after, so the caller only needs to show
+ * that it is restarting.
+ */
+export class InstallFailedRestartingError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'InstallFailedRestartingError'
+  }
+}
+
 /** An update the shell found; installing it stays the caller's decision. */
 export type DesktopUpdate = {
   version: string
   notes: string
+  /** True when the last attempt to install this same version failed. */
+  previouslyFailed: boolean
   /** Downloads and installs, reporting whole-number percentages as it goes. */
   install: (onProgress: (percent: number) => void) => Promise<void>
 }
@@ -54,11 +91,18 @@ export async function checkDesktopUpdate(): Promise<DesktopUpdate | null> {
   if (!IS_DESKTOP) return null
   const { check } = await import('@tauri-apps/plugin-updater')
   const update = await check()
-  if (!update) return null
+  if (!update) {
+    writeFailedVersion(null)
+    return null
+  }
+
+  const failedVersion = readFailedVersion()
+  if (failedVersion !== null && failedVersion !== update.version) writeFailedVersion(null)
 
   return {
     version: update.version,
     notes: update.body ?? '',
+    previouslyFailed: failedVersion === update.version,
     install: async (onProgress) => {
       let got = 0
       let total = 0
@@ -81,7 +125,22 @@ export async function checkDesktopUpdate(): Promise<DesktopUpdate | null> {
       } catch (error) {
         console.warn('TypeLab: could not stop the local service before updating', error)
       }
-      await update.install()
+      try {
+        await update.install()
+      } catch (error) {
+        // The service is already stopped, so the page has nothing to talk to;
+        // starting the app again brings it back. The version is remembered so
+        // the next launch asks before trying it again.
+        console.error('TypeLab update: install failed after the local service was stopped', error)
+        writeFailedVersion(update.version)
+        setTimeout(() => {
+          import('@tauri-apps/plugin-process')
+            .then(({ relaunch }) => relaunch())
+            .catch((e) => console.error('TypeLab update: relaunch after a failed install failed', e))
+        }, RELAUNCH_DELAY_MS)
+        throw new InstallFailedRestartingError(error instanceof Error ? error.message : String(error))
+      }
+      writeFailedVersion(null)
       // Only reached on macOS and Linux: the Windows installer takes over and
       // the process exits inside install(). Those two platforms replace the
       // bundle on disk and need a relaunch to run the new version.

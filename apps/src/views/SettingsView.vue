@@ -3,7 +3,12 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore, type FontSize } from '@/stores/settings'
 import { LOCALES, LOCALE_LABEL, type Locale } from '@/i18n'
-import { IS_DESKTOP, checkDesktopUpdate, type DesktopUpdate } from '@/api/desktop'
+import {
+  IS_DESKTOP,
+  InstallFailedRestartingError,
+  checkDesktopUpdate,
+  type DesktopUpdate,
+} from '@/api/desktop'
 import { useGridLayout } from '@/composables/useGridLayout'
 import ToggleSwitch from '@/components/ToggleSwitch.vue'
 
@@ -71,11 +76,14 @@ function pick(key: PrefKey, value: string) {
 }
 
 // The desktop bundle updates itself; the browser build has nothing to install.
-const updateState = ref<'idle' | 'checking' | 'latest' | 'found' | 'installing' | 'done' | 'error'>('idle')
+const updateState = ref<
+  'idle' | 'checking' | 'latest' | 'found' | 'installing' | 'restarting' | 'done' | 'error'
+>('idle')
 const updateVersion = ref('')
 const updatePercent = ref(0)
 const updateError = ref('')
 let pendingUpdate: DesktopUpdate | null = null
+const updateRetry = ref(false)
 
 const updateHint = computed(() => {
   switch (updateState.value) {
@@ -84,7 +92,11 @@ const updateHint = computed(() => {
     case 'latest':
       return t('settings.update.latest')
     case 'found':
-      return t('settings.update.found', { version: updateVersion.value })
+      return updateRetry.value
+        ? t('update.lastFailed', { version: updateVersion.value })
+        : t('settings.update.found', { version: updateVersion.value })
+    case 'restarting':
+      return t('update.installFailedRestarting')
     case 'installing':
       return t('settings.update.applying', { percent: updatePercent.value })
     case 'done':
@@ -96,11 +108,15 @@ const updateHint = computed(() => {
   }
 })
 
-const updateBusy = computed(() => updateState.value === 'checking' || updateState.value === 'installing')
+const updateBusy = computed(() => ['checking', 'installing', 'restarting'].includes(updateState.value))
 
 const updateAction = computed(() =>
   updateState.value === 'found'
-    ? { label: t('settings.update.apply'), primary: true, run: installUpdate }
+    ? {
+        label: t(updateRetry.value ? 'update.retry' : 'settings.update.apply'),
+        primary: true,
+        run: installUpdate,
+      }
     : { label: t('settings.update.check'), primary: false, run: checkForUpdate },
 )
 
@@ -121,6 +137,7 @@ async function checkForUpdate() {
   try {
     pendingUpdate = await checkDesktopUpdate()
     updateVersion.value = pendingUpdate?.version ?? ''
+    updateRetry.value = pendingUpdate?.previouslyFailed ?? false
     updateState.value = pendingUpdate ? 'found' : 'latest'
   } catch (e) {
     pendingUpdate = null
@@ -142,6 +159,11 @@ async function installUpdate() {
     // this line only ever runs on macOS and Linux.
     updateState.value = 'done'
   } catch (e) {
+    if (e instanceof InstallFailedRestartingError) {
+      // The app relaunches by itself a moment later.
+      updateState.value = 'restarting'
+      return
+    }
     updateError.value = reason(e)
     updateState.value = 'error'
   }
