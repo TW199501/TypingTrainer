@@ -1,0 +1,30 @@
+CLAUDE.md
+  s_b96b91accd2990::t_7489df6c30c262 52-56,58-59,62-63
+  s_b96b91accd2990::t_ebb035df085500 25-30
+.github/workflows/ci.yml
+  s_b96b91accd2990::t_f29200a9ba4bbc 4-5,7,90-110
+.github/workflows/release.yml
+  s_b96b91accd2990::t_0bf8441892488b 8-9,22-50,53,106,115,230,261
+.gitignore
+  s_b96b91accd2990::t_e85c703821285e 41-43
+README.md
+  s_b96b91accd2990::t_232ac3d3ff934a 136-137,139-141,144-145,148-149,218-222
+docs/signing-and-keys.md
+  s_b96b91accd2990::t_e7937457cc3247 109-112
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6d0d825a257b1c9629fb919bd2e4a3a2e665dd26",
+  "prompts": {},
+  "sessions": {
+    "s_b96b91accd2990": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "db197d54-183e-4c9d-be8a-762e37d3a2f4",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
