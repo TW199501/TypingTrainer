@@ -122,7 +122,7 @@ describe('checkHealth', () => {
     http.defaults.baseURL = 'http://127.0.0.1:6000/api'
 
     expect(await checkHealth()).toEqual({ ok: true })
-    expect(requested.at(-1)).toBe('http://127.0.0.1:6000/api/health')
+    expect(requested[requested.length - 1]).toBe('http://127.0.0.1:6000/api/health')
   })
 
   it('reports the reason instead of throwing when /health fails', async () => {

@@ -49,6 +49,10 @@ let backendFailed = false
 /** An update is installing from the error screen; it keeps the screen until it ends. */
 let updateInstalling = false
 
+function onUpdateInstalling(active: boolean) {
+  updateInstalling = active
+}
+
 function goPractice() {
   if (route.name !== 'practice') router.push({ name: 'practice' })
 }
@@ -138,11 +142,7 @@ onBeforeUnmount(() => {
 
 <template>
   <a-config-provider :theme="theme">
-    <BackendError
-      v-if="backendError"
-      :reason="backendError"
-      @installing="(active) => (updateInstalling = active)"
-    />
+    <BackendError v-if="backendError" :reason="backendError" @installing="onUpdateInstalling" />
     <div v-else-if="ready" class="shell">
       <AppSider />
       <div class="main">
