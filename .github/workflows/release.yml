@@ -81,6 +81,11 @@ jobs:
           node-version: 24
           cache: npm
 
+      # beforeBuildCommand publishes the API sidecar with `dotnet publish`.
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
@@ -221,6 +226,31 @@ jobs:
           # into darwin-aarch64 and darwin-x86_64 entries. Keeping the universal
           # key as well would leave a third path nothing is tested against.
           updaterJsonKeepUniversal: false
+
+      # A bundle that built is not proof the sidecar went into it.
+      - name: Installer carries the sidecar
+        shell: bash
+        run: |
+          case "$RUNNER_OS" in
+            Windows) f=src-tauri/target/release/typelab-api.exe ;;
+            Linux)   f=src-tauri/target/release/typelab-api ;;
+            macOS)   f=src-tauri/target/universal-apple-darwin/release/bundle/macos/TypeLab.app/Contents/MacOS/typelab-api ;;
+          esac
+          if [ ! -f "$f" ]; then
+            echo "::error::sidecar missing: $f"
+            exit 1
+          fi
+          if [ "$RUNNER_OS" = macOS ]; then
+            archs="$(lipo -archs "$f")"
+            echo "archs: $archs"
+            case "$archs" in *arm64*) ;; *) echo "::error::arm64 slice missing"; exit 1 ;; esac
+            case "$archs" in *x86_64*) ;; *) echo "::error::x86_64 slice missing"; exit 1 ;; esac
+          fi
+          if [ "$RUNNER_OS" = Linux ]; then
+            dpkg-deb -c src-tauri/target/release/bundle/deb/*.deb | grep -q '/usr/bin/typelab-api$' \
+              || { echo "::error::sidecar missing from the .deb"; exit 1; }
+          fi
+          echo "Sidecar present: $f"
 
   # The manifest is merged by read-modify-write across the three jobs above, so
   # a lost platform entry leaves every job green while half the installs stop
