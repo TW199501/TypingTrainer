@@ -71,6 +71,43 @@ jobs:
           fi
           node scripts/smoke-sidecar.mjs "src-tauri/binaries/typelab-api-${{ matrix.triple }}" -- arch -x86_64
 
+  # The Linux sidecar carries its own ICU (app-local), so it must start on a
+  # machine with no libicu at all. Without that, the .NET runtime aborts with
+  # "Couldn't find a valid ICU package installed on the system".
+  smoke-no-icu:
+    name: smoke (linux, no system libicu)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build sidecar
+        env:
+          TAURI_ENV_TARGET_TRIPLE: x86_64-unknown-linux-gnu
+        run: npm run sidecar:build
+
+      - name: Smoke test in a container without libicu
+        run: |
+          docker run --rm             -v "$PWD:/work:ro"             -v "$(command -v node):/usr/local/bin/node:ro"             debian:bookworm-slim bash -euxc '
+              count="$(ldconfig -p | grep -c libicu || true)"
+              [ "$count" = "0" ] || { echo "::error::the container already has libicu"; exit 1; }
+              cp /work/src-tauri/binaries/typelab-api-x86_64-unknown-linux-gnu /tmp/typelab-api
+              cp /work/scripts/smoke-sidecar.mjs /tmp/smoke-sidecar.mjs
+              chmod +x /tmp/typelab-api
+              cd /tmp && node smoke-sidecar.mjs /tmp/typelab-api
+            '
+
   # Builds the real installer, unsigned, and asserts the sidecar is inside it.
   # One format per OS keeps it fast; release.yml builds all of them.
   bundle:
