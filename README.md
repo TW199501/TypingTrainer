@@ -133,22 +133,20 @@ npm run version:minor    # 0.0.2 -> 0.1.0
 npm run version:major    # 0.1.0 -> 1.0.0
 ```
 
-合併進 `main` 後，`.github/workflows/version.yml` 會自動 patch 升版並提交；
-要升 minor／major 就在合併前先手動跑上面的指令。
-
-**打 tag 與打包只在 commit 標題含 `[release]` 時才發生。** 日常提交只推進版號，
-不會產生 tag，也不會花二十分鐘打三個平台的安裝檔：
-
-```bash
-git commit -m "Add the leaderboard endpoint [release]"
-```
-
-只看**標題行**是刻意的：比對整則訊息的話，任何在本文裡提到 `[release]` 的
-commit——一句註解、一次文件修改——都會發出沒人要求的版本。v0.0.5 就是這樣跑掉的。
+版號不再自動升（E-248）。要發版時，在開發分支上跑上面的指令，提交
+`chore(release): vX.Y.Z`，經 PR 合進 `dev`；分支怎麼走見 [`BRANCHING.md`](BRANCHING.md)。
 
 ## 發布 / Release
 
-打上 `v*` tag 會觸發 `release.yml`，產出這一版的實際可下載物：
+`dev` 測過後快轉到 `release`，在 `release` 指向的提交上打 annotated tag，由人推送：
+
+```bash
+git tag -a vX.Y.Z -m "TypeLab vX.Y.Z" origin/release
+git push origin vX.Y.Z
+```
+
+`v*` tag 會觸發 `release.yml`。第一個 job `verify` 檢查 tag 等於 `package.json`
+的版號、且在 `release` 上，不符就整個停下；通過後才產出這一版的可下載物：
 
 | 產物                                 | 平台        | 去處                   |
 | ------------------------------------ | ----------- | ---------------------- |
@@ -217,12 +215,11 @@ npm run tauri signer generate -- -w ~/.tauri/typelab.key
 
 ## CI
 
-| Workflow            | 觸發                                    | 內容                                                |
-| ------------------- | --------------------------------------- | --------------------------------------------------- |
-| `ci.yml`            | push · PR                               | format、lint、typecheck、test、build                |
-| `claude-review.yml` | PR 開啟／更新                           | Claude Code 自動審查，需 `ANTHROPIC_API_KEY` secret |
-| `version.yml`       | push 到 main                            | 自動 patch 升版；訊息含 `[release]` 才打 tag 並發布 |
-| `release.yml`       | `v*` tag、手動、或由 `version.yml` 呼叫 | 三平台桌面安裝檔 + 容器映像推上 GHCR                |
+| Workflow            | 觸發                                    | 內容                                                         |
+| ------------------- | --------------------------------------- | ------------------------------------------------------------ |
+| `ci.yml`            | push `dev`／`release`／`hotfix/**` · PR | format、lint、typecheck、test、build、e2e、server；`ci` 彙總 |
+| `claude-review.yml` | PR 開啟／更新                           | Claude Code 自動審查，需 `ANTHROPIC_API_KEY` secret          |
+| `release.yml`       | `v*` tag、手動                          | `verify` 後三平台桌面安裝檔 + 容器映像推上 GHCR              |
 
 ## 路線圖 / Roadmap
 

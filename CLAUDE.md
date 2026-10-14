@@ -22,6 +22,12 @@ The chain was walked end to end on v0.1.9 and v0.1.10: commit → version bump �
 tag → three signed desktop builds → container images → manifest check →
 published release → an installed copy updates itself.
 
+Since E-248 the version and the tag are no longer automatic (see
+`BRANCHING.md`): `npm run version:patch` goes into `dev` through a PR, `dev` is
+fast-forwarded to `release`, and a person pushes an annotated tag on the commit
+`release` points to. `release.yml` starts with a `verify` job that refuses a
+tag which does not match `package.json` or is not on `release`.
+
 Verified on real machines, not inferred from green jobs:
 
 - **Windows** fetched the update, verified the signature, installed and
@@ -43,26 +49,18 @@ reports _"Could not fetch a valid release JSON from the remote"_, which sounds
 like a broken manifest rather than a release nobody pressed Publish on. The last
 step is `gh release edit vX.Y.Z --draft=false --latest`.
 
-**A called workflow receives no secrets unless the caller passes them.**
-`version.yml` invokes `release.yml` with `uses:`, so it needs
-`secrets: inherit`. Without it every secret except `GITHUB_TOKEN` arrives
-empty. This cost three failed releases: Tauri base64-decodes the signing key
-before validating it, so an empty value fails as _"Missing comment in secret
-key"_ — which reads like a malformed key, not a missing one. The Docker job
-kept succeeding throughout because `GITHUB_TOKEN` is the one secret passed
-automatically.
+**An empty signing key reads like a malformed one.** Tauri base64-decodes the
+key before validating it, so an empty value fails as _"Missing comment in
+secret key"_. This cost three failed releases back when the now-removed
+`version.yml` called `release.yml` without `secrets: inherit`. The
+`Require the signing key` step now fails first with a plain message.
 
-**`git push --follow-tags` only pushes annotated tags.** A lightweight
-`git tag v1.2.3` is silently left behind while the workflow reports success.
-Use `git tag -a`.
+**Use `git tag -a`.** A lightweight tag carries no author, date or message,
+and `git push --follow-tags` silently leaves it behind.
 
 **A tag pushed with `GITHUB_TOKEN` triggers nothing.** GitHub suppresses it to
-avoid recursive runs, so `version.yml` calls `release.yml` directly rather than
-waiting for a `push` event that never arrives.
-
-**`[release]` is matched against the commit subject only.** Matching the whole
-message means any commit that merely mentions the marker — a comment, a doc
-change — ships a version nobody asked for. v0.0.5 escaped exactly that way.
+avoid recursive runs. That is why tags are pushed by a person, never by a
+workflow.
 
 **A read-only token cannot see draft releases.** A job that inspects release
 assets needs `contents: write`, or it fails with "release not found" while

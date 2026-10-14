@@ -106,9 +106,10 @@ Finished 2 updater signatures at:
 
 `Missing comment in secret key` almost always means the key is **absent**, not
 malformed: Tauri base64-decodes the value before validating it, so an empty
-string fails as a format error. Check that `version.yml` passes
-`secrets: inherit` to `release.yml` — a called workflow receives `GITHUB_TOKEN`
-automatically and nothing else. This cost three failed releases here.
+string fails as a format error. Check that `TAURI_SIGNING_PRIVATE_KEY` is set
+in the repository secrets; `release.yml` now stops at `Require the signing key`
+when it is empty. This cost three failed releases here, back when the removed
+`version.yml` called `release.yml` without `secrets: inherit`.
 
 ---
 

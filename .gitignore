@@ -38,3 +38,6 @@ TestResults/
 
 # Personal Claude Code settings; shared skills under .claude/skills are tracked
 .claude/settings.local.json
+
+# Orca worktrees created inside the repo.
+.ocrca/
