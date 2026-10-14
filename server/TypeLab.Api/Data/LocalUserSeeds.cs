@@ -20,6 +20,21 @@ public static class LocalUserSeeds
             return existing.Id;
         }
 
-        return db.Insertable(new User { Username = Username }).ExecuteReturnIdentity();
+        try
+        {
+            return db.Insertable(new User { Username = Username }).ExecuteReturnIdentity();
+        }
+        catch (Exception)
+        {
+            // Another process may have inserted the row between the query and the
+            // insert (the username has a unique index); use theirs if it is there.
+            var raced = db.Queryable<User>().First(u => u.Username == Username);
+            if (raced is null)
+            {
+                throw;
+            }
+
+            return raced.Id;
+        }
     }
 }

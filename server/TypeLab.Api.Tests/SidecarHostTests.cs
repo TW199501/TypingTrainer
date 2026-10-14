@@ -36,10 +36,16 @@ public sealed class SidecarHostTests : IAsyncLifetime
         }
     }
 
+    private SidecarProcess Launch(string? dbPath = null)
+    {
+        var p = new SidecarProcess(dbPath ?? DbPath);
+        _started.Add(p);
+        return p;
+    }
+
     private async Task<SidecarProcess> StartAsync()
     {
-        var p = new SidecarProcess(DbPath);
-        _started.Add(p);
+        var p = Launch();
         await p.WaitForPortAsync(TimeSpan.FromSeconds(30));
         return p;
     }
@@ -95,8 +101,12 @@ public sealed class SidecarHostTests : IAsyncLifetime
     [Fact]
     public async Task Two_sidecars_share_one_database()
     {
-        var first = await StartAsync();
-        var second = await StartAsync();
+        // Both are launched before either is awaited, so they race on a fresh database.
+        var first = Launch();
+        var second = Launch();
+        await Task.WhenAll(
+            first.WaitForPortAsync(TimeSpan.FromSeconds(60)),
+            second.WaitForPortAsync(TimeSpan.FromSeconds(60)));
         using var http = NoRedirectClient();
 
         var a = await http.GetAsync($"http://127.0.0.1:{first.Port}/api/health");
@@ -104,6 +114,24 @@ public sealed class SidecarHostTests : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.OK, a.StatusCode);
         Assert.Equal(HttpStatusCode.OK, b.StatusCode);
+    }
+
+    [Fact]
+    public async Task Unwritable_database_path_reports_ELF_SIDECAR_ERROR()
+    {
+        // A path below a regular file can never be created, on any OS.
+        Directory.CreateDirectory(_root);
+        var blocker = Path.Combine(_root, "blocker");
+        await File.WriteAllTextAsync(blocker, "not a directory");
+        var sidecar = Launch(Path.Combine(blocker, "sub", "typelab.db"));
+
+        var exited = await sidecar.WaitForExitAsync(TimeSpan.FromSeconds(30));
+
+        Assert.True(exited, "process should exit on database failure");
+        Assert.Equal(1, sidecar.ExitCode);
+        var errors = sidecar.OutputLines.Where(l => l.StartsWith("ELF_SIDECAR_ERROR=", StringComparison.Ordinal)).ToList();
+        Assert.Single(errors);
+        Assert.DoesNotContain(sidecar.OutputLines, l => l.StartsWith("ELF_SIDECAR_PORT=", StringComparison.Ordinal));
     }
 
     private sealed class SidecarProcess : IAsyncDisposable
@@ -114,6 +142,19 @@ public sealed class SidecarHostTests : IAsyncLifetime
         private readonly List<string> _output = [];
 
         public int Port { get; private set; }
+
+        public int ExitCode => _process.ExitCode;
+
+        public IReadOnlyList<string> OutputLines
+        {
+            get
+            {
+                lock (_output)
+                {
+                    return [.. _output];
+                }
+            }
+        }
 
         public SidecarProcess(string dbPath)
         {
@@ -171,7 +212,7 @@ public sealed class SidecarHostTests : IAsyncLifetime
 
         public async Task WaitForPortAsync(TimeSpan timeout)
         {
-            var done = await Task.WhenAny(_port.Task, Task.Delay(timeout));
+            var done = await Task.WhenAny(_port.Task, _process.WaitForExitAsync(), Task.Delay(timeout));
             if (done != _port.Task)
             {
                 string log;
@@ -180,7 +221,7 @@ public sealed class SidecarHostTests : IAsyncLifetime
                     log = string.Join(Environment.NewLine, _output);
                 }
 
-                throw new TimeoutException($"No {PortPrefix} line within {timeout.TotalSeconds}s. Output:{Environment.NewLine}{log}");
+                throw new TimeoutException($"No {PortPrefix} line within {timeout.TotalSeconds}s (exited: {_process.HasExited}). Output:{Environment.NewLine}{log}");
             }
 
             Port = await _port.Task;

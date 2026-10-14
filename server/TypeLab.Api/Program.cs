@@ -43,7 +43,18 @@ builder.Services.AddCors(o => o.AddPolicy(WebCors, p => p
 
 var app = builder.Build();
 
-app.Services.InitDatabase();
+try
+{
+    app.Services.InitDatabase();
+}
+catch (Exception ex) when (app.Services.GetRequiredService<ISidecarContext>().IsSidecar)
+{
+    // The shell waits for the handshake; report the failure on it instead of crashing.
+    var reason = ex.Message.Replace("\r", " ").Replace("\n", " ");
+    Console.Out.WriteLine($"ELF_SIDECAR_ERROR={reason}");
+    Console.Out.Flush();
+    return 1;
+}
 
 if (app.Environment.IsDevelopment())
 {
