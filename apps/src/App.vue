@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { initBackend, onBackendFailed } from '@/api/backend'
 import { useDictionaryStore } from '@/stores/dictionary'
 import { useLibraryStore } from '@/stores/library'
 import { useSessionStore } from '@/stores/session'
 import { useSettingsStore } from '@/stores/settings'
+import BackendError from '@/components/BackendError.vue'
 import AppSider from '@/components/AppSider.vue'
 import TopBar from '@/components/TopBar.vue'
 import StatusBar from '@/components/StatusBar.vue'
@@ -35,11 +37,15 @@ const theme = {
   },
 }
 
+/** Set when the bundled API cannot be reached; replaces the whole shell. */
+const backendError = ref<string | null>(null)
+
 function goPractice() {
   if (route.name !== 'practice') router.push({ name: 'practice' })
 }
 
 function onKeydown(e: KeyboardEvent) {
+  if (backendError.value) return
   if (e.metaKey || e.ctrlKey) {
     const k = e.key.toLowerCase()
     if (k === 'enter') {
@@ -74,7 +80,17 @@ watch(
   },
 )
 
-onMounted(() => {
+let stopWatchingBackend: (() => void) | undefined
+
+onMounted(async () => {
+  stopWatchingBackend = onBackendFailed((reason) => {
+    backendError.value = reason
+  })
+  const backend = await initBackend()
+  if (!backend.ok) {
+    backendError.value = backend.reason
+    return
+  }
   document.addEventListener('keydown', onKeydown)
   session.startClock()
   // Categories, dictionary and the error book are needed by more than one page.
@@ -83,6 +99,7 @@ onMounted(() => {
   void session.loadBook()
 })
 onBeforeUnmount(() => {
+  stopWatchingBackend?.()
   document.removeEventListener('keydown', onKeydown)
   session.stopClock()
 })
@@ -90,7 +107,8 @@ onBeforeUnmount(() => {
 
 <template>
   <a-config-provider :theme="theme">
-    <div class="shell">
+    <BackendError v-if="backendError" :reason="backendError" />
+    <div v-else class="shell">
       <AppSider />
       <div class="main">
         <TopBar />

@@ -12,6 +12,10 @@
     "pending": "待判读",
     "dash": "—"
   },
+  "backend": {
+    "unavailable": "TypeLab 无法连接本机服务",
+    "restart": "重新启动 TypeLab"
+  },
   "nav": {
     "groups": {
       "practice": "练习",

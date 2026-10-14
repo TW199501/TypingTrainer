@@ -10,7 +10,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const relaunch = vi.fn()
 const check = vi.fn()
+const invoke = vi.fn()
 
+vi.mock('@tauri-apps/api/core', () => ({ invoke }))
 vi.mock('@tauri-apps/plugin-updater', () => ({ check }))
 vi.mock('@tauri-apps/plugin-process', () => ({ relaunch }))
 
@@ -153,6 +155,37 @@ describe('install progress', () => {
 
     // Only reached on macOS and Linux; on Windows the installer takes over and
     // the process is gone before this line.
+    expect(relaunch).toHaveBeenCalledOnce()
+  })
+})
+
+describe('stopping the backend before an update', () => {
+  it('stops the backend before downloading the update', async () => {
+    const update = fakeUpdate([])
+    check.mockResolvedValue(update)
+    invoke.mockResolvedValue(undefined)
+    const { checkDesktopUpdate } = await importDesktop(true)
+    const found = await checkDesktopUpdate()
+
+    await found!.install(() => {})
+
+    expect(invoke).toHaveBeenCalledWith('stop_backend')
+    // The installer replaces files the running API holds open, so it must be gone first.
+    expect(invoke.mock.invocationCallOrder[0]).toBeLessThan(
+      update.downloadAndInstall.mock.invocationCallOrder[0],
+    )
+  })
+
+  it('install still runs when stop_backend has nothing to stop', async () => {
+    const update = fakeUpdate([])
+    check.mockResolvedValue(update)
+    invoke.mockResolvedValue(undefined)
+    const { checkDesktopUpdate } = await importDesktop(true)
+    const found = await checkDesktopUpdate()
+
+    await found!.install(() => {})
+
+    expect(update.downloadAndInstall).toHaveBeenCalledOnce()
     expect(relaunch).toHaveBeenCalledOnce()
   })
 })

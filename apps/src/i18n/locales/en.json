@@ -12,6 +12,10 @@
     "pending": "Pending",
     "dash": "—"
   },
+  "backend": {
+    "unavailable": "TypeLab could not reach its local service",
+    "restart": "Restart TypeLab"
+  },
   "nav": {
     "groups": {
       "practice": "Practice",

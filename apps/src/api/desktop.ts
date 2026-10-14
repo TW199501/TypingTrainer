@@ -28,6 +28,12 @@ export async function desktopModelDir(): Promise<string | null> {
   }
 }
 
+/** Stops the bundled API; resolves too when none is running. */
+async function stopBackend(): Promise<void> {
+  const { invoke } = await import('@tauri-apps/api/core')
+  await invoke('stop_backend')
+}
+
 /** An update the shell found; installing it stays the caller's decision. */
 export type DesktopUpdate = {
   version: string
@@ -54,6 +60,8 @@ export async function checkDesktopUpdate(): Promise<DesktopUpdate | null> {
     version: update.version,
     notes: update.body ?? '',
     install: async (onProgress) => {
+      // The installer replaces files the running API holds open.
+      await stopBackend()
       let got = 0
       let total = 0
       await update.downloadAndInstall((event) => {
