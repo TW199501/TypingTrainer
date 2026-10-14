@@ -1,0 +1,26 @@
+server/TypeLab.Api/SidecarSignal.cs
+  s_17f9718f56f12f::t_af3e591f3f9d82 1-26
+server/TypeLab.Api/Program.cs
+  s_17f9718f56f12f::t_97402c316a2ae9 14,16-17
+  s_17f9718f56f12f::t_59625752e4fe61 4
+server/TypeLab.Api.Tests/SidecarSignalTests.cs
+  s_17f9718f56f12f::t_dafcc1f9728878 1-48
+server/TypeLab.Api.Tests/SidecarHostTests.cs
+  s_17f9718f56f12f::t_a837e326f702ce 39,41,46,48,91-94,98,208,223
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "269fafb7d02258b54c1ff1607a584bc4a3d86ba4",
+  "prompts": {},
+  "sessions": {
+    "s_17f9718f56f12f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2a55c47-cd6b-48db-b0ab-2b142d09c647",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
