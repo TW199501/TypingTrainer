@@ -1,0 +1,21 @@
+BRANCHING.md
+  s_b96b91accd2990::t_5dcc8d147c2520 1-77
+CLAUDE.md
+  s_b96b91accd2990::t_32a4bac3aef936 7-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "aa2e8c00484fbbe00af09a1c3c0803fb22ba2456",
+  "prompts": {},
+  "sessions": {
+    "s_b96b91accd2990": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "db197d54-183e-4c9d-be8a-762e37d3a2f4",
+        "model": "unknown"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
