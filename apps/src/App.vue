@@ -39,6 +39,8 @@ const theme = {
 
 /** Set when the bundled API cannot be reached; replaces the whole shell. */
 const backendError = ref<string | null>(null)
+/** True once the backend is known good; nothing loads or renders before that. */
+const ready = ref(false)
 
 function goPractice() {
   if (route.name !== 'practice') router.push({ name: 'practice' })
@@ -87,10 +89,13 @@ onMounted(async () => {
     backendError.value = reason
   })
   const backend = await initBackend()
+  // A failure announced while the check was still running wins over its result.
+  if (backendError.value) return
   if (!backend.ok) {
     backendError.value = backend.reason
     return
   }
+  ready.value = true
   document.addEventListener('keydown', onKeydown)
   session.startClock()
   // Categories, dictionary and the error book are needed by more than one page.
@@ -108,7 +113,7 @@ onBeforeUnmount(() => {
 <template>
   <a-config-provider :theme="theme">
     <BackendError v-if="backendError" :reason="backendError" />
-    <div v-else class="shell">
+    <div v-else-if="ready" class="shell">
       <AppSider />
       <div class="main">
         <TopBar />
