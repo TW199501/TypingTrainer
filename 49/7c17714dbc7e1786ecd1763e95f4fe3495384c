@@ -1,0 +1,23 @@
+scripts/smoke-sidecar.mjs
+  s_17f9718f56f12f::t_4f194b5a9d98fc 2,13-16,71-72,107-111
+.github/workflows/release.yml
+  s_17f9718f56f12f::t_e433c4284e09d5 253
+.github/workflows/sidecar-smoke.yml
+  s_17f9718f56f12f::t_e433c4284e09d5 150
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "497c17714dbc7e1786ecd1763e95f4fe3495384c",
+  "prompts": {},
+  "sessions": {
+    "s_17f9718f56f12f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2a55c47-cd6b-48db-b0ab-2b142d09c647",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
