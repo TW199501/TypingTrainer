@@ -1,0 +1,29 @@
+src-tauri/tauri.conf.json
+  s_17f9718f56f12f::t_e5dd45181f2d93 26,33
+src-tauri/src/lib.rs
+  s_17f9718f56f12f::t_e5dd45181f2d93 1-3,5-6,38-51,60-89,96-101,110-118,122-135
+src-tauri/Cargo.toml
+  s_17f9718f56f12f::t_b443fbce336dac 29-31
+src-tauri/src/sidecar.rs
+  s_17f9718f56f12f::t_29c42b400ec820 266,311-314,338-341,370-373
+  s_17f9718f56f12f::t_3801e4c75c52ea 305-310,315-337,342-347,451-452
+  s_17f9718f56f12f::t_b10047706d6257 1-265,267-304,348-369,374-450
+src-tauri/Cargo.lock
+  s_17f9718f56f12f::t_92a22616bcf368 409-414,777-790,1601-1619,1996-2001,2283-2293,2306-2315,3147-3157,3164-3194,3639-3659,4165
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0d130a830f60161061c7e1a03c548ab095cd1067",
+  "prompts": {},
+  "sessions": {
+    "s_17f9718f56f12f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2a55c47-cd6b-48db-b0ab-2b142d09c647",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
