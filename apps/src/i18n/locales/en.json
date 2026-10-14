@@ -15,7 +15,16 @@
   "backend": {
     "starting": "Starting TypeLab…",
     "unavailable": "TypeLab could not reach its local service",
-    "restart": "Restart TypeLab"
+    "restart": "Restart TypeLab",
+    "update": {
+      "checking": "Checking for updates…",
+      "none": "No update available.",
+      "found": "Version {version} is available.",
+      "install": "Install update",
+      "installing": "Installing… {percent}%",
+      "checkFailed": "Update check failed: {reason}",
+      "installFailed": "Update failed: {reason}"
+    }
   },
   "nav": {
     "groups": {

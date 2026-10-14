@@ -15,7 +15,16 @@
   "backend": {
     "starting": "正在啟動 TypeLab…",
     "unavailable": "TypeLab 無法連上本機服務",
-    "restart": "重新啟動 TypeLab"
+    "restart": "重新啟動 TypeLab",
+    "update": {
+      "checking": "正在檢查更新…",
+      "none": "目前沒有可用的更新。",
+      "found": "有新版本 {version}。",
+      "install": "安裝更新",
+      "installing": "安裝中… {percent}%",
+      "checkFailed": "檢查更新失敗：{reason}",
+      "installFailed": "更新失敗：{reason}"
+    }
   },
   "nav": {
     "groups": {

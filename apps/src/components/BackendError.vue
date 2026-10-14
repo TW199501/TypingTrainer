@@ -1,9 +1,51 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { IS_DESKTOP, checkDesktopUpdate, type DesktopUpdate } from '@/api/desktop'
 
 defineProps<{ reason: string }>()
 
 const { t } = useI18n()
+
+/**
+ * The updater talks to the release endpoint, not to the local API, so an
+ * update that fixes the API can still be installed from here.
+ */
+type UpdateState =
+  | { kind: 'checking' }
+  | { kind: 'none' }
+  | { kind: 'found'; update: DesktopUpdate }
+  | { kind: 'installing'; update: DesktopUpdate; percent: number }
+  | { kind: 'checkFailed'; reason: string }
+  | { kind: 'installFailed'; reason: string }
+
+/** Null in a browser, where the web deployment updates by pulling new images. */
+const update = ref<UpdateState | null>(IS_DESKTOP ? { kind: 'checking' } : null)
+
+const describe = (e: unknown) => (e instanceof Error ? e.message : String(e))
+
+onMounted(async () => {
+  if (!IS_DESKTOP) return
+  try {
+    const found = await checkDesktopUpdate()
+    update.value = found ? { kind: 'found', update: found } : { kind: 'none' }
+  } catch (e) {
+    update.value = { kind: 'checkFailed', reason: describe(e) }
+  }
+})
+
+async function install() {
+  const state = update.value
+  if (state?.kind !== 'found') return
+  update.value = { kind: 'installing', update: state.update, percent: 0 }
+  try {
+    await state.update.install((percent) => {
+      update.value = { kind: 'installing', update: state.update, percent }
+    })
+  } catch (e) {
+    update.value = { kind: 'installFailed', reason: describe(e) }
+  }
+}
 
 async function restart() {
   const { relaunch } = await import('@tauri-apps/plugin-process')
@@ -15,6 +57,25 @@ async function restart() {
   <div class="backend-error" role="alert">
     <h1>{{ t('backend.unavailable') }}</h1>
     <p class="reason">{{ reason }}</p>
+    <div v-if="update" class="update" aria-live="polite">
+      <p v-if="update.kind === 'checking' || update.kind === 'none'" class="quiet">
+        {{ t(update.kind === 'checking' ? 'backend.update.checking' : 'backend.update.none') }}
+      </p>
+      <template v-else-if="update.kind === 'found' || update.kind === 'installing'">
+        <p>{{ t('backend.update.found', { version: update.update.version }) }}</p>
+        <button type="button" class="install" :disabled="update.kind === 'installing'" @click="install">
+          {{
+            update.kind === 'installing'
+              ? t('backend.update.installing', { percent: update.percent })
+              : t('backend.update.install')
+          }}
+        </button>
+      </template>
+      <p v-else-if="update.kind === 'checkFailed'" class="quiet">
+        {{ t('backend.update.checkFailed', { reason: update.reason }) }}
+      </p>
+      <p v-else class="quiet">{{ t('backend.update.installFailed', { reason: update.reason }) }}</p>
+    </div>
     <button type="button" class="restart" @click="restart">{{ t('backend.restart') }}</button>
   </div>
 </template>
@@ -43,7 +104,22 @@ h1 {
   word-break: break-word;
   color: var(--text-2, var(--text));
 }
-.restart {
+.update {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.update p {
+  margin: 0;
+}
+.quiet {
+  max-width: 560px;
+  word-break: break-word;
+  color: var(--text-2, var(--text));
+}
+.restart,
+.install {
   padding: 6px 16px;
   border: 0;
   border-radius: 6px;
@@ -52,7 +128,12 @@ h1 {
   font: inherit;
   cursor: pointer;
 }
-.restart:hover {
+.restart:hover,
+.install:hover:not(:disabled) {
   background: #e08a6c;
+}
+.install:disabled {
+  opacity: 0.7;
+  cursor: default;
 }
 </style>
