@@ -60,11 +60,11 @@ export async function checkDesktopUpdate(): Promise<DesktopUpdate | null> {
     version: update.version,
     notes: update.body ?? '',
     install: async (onProgress) => {
-      // The installer replaces files the running API holds open.
-      await stopBackend()
       let got = 0
       let total = 0
-      await update.downloadAndInstall((event) => {
+      // Download (which also checks the signature) while the API keeps
+      // running, so a failed download leaves the app as it was.
+      await update.download((event) => {
         if (event.event === 'Started') {
           total = event.data.contentLength ?? 0
         } else if (event.event === 'Progress') {
@@ -74,9 +74,17 @@ export async function checkDesktopUpdate(): Promise<DesktopUpdate | null> {
           if (total) onProgress(Math.min(99, Math.floor((got / total) * 100)))
         }
       })
+      // The installer replaces files the running API holds open. A stop that
+      // fails must not block the update: the API exits with the app anyway.
+      try {
+        await stopBackend()
+      } catch (error) {
+        console.warn('TypeLab: could not stop the local service before updating', error)
+      }
+      await update.install()
       // Only reached on macOS and Linux: the Windows installer takes over and
-      // the process exits inside downloadAndInstall. Those two platforms
-      // replace the bundle on disk and need a relaunch to run the new version.
+      // the process exits inside install(). Those two platforms replace the
+      // bundle on disk and need a relaunch to run the new version.
       const { relaunch } = await import('@tauri-apps/plugin-process')
       await relaunch()
     },

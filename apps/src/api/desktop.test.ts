@@ -27,19 +27,30 @@ async function importDesktop(inShell: boolean) {
   return import('./desktop')
 }
 
+/** Steps the fake update and the backend stop record, in order. */
+const steps: string[] = []
+
 /** Minimal stand-in for the plugin's Update object. */
 function fakeUpdate(events: { event: string; data: Record<string, number> }[]) {
   return {
     version: '1.2.3',
     body: 'Fixes the thing',
-    downloadAndInstall: vi.fn(async (onEvent: (e: unknown) => void) => {
+    download: vi.fn(async (onEvent: (e: unknown) => void) => {
       for (const e of events) onEvent(e)
+      steps.push('downloaded')
+    }),
+    install: vi.fn(async () => {
+      steps.push('installed')
     }),
   }
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
+  steps.length = 0
+  invoke.mockImplementation(async (cmd: string) => {
+    steps.push(cmd)
+  })
 })
 
 afterEach(() => {
@@ -160,32 +171,44 @@ describe('install progress', () => {
 })
 
 describe('stopping the backend before an update', () => {
-  it('stops the backend before downloading the update', async () => {
-    const update = fakeUpdate([])
-    check.mockResolvedValue(update)
-    invoke.mockResolvedValue(undefined)
+  it('stops the backend after the download and before the install', async () => {
+    check.mockResolvedValue(fakeUpdate([]))
     const { checkDesktopUpdate } = await importDesktop(true)
     const found = await checkDesktopUpdate()
 
     await found!.install(() => {})
 
-    expect(invoke).toHaveBeenCalledWith('stop_backend')
-    // The installer replaces files the running API holds open, so it must be gone first.
-    expect(invoke.mock.invocationCallOrder[0]).toBeLessThan(
-      update.downloadAndInstall.mock.invocationCallOrder[0],
-    )
+    // The installer replaces files the running API holds open, so it must be
+    // gone first; a download that fails must leave it running.
+    expect(steps).toEqual(['downloaded', 'stop_backend', 'installed'])
   })
 
-  it('install still runs when stop_backend has nothing to stop', async () => {
+  it('leaves the backend running when the download fails', async () => {
+    const update = fakeUpdate([])
+    update.download.mockRejectedValue(new Error('signature mismatch'))
+    check.mockResolvedValue(update)
+    const { checkDesktopUpdate } = await importDesktop(true)
+    const found = await checkDesktopUpdate()
+
+    await expect(found!.install(() => {})).rejects.toThrow('signature mismatch')
+
+    expect(invoke).not.toHaveBeenCalled()
+    expect(update.install).not.toHaveBeenCalled()
+  })
+
+  it('still installs when stop_backend fails', async () => {
     const update = fakeUpdate([])
     check.mockResolvedValue(update)
-    invoke.mockResolvedValue(undefined)
+    invoke.mockRejectedValue('the backend did not exit within 7 s')
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const { checkDesktopUpdate } = await importDesktop(true)
     const found = await checkDesktopUpdate()
 
     await found!.install(() => {})
 
-    expect(update.downloadAndInstall).toHaveBeenCalledOnce()
+    expect(update.install).toHaveBeenCalledOnce()
     expect(relaunch).toHaveBeenCalledOnce()
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
   })
 })
