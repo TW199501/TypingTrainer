@@ -1,0 +1,21 @@
+apps/src/App.vue
+  s_17f9718f56f12f::t_fa4a778e3eb22e 42-43,92-93,98,116
+apps/src/App.test.ts
+  s_17f9718f56f12f::t_fa4a778e3eb22e 1-114
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f0b984a38b570fa863726dc23a048b82246cd298",
+  "prompts": {},
+  "sessions": {
+    "s_17f9718f56f12f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2a55c47-cd6b-48db-b0ab-2b142d09c647",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
