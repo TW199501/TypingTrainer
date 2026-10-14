@@ -40,18 +40,45 @@ const FAILED_VERSION_KEY = 'typelab.update.failedVersion'
 /** How long the "restarting" notice stays up before the app relaunches. */
 const RELAUNCH_DELAY_MS = 1500
 
-function readFailedVersion(): string | null {
+/** Longest failure reason shown on screen; the stored copy is never cut. */
+const REASON_DISPLAY_LIMIT = 160
+
+type FailedMarker = { version: string; reason: string | null }
+
+/** Cuts a reason for display, ending it with an ellipsis when something was dropped. */
+function truncateReason(reason: string): string {
+  return reason.length > REASON_DISPLAY_LIMIT ? `${reason.slice(0, REASON_DISPLAY_LIMIT)}…` : reason
+}
+
+/** Reads the JSON marker, or the older format where the value is just the version. */
+function readFailedMarker(): FailedMarker | null {
+  let raw: string | null
   try {
-    return localStorage.getItem(FAILED_VERSION_KEY)
+    raw = localStorage.getItem(FAILED_VERSION_KEY)
   } catch {
     return null
   }
+  if (raw === null) return null
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      typeof (parsed as { version?: unknown }).version === 'string'
+    ) {
+      const { version, reason } = parsed as { version: string; reason?: unknown }
+      return { version, reason: typeof reason === 'string' ? reason : null }
+    }
+  } catch {
+    // Not JSON: the older format stored the bare version string.
+  }
+  return { version: raw, reason: null }
 }
 
-function writeFailedVersion(version: string | null) {
+function writeFailedMarker(marker: { version: string; reason: string } | null) {
   try {
-    if (version === null) localStorage.removeItem(FAILED_VERSION_KEY)
-    else localStorage.setItem(FAILED_VERSION_KEY, version)
+    if (marker === null) localStorage.removeItem(FAILED_VERSION_KEY)
+    else localStorage.setItem(FAILED_VERSION_KEY, JSON.stringify({ ...marker, at: new Date().toISOString() }))
   } catch {
     // Storage that is unavailable only costs the retry notice.
   }
@@ -63,9 +90,13 @@ function writeFailedVersion(version: string | null) {
  * that it is restarting.
  */
 export class InstallFailedRestartingError extends Error {
-  constructor(message: string) {
+  /** Settles only if the automatic relaunch is rejected, so the page can ask for a manual one. */
+  readonly relaunchFailed: Promise<void>
+
+  constructor(message: string, relaunchFailed: Promise<void> = new Promise(() => {})) {
     super(message)
     this.name = 'InstallFailedRestartingError'
+    this.relaunchFailed = relaunchFailed
   }
 }
 
@@ -75,6 +106,8 @@ export type DesktopUpdate = {
   notes: string
   /** True when the last attempt to install this same version failed. */
   previouslyFailed: boolean
+  /** Why that attempt failed, cut for display; null when unknown. */
+  previousFailureReason: string | null
   /** Downloads and installs, reporting whole-number percentages as it goes. */
   install: (onProgress: (percent: number) => void) => Promise<void>
 }
@@ -92,17 +125,19 @@ export async function checkDesktopUpdate(): Promise<DesktopUpdate | null> {
   const { check } = await import('@tauri-apps/plugin-updater')
   const update = await check()
   if (!update) {
-    writeFailedVersion(null)
+    writeFailedMarker(null)
     return null
   }
 
-  const failedVersion = readFailedVersion()
-  if (failedVersion !== null && failedVersion !== update.version) writeFailedVersion(null)
+  const failed = readFailedMarker()
+  const previouslyFailed = failed?.version === update.version
+  if (failed && !previouslyFailed) writeFailedMarker(null)
 
   return {
     version: update.version,
     notes: update.body ?? '',
-    previouslyFailed: failedVersion === update.version,
+    previouslyFailed,
+    previousFailureReason: previouslyFailed && failed.reason ? truncateReason(failed.reason) : null,
     install: async (onProgress) => {
       let got = 0
       let total = 0
@@ -132,15 +167,21 @@ export async function checkDesktopUpdate(): Promise<DesktopUpdate | null> {
         // starting the app again brings it back. The version is remembered so
         // the next launch asks before trying it again.
         console.error('TypeLab update: install failed after the local service was stopped', error)
-        writeFailedVersion(update.version)
-        setTimeout(() => {
-          import('@tauri-apps/plugin-process')
-            .then(({ relaunch }) => relaunch())
-            .catch((e) => console.error('TypeLab update: relaunch after a failed install failed', e))
-        }, RELAUNCH_DELAY_MS)
-        throw new InstallFailedRestartingError(error instanceof Error ? error.message : String(error))
+        const message = error instanceof Error ? error.message : String(error)
+        writeFailedMarker({ version: update.version, reason: message })
+        const relaunchFailed = new Promise<void>((resolve) => {
+          setTimeout(() => {
+            import('@tauri-apps/plugin-process')
+              .then(({ relaunch }) => relaunch())
+              .catch((e) => {
+                console.error('TypeLab update: relaunch after a failed install failed', e)
+                resolve()
+              })
+          }, RELAUNCH_DELAY_MS)
+        })
+        throw new InstallFailedRestartingError(message, relaunchFailed)
       }
-      writeFailedVersion(null)
+      writeFailedMarker(null)
       // Only reached on macOS and Linux: the Windows installer takes over and
       // the process exits inside install(). Those two platforms replace the
       // bundle on disk and need a relaunch to run the new version.

@@ -26,6 +26,7 @@ type UpdateState =
   | { kind: 'checkFailed'; reason: string }
   | { kind: 'installFailed'; reason: string }
   | { kind: 'restarting' }
+  | { kind: 'relaunchFailed' }
 
 /** Null in a browser, where the web deployment updates by pulling new images. */
 const update = ref<UpdateState | null>(IS_DESKTOP ? { kind: 'checking' } : null)
@@ -55,6 +56,10 @@ async function install() {
     if (e instanceof InstallFailedRestartingError) {
       // The app relaunches by itself; the screen stays locked until it does.
       update.value = { kind: 'restarting' }
+      // A relaunch the shell refuses must not leave the screen locked.
+      e.relaunchFailed.then(() => {
+        update.value = { kind: 'relaunchFailed' }
+      })
       return
     }
     update.value = { kind: 'installFailed', reason: describe(e) }
@@ -78,7 +83,14 @@ async function restart() {
       </p>
       <template v-else-if="update.kind === 'found' || update.kind === 'installing'">
         <p v-if="update.update.previouslyFailed">
-          {{ t('update.lastFailed', { version: update.update.version }) }}
+          {{
+            update.update.previousFailureReason
+              ? t('update.lastFailedReason', {
+                  version: update.update.version,
+                  reason: update.update.previousFailureReason,
+                })
+              : t('update.lastFailed', { version: update.update.version })
+          }}
         </p>
         <p v-else>{{ t('backend.update.found', { version: update.update.version }) }}</p>
         <button type="button" class="install" :disabled="update.kind === 'installing'" @click="install">
@@ -90,6 +102,7 @@ async function restart() {
         </button>
       </template>
       <p v-else-if="update.kind === 'restarting'" class="quiet">{{ t('update.installFailedRestarting') }}</p>
+      <p v-else-if="update.kind === 'relaunchFailed'" class="quiet">{{ t('update.reopenManually') }}</p>
       <p v-else-if="update.kind === 'checkFailed'" class="quiet">
         {{ t('backend.update.checkFailed', { reason: update.reason }) }}
       </p>

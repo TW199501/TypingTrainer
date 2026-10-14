@@ -77,13 +77,14 @@ function pick(key: PrefKey, value: string) {
 
 // The desktop bundle updates itself; the browser build has nothing to install.
 const updateState = ref<
-  'idle' | 'checking' | 'latest' | 'found' | 'installing' | 'restarting' | 'done' | 'error'
+  'idle' | 'checking' | 'latest' | 'found' | 'installing' | 'restarting' | 'relaunchFailed' | 'done' | 'error'
 >('idle')
 const updateVersion = ref('')
 const updatePercent = ref(0)
 const updateError = ref('')
 let pendingUpdate: DesktopUpdate | null = null
 const updateRetry = ref(false)
+const updateRetryReason = ref<string | null>(null)
 
 const updateHint = computed(() => {
   switch (updateState.value) {
@@ -93,10 +94,14 @@ const updateHint = computed(() => {
       return t('settings.update.latest')
     case 'found':
       return updateRetry.value
-        ? t('update.lastFailed', { version: updateVersion.value })
+        ? updateRetryReason.value
+          ? t('update.lastFailedReason', { version: updateVersion.value, reason: updateRetryReason.value })
+          : t('update.lastFailed', { version: updateVersion.value })
         : t('settings.update.found', { version: updateVersion.value })
     case 'restarting':
       return t('update.installFailedRestarting')
+    case 'relaunchFailed':
+      return t('update.reopenManually')
     case 'installing':
       return t('settings.update.applying', { percent: updatePercent.value })
     case 'done':
@@ -138,6 +143,7 @@ async function checkForUpdate() {
     pendingUpdate = await checkDesktopUpdate()
     updateVersion.value = pendingUpdate?.version ?? ''
     updateRetry.value = pendingUpdate?.previouslyFailed ?? false
+    updateRetryReason.value = pendingUpdate?.previousFailureReason ?? null
     updateState.value = pendingUpdate ? 'found' : 'latest'
   } catch (e) {
     pendingUpdate = null
@@ -162,6 +168,10 @@ async function installUpdate() {
     if (e instanceof InstallFailedRestartingError) {
       // The app relaunches by itself a moment later.
       updateState.value = 'restarting'
+      // A relaunch the shell refuses must not leave the button locked.
+      e.relaunchFailed.then(() => {
+        updateState.value = 'relaunchFailed'
+      })
       return
     }
     updateError.value = reason(e)

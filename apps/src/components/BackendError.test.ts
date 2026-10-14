@@ -212,9 +212,46 @@ describe('a failed install on the error screen', () => {
     expect(wrapper.find('.update').text()).toBe('Update failed to install — restarting TypeLab…')
     expect(restartButton(wrapper)!.attributes('disabled')).toBeDefined()
     expect(wrapper.emitted('installing')).toEqual([[true]])
-    expect(localStorage.getItem('typelab.update.failedVersion')).toBe('1.2.3')
+    expect(JSON.parse(localStorage.getItem('typelab.update.failedVersion')!).version).toBe('1.2.3')
     await vi.advanceTimersByTimeAsync(2000)
     expect(relaunch).toHaveBeenCalledOnce()
+    error.mockRestore()
+  })
+
+  it('shows the stored reason, cut for display, in the notice', async () => {
+    const reason = 'z'.repeat(300)
+    localStorage.setItem(
+      'typelab.update.failedVersion',
+      JSON.stringify({ version: '1.2.3', reason, at: 'now' }),
+    )
+    check.mockResolvedValue(fakeUpdate())
+    const wrapper = await render('boom', true)
+
+    expect(wrapper.find('.update').text()).toContain(
+      `The last attempt to install v1.2.3 failed: ${'z'.repeat(160)}…`,
+    )
+    expect(wrapper.find('.update').text()).not.toContain('z'.repeat(161))
+    expect(JSON.parse(localStorage.getItem('typelab.update.failedVersion')!).reason).toBe(reason)
+  })
+
+  it('asks for a manual reopen and re-enables Restart when the relaunch is rejected', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout'] })
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    relaunch.mockRejectedValueOnce(new Error('no relaunch'))
+    const update = fakeUpdate()
+    update.install.mockRejectedValue(new Error('disk full'))
+    check.mockResolvedValue(update)
+    const wrapper = await render('boom', true)
+
+    await wrapper.get('.update button').trigger('click')
+    await flushPromises()
+    expect(restartButton(wrapper)!.attributes('disabled')).toBeDefined()
+    await vi.advanceTimersByTimeAsync(2000)
+    await flushPromises()
+
+    expect(wrapper.find('.update').text()).toBe('Please reopen TypeLab manually.')
+    expect(restartButton(wrapper)!.attributes('disabled')).toBeUndefined()
+    expect(localStorage.getItem('typelab.update.failedVersion')).not.toBeNull()
     error.mockRestore()
   })
 

@@ -29,6 +29,8 @@
   "update": {
     "installFailedRestarting": "更新安裝失敗，正在重新啟動 TypeLab…",
     "lastFailed": "上次安裝 v{version} 失敗。",
+    "lastFailedReason": "上次安裝 v{version} 失敗：{reason}",
+    "reopenManually": "請手動重新開啟 TypeLab。",
     "retry": "重試"
   },
   "nav": {
