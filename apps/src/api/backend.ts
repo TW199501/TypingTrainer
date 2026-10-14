@@ -19,7 +19,14 @@ export async function resolveBaseUrl(): Promise<string> {
 }
 
 const failedHandlers = new Set<(reason: string) => void>()
+const readyHandlers = new Set<(baseUrl: string) => void>()
 let listening: Promise<void> | null = null
+
+/** Calls `handler` with the base URL each time the shell announces a (re)started API. */
+export function onBackendReady(handler: (baseUrl: string) => void): () => void {
+  readyHandlers.add(handler)
+  return () => readyHandlers.delete(handler)
+}
 
 /** Calls `handler` with the reason when the shell gives up restarting the API. */
 export function onBackendFailed(handler: (reason: string) => void): () => void {
@@ -33,6 +40,7 @@ function listenForBackendEvents(): Promise<void> {
     const { listen } = await import('@tauri-apps/api/event')
     await listen<string>('backend://ready', (event) => {
       http.defaults.baseURL = event.payload
+      for (const handler of readyHandlers) handler(event.payload)
     })
     await listen<string>('backend://failed', (event) => {
       for (const handler of failedHandlers) handler(event.payload)

@@ -125,6 +125,18 @@ describe('backend events', () => {
     expect(http.defaults.baseURL).toBe('http://127.0.0.1:6000/api')
   })
 
+  it('tells ready handlers the new base URL after setting it', async () => {
+    invoke.mockResolvedValue('http://127.0.0.1:5123/api')
+    const { initBackend, onBackendReady, http } = await load(true)
+    const seen: string[] = []
+    onBackendReady((url) => seen.push(`${url} ${http.defaults.baseURL}`))
+    await initBackend()
+
+    listeners.get('backend://ready')!({ payload: 'http://127.0.0.1:6000/api' })
+
+    expect(seen).toEqual(['http://127.0.0.1:6000/api http://127.0.0.1:6000/api'])
+  })
+
   it('reports the reason when backend://failed arrives', async () => {
     invoke.mockResolvedValue('http://127.0.0.1:5123/api')
     const { initBackend, onBackendFailed } = await load(true)

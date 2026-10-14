@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { initBackend, onBackendFailed } from '@/api/backend'
+import { initBackend, onBackendFailed, onBackendReady } from '@/api/backend'
+import { IS_DESKTOP } from '@/api/desktop'
 import { useDictionaryStore } from '@/stores/dictionary'
 import { useLibraryStore } from '@/stores/library'
 import { useSessionStore } from '@/stores/session'
@@ -11,6 +13,7 @@ import AppSider from '@/components/AppSider.vue'
 import TopBar from '@/components/TopBar.vue'
 import StatusBar from '@/components/StatusBar.vue'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const session = useSessionStore()
@@ -41,6 +44,8 @@ const theme = {
 const backendError = ref<string | null>(null)
 /** True once the backend is known good; nothing loads or renders before that. */
 const ready = ref(false)
+/** Set by backend://failed: the shell gave up, so the error stays. */
+let backendFailed = false
 
 function goPractice() {
   if (route.name !== 'practice') router.push({ name: 'practice' })
@@ -82,11 +87,31 @@ watch(
   },
 )
 
-let stopWatchingBackend: (() => void) | undefined
+/** Shows the shell and loads shared data; runs at most once. */
+function start() {
+  if (ready.value) return
+  backendError.value = null
+  ready.value = true
+  document.addEventListener('keydown', onKeydown)
+  session.startClock()
+  // Categories, dictionary and the error book are needed by more than one page.
+  void library.load()
+  void dictionary.load()
+  void session.loadBook()
+}
+
+let stopWatchingFailed: (() => void) | undefined
+let stopWatchingReady: (() => void) | undefined
 
 onMounted(async () => {
-  stopWatchingBackend = onBackendFailed((reason) => {
+  stopWatchingFailed = onBackendFailed((reason) => {
+    backendFailed = true
     backendError.value = reason
+  })
+  // A handshake announced after the check failed (e.g. a start slower than the
+  // wait) means the API is up after all.
+  stopWatchingReady = onBackendReady(() => {
+    if (backendError.value && !backendFailed) start()
   })
   const backend = await initBackend()
   // A failure announced while the check was still running wins over its result.
@@ -95,16 +120,11 @@ onMounted(async () => {
     backendError.value = backend.reason
     return
   }
-  ready.value = true
-  document.addEventListener('keydown', onKeydown)
-  session.startClock()
-  // Categories, dictionary and the error book are needed by more than one page.
-  void library.load()
-  void dictionary.load()
-  void session.loadBook()
+  start()
 })
 onBeforeUnmount(() => {
-  stopWatchingBackend?.()
+  stopWatchingFailed?.()
+  stopWatchingReady?.()
   document.removeEventListener('keydown', onKeydown)
   session.stopClock()
 })
@@ -123,10 +143,22 @@ onBeforeUnmount(() => {
         <StatusBar />
       </div>
     </div>
+    <div v-else-if="IS_DESKTOP" class="backend-starting" role="status">
+      {{ t('backend.starting') }}
+    </div>
   </a-config-provider>
 </template>
 
 <style scoped>
+.backend-starting {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  color: var(--text-2, var(--text));
+  font-family: var(--font);
+}
 .shell {
   display: flex;
   height: 100vh;

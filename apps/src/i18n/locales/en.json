@@ -13,6 +13,7 @@
     "dash": "—"
   },
   "backend": {
+    "starting": "Starting TypeLab…",
     "unavailable": "TypeLab could not reach its local service",
     "restart": "Restart TypeLab"
   },
