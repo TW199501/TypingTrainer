@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AxiosRequestConfig } from 'axios'
-import { createServer, type Server } from 'node:http'
-import { createServer as createTcpServer, type AddressInfo, type Socket } from 'node:net'
 
 /**
  * Reaching the bundled API.
@@ -176,6 +174,23 @@ describe('stopBackend', () => {
  * fake adapter is swapped back for axios' own so connection errors and the
  * timeout come from the network stack, not from the test.
  */
+/** The app's tsconfig carries no Node types, so the little used here is typed by hand. */
+type NodeServer = {
+  listen(port: number, host: string, cb: () => void): void
+  address(): { port: number }
+  close(cb: () => void): void
+}
+type NodeSocket = { destroy(): void }
+type NodeResponse = {
+  writeHead(status: number, headers: Record<string, string>): void
+  end(body: string): void
+}
+type NodeHttp = {
+  createServer(handler: (req: { url?: string }, res: NodeResponse) => void): NodeServer
+}
+type NodeNet = { createServer(onConnection?: (socket: NodeSocket) => void): NodeServer }
+const nodeModule = <T>(name: string): Promise<T> => import(/* @vite-ignore */ name)
+
 describe('requests across a sidecar restart', () => {
   const servers: { close: (cb: () => void) => void }[] = []
 
@@ -185,31 +200,34 @@ describe('requests across a sidecar restart', () => {
 
   /** An API stand-in that answers every request with the port it listens on. */
   async function apiOn(): Promise<number> {
-    const server: Server = createServer((req, res) => {
+    const { createServer } = await nodeModule<NodeHttp>('node:http')
+    const server = createServer((req, res) => {
       res.writeHead(200, {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json',
       })
-      res.end(JSON.stringify({ port: (server.address() as AddressInfo).port, url: req.url }))
+      res.end(JSON.stringify({ port: server.address().port, url: req.url }))
     })
     await new Promise<void>((r) => server.listen(0, '127.0.0.1', r))
     servers.push(server)
-    return (server.address() as AddressInfo).port
+    return server.address().port
   }
 
   /** A port nothing listens on, as while the old process is gone. */
   async function closedPort(): Promise<number> {
-    const probe = createTcpServer()
+    const { createServer } = await nodeModule<NodeNet>('node:net')
+    const probe = createServer()
     await new Promise<void>((r) => probe.listen(0, '127.0.0.1', r))
-    const { port } = probe.address() as AddressInfo
+    const { port } = probe.address()
     await new Promise<void>((r) => probe.close(() => r()))
     return port
   }
 
   /** Accepts connections and never answers, as a process stuck shutting down. */
   async function silentPort(): Promise<number> {
-    const sockets: Socket[] = []
-    const server = createTcpServer((socket) => sockets.push(socket))
+    const { createServer } = await nodeModule<NodeNet>('node:net')
+    const sockets: NodeSocket[] = []
+    const server = createServer((socket) => sockets.push(socket))
     await new Promise<void>((r) => server.listen(0, '127.0.0.1', r))
     // close() waits for open connections, and this one never ends by itself.
     servers.push({
@@ -218,7 +236,7 @@ describe('requests across a sidecar restart', () => {
         server.close(cb)
       },
     })
-    return (server.address() as AddressInfo).port
+    return server.address().port
   }
 
   async function loadReal(firstPort: number) {
