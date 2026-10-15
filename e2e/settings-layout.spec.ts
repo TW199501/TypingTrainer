@@ -35,9 +35,15 @@ async function boxOf(el: Locator) {
  * nothing here clicks.
  */
 async function pretendDesktop(page: Page) {
+  // On desktop the app asks the shell for the API address and checks /health
+  // before showing anything, so the stub answers both.
   await page.addInitScript(() => {
-    ;(window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {}
+    ;(window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {
+      transformCallback: () => 1,
+      invoke: async (cmd: string) => (cmd === 'api_base_url' ? `${location.origin}/api` : undefined),
+    }
   })
+  await page.route('**/api/health', (route) => route.fulfill({ status: 200, body: '{}' }))
 }
 
 async function openSettings(page: Page, width = 1440, height = 900) {

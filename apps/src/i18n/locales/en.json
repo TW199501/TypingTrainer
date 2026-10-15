@@ -12,6 +12,27 @@
     "pending": "Pending",
     "dash": "—"
   },
+  "backend": {
+    "starting": "Starting TypeLab…",
+    "unavailable": "TypeLab could not reach its local service",
+    "restart": "Restart TypeLab",
+    "update": {
+      "checking": "Checking for updates…",
+      "none": "No update available.",
+      "found": "Version {version} is available.",
+      "install": "Install update",
+      "installing": "Installing… {percent}%",
+      "checkFailed": "Update check failed: {reason}",
+      "installFailed": "Update failed: {reason}"
+    }
+  },
+  "update": {
+    "installFailedRestarting": "Update failed to install — restarting TypeLab…",
+    "lastFailed": "The last attempt to install v{version} failed.",
+    "lastFailedReason": "The last attempt to install v{version} failed: {reason}",
+    "reopenManually": "Please reopen TypeLab manually.",
+    "retry": "Retry"
+  },
   "nav": {
     "groups": {
       "practice": "Practice",

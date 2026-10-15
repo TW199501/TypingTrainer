@@ -28,10 +28,86 @@ export async function desktopModelDir(): Promise<string | null> {
   }
 }
 
+/** Stops the bundled API; resolves too when none is running. */
+async function stopBackend(): Promise<void> {
+  const { invoke } = await import('@tauri-apps/api/core')
+  await invoke('stop_backend')
+}
+
+/** Remembers the version whose install failed, so the next launch does not offer it blindly. */
+const FAILED_VERSION_KEY = 'typelab.update.failedVersion'
+
+/** How long the "restarting" notice stays up before the app relaunches. */
+const RELAUNCH_DELAY_MS = 1500
+
+/** Longest failure reason shown on screen; the stored copy is never cut. */
+const REASON_DISPLAY_LIMIT = 160
+
+type FailedMarker = { version: string; reason: string | null }
+
+/** Cuts a reason for display, ending it with an ellipsis when something was dropped. */
+function truncateReason(reason: string): string {
+  return reason.length > REASON_DISPLAY_LIMIT ? `${reason.slice(0, REASON_DISPLAY_LIMIT)}…` : reason
+}
+
+/** Reads the JSON marker, or the older format where the value is just the version. */
+function readFailedMarker(): FailedMarker | null {
+  let raw: string | null
+  try {
+    raw = localStorage.getItem(FAILED_VERSION_KEY)
+  } catch {
+    return null
+  }
+  if (raw === null) return null
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      typeof (parsed as { version?: unknown }).version === 'string'
+    ) {
+      const { version, reason } = parsed as { version: string; reason?: unknown }
+      return { version, reason: typeof reason === 'string' ? reason : null }
+    }
+  } catch {
+    // Not JSON: the older format stored the bare version string.
+  }
+  return { version: raw, reason: null }
+}
+
+function writeFailedMarker(marker: { version: string; reason: string } | null) {
+  try {
+    if (marker === null) localStorage.removeItem(FAILED_VERSION_KEY)
+    else localStorage.setItem(FAILED_VERSION_KEY, JSON.stringify({ ...marker, at: new Date().toISOString() }))
+  } catch {
+    // Storage that is unavailable only costs the retry notice.
+  }
+}
+
+/**
+ * Thrown when the installer failed after the local service had been stopped.
+ * The app relaunches itself shortly after, so the caller only needs to show
+ * that it is restarting.
+ */
+export class InstallFailedRestartingError extends Error {
+  /** Settles only if the automatic relaunch is rejected, so the page can ask for a manual one. */
+  readonly relaunchFailed: Promise<void>
+
+  constructor(message: string, relaunchFailed: Promise<void> = new Promise(() => {})) {
+    super(message)
+    this.name = 'InstallFailedRestartingError'
+    this.relaunchFailed = relaunchFailed
+  }
+}
+
 /** An update the shell found; installing it stays the caller's decision. */
 export type DesktopUpdate = {
   version: string
   notes: string
+  /** True when the last attempt to install this same version failed. */
+  previouslyFailed: boolean
+  /** Why that attempt failed, cut for display; null when unknown. */
+  previousFailureReason: string | null
   /** Downloads and installs, reporting whole-number percentages as it goes. */
   install: (onProgress: (percent: number) => void) => Promise<void>
 }
@@ -48,15 +124,26 @@ export async function checkDesktopUpdate(): Promise<DesktopUpdate | null> {
   if (!IS_DESKTOP) return null
   const { check } = await import('@tauri-apps/plugin-updater')
   const update = await check()
-  if (!update) return null
+  if (!update) {
+    writeFailedMarker(null)
+    return null
+  }
+
+  const failed = readFailedMarker()
+  const previouslyFailed = failed?.version === update.version
+  if (failed && !previouslyFailed) writeFailedMarker(null)
 
   return {
     version: update.version,
     notes: update.body ?? '',
+    previouslyFailed,
+    previousFailureReason: previouslyFailed && failed.reason ? truncateReason(failed.reason) : null,
     install: async (onProgress) => {
       let got = 0
       let total = 0
-      await update.downloadAndInstall((event) => {
+      // Download (which also checks the signature) while the API keeps
+      // running, so a failed download leaves the app as it was.
+      await update.download((event) => {
         if (event.event === 'Started') {
           total = event.data.contentLength ?? 0
         } else if (event.event === 'Progress') {
@@ -66,9 +153,38 @@ export async function checkDesktopUpdate(): Promise<DesktopUpdate | null> {
           if (total) onProgress(Math.min(99, Math.floor((got / total) * 100)))
         }
       })
+      // The installer replaces files the running API holds open. A stop that
+      // fails must not block the update: the API exits with the app anyway.
+      try {
+        await stopBackend()
+      } catch (error) {
+        console.warn('TypeLab: could not stop the local service before updating', error)
+      }
+      try {
+        await update.install()
+      } catch (error) {
+        // The service is already stopped, so the page has nothing to talk to;
+        // starting the app again brings it back. The version is remembered so
+        // the next launch asks before trying it again.
+        console.error('TypeLab update: install failed after the local service was stopped', error)
+        const message = error instanceof Error ? error.message : String(error)
+        writeFailedMarker({ version: update.version, reason: message })
+        const relaunchFailed = new Promise<void>((resolve) => {
+          setTimeout(() => {
+            import('@tauri-apps/plugin-process')
+              .then(({ relaunch }) => relaunch())
+              .catch((e) => {
+                console.error('TypeLab update: relaunch after a failed install failed', e)
+                resolve()
+              })
+          }, RELAUNCH_DELAY_MS)
+        })
+        throw new InstallFailedRestartingError(message, relaunchFailed)
+      }
+      writeFailedMarker(null)
       // Only reached on macOS and Linux: the Windows installer takes over and
-      // the process exits inside downloadAndInstall. Those two platforms
-      // replace the bundle on disk and need a relaunch to run the new version.
+      // the process exits inside install(). Those two platforms replace the
+      // bundle on disk and need a relaunch to run the new version.
       const { relaunch } = await import('@tauri-apps/plugin-process')
       await relaunch()
     },
