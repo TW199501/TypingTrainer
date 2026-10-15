@@ -1,0 +1,19 @@
+scripts/smoke-sidecar.mjs
+  s_6d601365717a10::t_ce4b54ac42a0fb 40-48,52,55-56,65-70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "41edbee9eab4197e5809aa2d2d8eedbe008f110a",
+  "prompts": {},
+  "sessions": {
+    "s_6d601365717a10": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e59a6c65-abb3-4049-871c-072de9056545",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
