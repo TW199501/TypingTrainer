@@ -78,7 +78,7 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: 24
+          node-version-file: .nvmrc
           cache: npm
 
       # beforeBuildCommand publishes the API sidecar with `dotnet publish`.
