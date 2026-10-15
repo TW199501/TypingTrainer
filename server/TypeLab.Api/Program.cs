@@ -1,6 +1,7 @@
 using ELF.Modules.Hosting.Sidecar;
 using ELF.Modules.Hosting.Sidecar.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.HostFiltering;
+using TypeLab.Api;
 using TypeLab.Api.Api;
 using TypeLab.Api.Data;
 using TypeLab.Api.Models;
@@ -10,11 +11,10 @@ using XiHan.Framework.Translation.OpenCC;
 
 // The shell starts the sidecar without a working directory, so it inherits the
 // app's (`/` from Finder, $HOME on Linux). The content root, and with it
-// appsettings.json, must come from the executable's folder instead. Same signal
-// as UseElfSidecar: ELF_SIDECAR=1 or Elf:Hosting:Sidecar:Enabled.
+// appsettings.json, must come from the executable's folder instead.
 var signal = new ConfigurationBuilder().AddEnvironmentVariables().AddCommandLine(args).Build();
-var sidecarRequested = signal["ELF_SIDECAR"] == "1"
-    || signal.GetValue<bool>("Elf:Hosting:Sidecar:Enabled");
+var sidecarRequested = SidecarSignal.IsRequested(
+    Environment.GetEnvironmentVariable(SidecarSignal.EnvironmentVariable), signal);
 
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {

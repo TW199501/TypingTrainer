@@ -36,16 +36,16 @@ public sealed class SidecarHostTests : IAsyncLifetime
         }
     }
 
-    private SidecarProcess Launch(string? dbPath = null)
+    private SidecarProcess Launch(string? dbPath = null, string sidecarSwitch = "1")
     {
-        var p = new SidecarProcess(dbPath ?? DbPath);
+        var p = new SidecarProcess(dbPath ?? DbPath, sidecarSwitch);
         _started.Add(p);
         return p;
     }
 
-    private async Task<SidecarProcess> StartAsync()
+    private async Task<SidecarProcess> StartAsync(string sidecarSwitch = "1")
     {
-        var p = Launch();
+        var p = Launch(sidecarSwitch: sidecarSwitch);
         await p.WaitForPortAsync(TimeSpan.FromSeconds(30));
         return p;
     }
@@ -88,12 +88,14 @@ public sealed class SidecarHostTests : IAsyncLifetime
         Assert.Equal(origin, Assert.Single(values));
     }
 
-    [Fact]
-    public async Task Cors_origin_only_in_appsettings_proves_config_loads_from_a_foreign_cwd()
+    [Theory]
+    [InlineData("1")]
+    [InlineData("true")]
+    public async Task Cors_origin_only_in_appsettings_proves_config_loads_from_a_foreign_cwd(string sidecarSwitch)
     {
         // https://tauri.localhost is absent from the in-code fallback, so it is allowed
         // only if appsettings.json was read from the sidecar's own folder.
-        var sidecar = await StartAsync();
+        var sidecar = await StartAsync(sidecarSwitch);
         using var http = NoRedirectClient();
         using var request = new HttpRequestMessage(HttpMethod.Get, $"http://127.0.0.1:{sidecar.Port}/api/health");
         request.Headers.Add("Origin", "https://tauri.localhost");
@@ -203,7 +205,7 @@ public sealed class SidecarHostTests : IAsyncLifetime
 
         private static readonly string ForeignDirectory = Directory.CreateTempSubdirectory("typelab-cwd-").FullName;
 
-        public SidecarProcess(string dbPath)
+        public SidecarProcess(string dbPath, string sidecarSwitch)
         {
             var dll = Path.Combine(AppContext.BaseDirectory, "TypeLab.Api.dll");
             var info = new ProcessStartInfo("dotnet")
@@ -218,7 +220,7 @@ public sealed class SidecarHostTests : IAsyncLifetime
                 WorkingDirectory = ForeignDirectory,
             };
             info.ArgumentList.Add(dll);
-            info.Environment["ELF_SIDECAR"] = "1";
+            info.Environment["ELF_SIDECAR"] = sidecarSwitch;
             info.Environment["TYPELAB_DB_PATH"] = dbPath;
             info.Environment["ASPNETCORE_ENVIRONMENT"] = "Production";
             // Without a known HTTPS port the redirect middleware only logs a warning,
