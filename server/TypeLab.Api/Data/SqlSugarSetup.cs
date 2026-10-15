@@ -71,7 +71,7 @@ public static class SqlSugarSetup
         var dbPath = config["TYPELAB_DB_PATH"];
         if (!string.IsNullOrWhiteSpace(dbPath))
         {
-            return $"DataSource={dbPath}";
+            return ForDataSource(dbPath);
         }
 
         var configured = config.GetConnectionString("Default") ?? "DataSource=app.db";
@@ -81,8 +81,12 @@ public static class SqlSugarSetup
             return configured;
         }
 
-        return $"DataSource={Path.GetFullPath(dataSource, contentRoot)}";
+        return ForDataSource(Path.GetFullPath(dataSource, contentRoot));
     }
+
+    // A path may contain ';' or '=', so it goes through the builder to be quoted.
+    private static string ForDataSource(string path) =>
+        new SqliteConnectionStringBuilder { DataSource = path }.ToString();
 
     private static void EnsureDirectory(string connection)
     {
