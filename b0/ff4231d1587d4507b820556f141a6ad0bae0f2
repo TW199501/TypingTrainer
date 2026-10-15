@@ -1,0 +1,21 @@
+server/TypeLab.Api.Tests/SqlSugarSetupTests.cs
+  s_041830bf4ed497::t_46742d8ea42157 1,14-16,26,37,48,60-83
+server/TypeLab.Api/Data/SqlSugarSetup.cs
+  s_041830bf4ed497::t_dea6a1c97480fc 74,84,87-90
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b0ff4231d1587d4507b820556f141a6ad0bae0f2",
+  "prompts": {},
+  "sessions": {
+    "s_041830bf4ed497": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01b8246d-d77a-4c53-8ce7-6e38bdae25e0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
