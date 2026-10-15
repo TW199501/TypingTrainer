@@ -1,0 +1,19 @@
+.github/workflows/sidecar-smoke.yml
+  s_6d601365717a10::t_f102dde4c33366 41,90,138
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0579cbb09a26892ebe70debe501840443a5e2be9",
+  "prompts": {},
+  "sessions": {
+    "s_6d601365717a10": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e59a6c65-abb3-4049-871c-072de9056545",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
