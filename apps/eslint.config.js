@@ -2,6 +2,7 @@ import js from '@eslint/js'
 import ts from 'typescript-eslint'
 import vue from 'eslint-plugin-vue'
 import prettier from 'eslint-config-prettier'
+import globals from 'globals'
 
 export default ts.config(
   { ignores: ['dist/**', 'node_modules/**', 'coverage/**'] },
@@ -11,6 +12,8 @@ export default ts.config(
   {
     files: ['**/*.vue'],
     languageOptions: {
+      // eslint-plugin-vue 10 no longer adds browser globals to its configs.
+      globals: globals.browser,
       parserOptions: { parser: ts.parser },
     },
   },
