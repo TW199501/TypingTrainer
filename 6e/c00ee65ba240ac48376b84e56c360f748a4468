@@ -1,0 +1,23 @@
+apps/eslint.config.js
+  s_6d601365717a10::t_01fe5d44fc0422 5,15-16
+apps/package.json
+  s_6d601365717a10::t_c1a60b67586aae 34-35,41
+package-lock.json
+  s_6d601365717a10::t_9b05497d6efb87 43-44,50,54-146
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6ec00ee65ba240ac48376b84e56c360f748a4468",
+  "prompts": {},
+  "sessions": {
+    "s_6d601365717a10": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e59a6c65-abb3-4049-871c-072de9056545",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
