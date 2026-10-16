@@ -7,11 +7,10 @@ on:
 jobs:
   review:
     name: review
-    # Bot-authored pull requests are skipped rather than failed. Dependabot's
-    # PRs cannot read repository secrets by design, so the API key would always
-    # arrive empty and every dependency bump would carry a red check for a
-    # review that never could have run.
-    if: ${{ !endsWith(github.actor, '[bot]') }}
+    # Other bots are skipped rather than failed. Dependabot is reviewed, but
+    # its runs read Dependabot secrets, not Actions secrets, so the token has
+    # to be stored under both (`gh secret set --app dependabot`).
+    if: ${{ !endsWith(github.actor, '[bot]') || github.actor == 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -28,6 +27,8 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # The action refuses bot-triggered runs unless the bot is listed.
+          allowed_bots: 'dependabot[bot]'
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
