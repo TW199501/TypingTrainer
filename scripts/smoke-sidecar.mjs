@@ -37,11 +37,23 @@ function defaultBinary() {
 }
 
 const binary = resolve(positional[0] ?? defaultBinary())
+
+let size = 0
+try {
+  size = statSync(binary).size
+} catch {
+  console.error(`smoke-sidecar: binary not found: ${binary}`)
+  process.exit(1)
+}
+
 const dataDir = mkdtempSync(join(tmpdir(), 'typelab-smoke-'))
 const workDir = mkdtempSync(join(tmpdir(), 'typelab-smoke-cwd-'))
 let child
+let finished = false
 
 function finish(code, message) {
+  if (finished) return
+  finished = true
   if (message) (code === 0 ? console.log : console.error)(message)
   if (child && child.exitCode === null) child.kill('SIGKILL')
   try {
@@ -50,15 +62,14 @@ function finish(code, message) {
   } catch {
     // The database may still be locked on Windows; the OS temp cleaner owns it.
   }
-  process.exit(code)
+  // process.exit() while the child's pipes are still closing aborts Node 24.18
+  // on the Windows runner ("Assertion failed: !(handle->flags &
+  // UV_HANDLE_CLOSING)", src\win\async.c). Let the event loop drain instead;
+  // the unref'd timer only fires if something is still holding it open.
+  process.exitCode = code
+  setTimeout(() => process.exit(code), 5_000).unref()
 }
 
-let size = 0
-try {
-  size = statSync(binary).size
-} catch {
-  finish(1, `smoke-sidecar: binary not found: ${binary}`)
-}
 console.log(`smoke-sidecar: ${binary}`)
 console.log(`smoke-sidecar: size ${(size / 1024 / 1024).toFixed(1)} MB`)
 
