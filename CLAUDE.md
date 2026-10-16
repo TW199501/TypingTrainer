@@ -106,9 +106,11 @@ Apple certificate and notarisation steps.
 
 ## Versions
 
-Six files carry the version; `scripts/version.mjs` rewrites all of them.
-Never edit one by hand. `Cargo.lock` is included: leaving it to cargo means it
-lags behind and `cargo build --locked` fails.
+Seven files carry the version; `scripts/version.mjs` rewrites all of them.
+Never edit one by hand. Both lock files are included: left to cargo,
+`Cargo.lock` lags behind and `cargo build --locked` fails; left to npm,
+`package-lock.json` lags until the next `npm install` rewrites it and leaves an
+uncommitted change behind.
 
 ## Typing engine
 
