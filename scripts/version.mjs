@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Single source of truth for the version number, which otherwise lives in five
-// places across four toolchains.
+// Single source of truth for the version number, which otherwise lives in seven
+// files across four toolchains.
 //
 //   node scripts/version.mjs            → print the current version
 //   node scripts/version.mjs patch      → 0.0.1 -> 0.0.2
@@ -47,6 +47,21 @@ const TARGETS = [
     // the tree after every release.
     file: p('src-tauri', 'Cargo.lock'),
     find: /(name = "typelab"\r?\nversion = ")([^"]+)(")/,
+  },
+  // npm's lock file repeats the version three times: at the top, for the root
+  // package, and for the apps workspace. Left behind, the next `npm install`
+  // rewrites them and leaves the same uncommitted change as Cargo.lock would.
+  {
+    file: p('package-lock.json'),
+    find: /(^\{\s*"name"\s*:\s*"typing-trainer",\s*"version"\s*:\s*")([^"]+)(")/,
+  },
+  {
+    file: p('package-lock.json'),
+    find: /(""\s*:\s*\{\s*"name"\s*:\s*"typing-trainer",\s*"version"\s*:\s*")([^"]+)(")/,
+  },
+  {
+    file: p('package-lock.json'),
+    find: /("apps"\s*:\s*\{\s*"name"\s*:\s*"@typelab\/web",\s*"version"\s*:\s*")([^"]+)(")/,
   },
 ]
 
