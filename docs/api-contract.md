@@ -11,35 +11,35 @@ behaviour are hand-written.
 
 ## Endpoints
 
-| Method        | Path                         | Purpose                                                  |
-| ------------- | ---------------------------- | -------------------------------------------------------- |
-| POST          | `/auth/login`                | `LoginRequest` → `AuthUserDto`                           |
-| POST          | `/auth/register`             | same shape as login                                      |
-| GET           | `/categories`                | two-level category tree (`CategoryDto[]`)                |
+| Method        | Path                         | Purpose                                                      |
+| ------------- | ---------------------------- | ------------------------------------------------------------ |
+| POST          | `/auth/login`                | `LoginRequest` → `AuthUserDto`                               |
+| POST          | `/auth/register`             | same shape as login                                          |
+| GET           | `/categories`                | two-level category tree (`CategoryDto[]`)                    |
 | POST          | `/categories`                | create a top-level or sub category (`CreateCategoryRequest`) |
-| PUT · DELETE  | `/categories/{id}`           | rename / delete a user category (built-in → 409)         |
-| GET           | `/texts`                     | text list without `content`, total in `X-Total-Count`    |
-| GET           | `/texts/{id}`                | one text, with `content`                                 |
-| POST          | `/texts`                     | store a pasted text (`CreateTextRequest` → `TextDto`)    |
-| POST          | `/texts/import`              | store several texts atomically (`{ texts: [...] }`)      |
-| DELETE        | `/texts/{id}`                | delete a user text (built-in → 409)                      |
-| GET           | `/words?topic=&q=`           | dictionary entries (`DictEntryDto[]`)                    |
-| POST          | `/words/import`              | dictionary import (ECDICT / CC-CEDICT / custom)          |
-| POST          | `/sessions`                  | submit a run (`SessionSubmitDto` → `SessionResultDto`)   |
-| GET           | `/sessions/me`               | recent history (`HistoryItemDto[]`)                      |
-| GET           | `/stats/summary`             | headline numbers (`StatsSummaryDto`)                     |
-| GET           | `/stats/trend?lang=&days=30` | trend series (`TrendPointDto[]`)                         |
-| GET           | `/stats/keys`                | per-key error rate for the heatmap                       |
-| GET           | `/stats/compare?period=`     | this period vs previous                                  |
-| GET           | `/stats/bests`               | personal best per text                                   |
-| GET           | `/leaderboard?lang=&period=` | leaderboard rows                                         |
-| GET           | `/coach`                     | level, targets and today's recommendations               |
-| GET · PUT     | `/book`                      | error book (spaced repetition state)                     |
-| GET           | `/models?locale=`            | model catalogue + the install directory for this runtime |
-| POST · DELETE | `/models/{code}/install`     | mark a model installed / remove it                       |
-| GET           | `/prompts?locale=`           | built-in prompt catalogue (Name/Description localised)   |
-| GET           | `/translate/providers`       | registered translators and whether each is configured    |
-| POST          | `/translate/locales`         | one locale in, the remaining UI locales out              |
+| PUT · DELETE  | `/categories/{id}`           | rename / delete a user category (built-in → 409)             |
+| GET           | `/texts`                     | text list without `content`, total in `X-Total-Count`        |
+| GET           | `/texts/{id}`                | one text, with `content`                                     |
+| POST          | `/texts`                     | store a pasted text (`CreateTextRequest` → `TextDto`)        |
+| POST          | `/texts/import`              | store several texts atomically (`{ texts: [...] }`)          |
+| DELETE        | `/texts/{id}`                | delete a user text (built-in → 409)                          |
+| GET           | `/words?topic=&q=`           | dictionary entries (`DictEntryDto[]`)                        |
+| POST          | `/words/import`              | dictionary import (ECDICT / CC-CEDICT / custom)              |
+| POST          | `/sessions`                  | submit a run (`SessionSubmitDto` → `SessionResultDto`)       |
+| GET           | `/sessions/me`               | recent history (`HistoryItemDto[]`)                          |
+| GET           | `/stats/summary`             | headline numbers (`StatsSummaryDto`)                         |
+| GET           | `/stats/trend?lang=&days=30` | trend series (`TrendPointDto[]`)                             |
+| GET           | `/stats/keys`                | per-key error rate for the heatmap                           |
+| GET           | `/stats/compare?period=`     | this period vs previous                                      |
+| GET           | `/stats/bests`               | personal best per text                                       |
+| GET           | `/leaderboard?lang=&period=` | leaderboard rows                                             |
+| GET           | `/coach`                     | level, targets and today's recommendations                   |
+| GET · PUT     | `/book`                      | error book (spaced repetition state)                         |
+| GET           | `/models?locale=`            | model catalogue + the install directory for this runtime     |
+| POST · DELETE | `/models/{code}/install`     | mark a model installed / remove it                           |
+| GET           | `/prompts?locale=`           | built-in prompt catalogue (Name/Description localised)       |
+| GET           | `/translate/providers`       | registered translators and whether each is configured        |
+| POST          | `/translate/locales`         | one locale in, the remaining UI locales out                  |
 
 ### Library: categories and texts
 
@@ -110,24 +110,24 @@ are created on start-up. Two constraints the entities work around: SQLite has no
 native `DateTimeOffset` (columns are UTC `DateTime`), and SqlSugar materialises
 rows reflectively, so entities use defaults rather than `required` members.
 
-| Table                               | Columns                                                                                  |
-| ----------------------------------- | ---------------------------------------------------------------------------------------- |
-| `Users`                             | Id, Username, PasswordHash, KeyboardLayout, UiLanguage, CreatedAt                        |
-| `Categories`                        | Id, ParentId, Name, I18nKey, Color, Layout, Code, Kind, SortOrder                        |
+| Table                               | Columns                                                                                       |
+| ----------------------------------- | --------------------------------------------------------------------------------------------- |
+| `Users`                             | Id, Username, PasswordHash, KeyboardLayout, UiLanguage, CreatedAt                             |
+| `Categories`                        | Id, ParentId, Name, I18nKey, Color, Layout, Code, Kind, SortOrder                             |
 | `Texts`                             | Id, CategoryId, Code, SortOrder, Title, Content, Level, Chars, Language, CreatedBy, CreatedAt |
-| `Sessions`                          | Id, UserId, TextId, Mode, Speed, Unit, Accuracy, DurationSec, ErrorCount, CreatedAt      |
-| `SessionKeystrokes`                 | SessionId, Seq, KeyChar, OffsetMs, IsCorrect                                             |
-| `KeyErrors`                         | SessionId, KeyChar, Count                                                                |
-| `ErrorBook`                         | UserId, KeyChar, Total, Box, DueAt                                                       |
-| `TextSegmentations`                 | Id, TextId, Engine, ModelVersion, IsPrimary, CreatedAt                                   |
-| `TextSegments`                      | Id, SegmentationId, Seq, Token, Pos, CharStart, CharLength, Reading, WordId              |
-| `PromptTemplates`                   | Id, Code, Name, Description, Content, ModelHint, Revision, IsBuiltIn, CreatedBy          |
-| `LocalModels`                       | Id, Code, Name, Kind, Note, SizeMb, SourceUrl, Sha256, SortOrder, Installed, InstalledAt |
-| `Translations`                      | Id, EntityType, EntityId, Field, Locale, Value, UpdatedAt                                |
-| `Words`                             | Id, Text, Phonetic, Pos, Zh, Topic, Freq                                                 |
-| `WordExamples`                      | WordId, Sentence, Translation                                                            |
-| `UserWordMastery`                   | UserId, WordId, Mastery, NextReviewAt                                                    |
-| `Achievements` / `UserAchievements` | Id, Code, Name, Threshold / UserId, AchievementId, UnlockedAt                            |
+| `Sessions`                          | Id, UserId, TextId, Mode, Speed, Unit, Accuracy, DurationSec, ErrorCount, CreatedAt           |
+| `SessionKeystrokes`                 | SessionId, Seq, KeyChar, OffsetMs, IsCorrect                                                  |
+| `KeyErrors`                         | SessionId, KeyChar, Count                                                                     |
+| `ErrorBook`                         | UserId, KeyChar, Total, Box, DueAt                                                            |
+| `TextSegmentations`                 | Id, TextId, Engine, ModelVersion, IsPrimary, CreatedAt                                        |
+| `TextSegments`                      | Id, SegmentationId, Seq, Token, Pos, CharStart, CharLength, Reading, WordId                   |
+| `PromptTemplates`                   | Id, Code, Name, Description, Content, ModelHint, Revision, IsBuiltIn, CreatedBy               |
+| `LocalModels`                       | Id, Code, Name, Kind, Note, SizeMb, SourceUrl, Sha256, SortOrder, Installed, InstalledAt      |
+| `Translations`                      | Id, EntityType, EntityId, Field, Locale, Value, UpdatedAt                                     |
+| `Words`                             | Id, Text, Phonetic, Pos, Zh, Topic, Freq                                                      |
+| `WordExamples`                      | WordId, Sentence, Translation                                                                 |
+| `UserWordMastery`                   | UserId, WordId, Mastery, NextReviewAt                                                         |
+| `Achievements` / `UserAchievements` | Id, Code, Name, Threshold / UserId, AchievementId, UnlockedAt                                 |
 
 The word column is `Text`, not `Word`: C# forbids a member sharing its type's
 name.
