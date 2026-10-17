@@ -3,6 +3,7 @@
  * rename and delete write into. A page reload restores the fixtures.
  */
 import type { CategoryDto, CreateCategoryBody, CreateTextBody, SubCategoryDto, TextDto } from '../types'
+import { ApiError } from '../http'
 import { CATEGORIES, TEXTS } from './fixtures'
 
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T
@@ -63,11 +64,24 @@ export function renameCategory(id: string, name: string) {
 }
 
 export function removeCategory(id: string) {
+  const top = categories.find((c) => c.id === id)
+  const sub = categories.flatMap((c) => c.children).find((x) => x.id === id)
+  if (top?.isBuiltIn || sub?.isBuiltIn) throw new ApiError('Built-in rows cannot be deleted', 409)
+
+  const moved = texts.filter((t) => (top ? t.categoryId === id : t.subId === id))
   categories = categories.filter((c) => c.id !== id)
   for (const c of categories) c.children = c.children.filter((x) => x.id !== id)
-  texts = texts.filter((t) =>
-    categories.some((c) => c.id === t.categoryId && c.children.some((x) => x.id === t.subId)),
-  )
+  if (!moved.length) return
+
+  const home = uncategorised()
+  const homeSub = subFor(home, 'Uncategorised')
+  for (const t of moved) {
+    t.categoryId = home.id
+    t.category = home.name
+    t.subId = homeSub.id
+    t.sub = homeSub.name
+  }
+  homeSub.count += moved.length
 }
 
 function subFor(parent: CategoryDto, name: string | undefined): SubCategoryDto {
