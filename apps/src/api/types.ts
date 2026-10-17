@@ -76,6 +76,26 @@ export interface DictEntryDto {
   mastery: number
 }
 
+/** One row of a dictionary import. */
+export interface ImportWordDto {
+  word: string
+  zh: string
+  phonetic: string
+  pos: string
+  topic: string
+  example: string
+}
+
+export interface ImportWordsBody {
+  skipDuplicates: boolean
+  words: ImportWordDto[]
+}
+
+export interface ImportWordsResult {
+  added: number
+  skipped: number
+}
+
 /** One physical key event, sent with the run so the server can re-verify the score. */
 export interface KeystrokeDto {
   k: string

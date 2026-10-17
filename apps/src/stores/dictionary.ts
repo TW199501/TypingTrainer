@@ -1,6 +1,8 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { api, type DictEntryDto } from '@/api'
+import { message } from 'ant-design-vue'
+import { api, ApiError, type DictEntryDto, type ImportWordDto } from '@/api'
+import { i18n } from '@/i18n'
 import type { DictEntry } from '@/data/types'
 
 export interface DictFile {
@@ -8,9 +10,12 @@ export interface DictFile {
   rows: number
   cols: string[]
   preview: { w: string; zh: string; cat: string }[]
+  /** The whole file, parsed again on import. */
+  text: string
 }
 
 const toEntry = (d: DictEntryDto): DictEntry => ({
+  id: d.id,
   w: d.word,
   ph: d.phonetic,
   pos: d.pos,
@@ -37,6 +42,11 @@ export const useDictionaryStore = defineStore('dictionary', () => {
 
   async function load() {
     if (loaded.value) return
+    await reload()
+  }
+
+  /** Reads the list again even when it was loaded before, e.g. after an import or a restarted API. */
+  async function reload() {
     entries.value = (await api.dictionary.list()).map(toEntry)
     loaded.value = true
   }
@@ -62,7 +72,7 @@ export const useDictionaryStore = defineStore('dictionary', () => {
         const p = r.split(sep)
         return { w: p[0] || '', zh: p[1] || '', cat: p[3] || 'Uncategorised' }
       })
-      file.value = { name: f.name, rows: rows.length, cols, preview }
+      file.value = { name: f.name, rows: rows.length, cols, preview, text }
       map.value = { w: cols[0] || '', zh: cols[1] || '', ph: cols[2] || '', cat: cols[3] || '' }
     }
     reader.readAsText(f)
@@ -72,9 +82,48 @@ export const useDictionaryStore = defineStore('dictionary', () => {
     importOpen.value = false
   }
 
-  function confirmImport() {
-    importOpen.value = false
-    file.value = null
+  /** Turns every data row into a word, reading each field from the column the user mapped to it. */
+  function mappedWords(f: DictFile): ImportWordDto[] {
+    const lines = f.text.split(/\r?\n/).filter(Boolean)
+    const sep = f.text.includes('\t') ? '\t' : ','
+    const header = (lines[0] || '').split(sep).map((c) => c.trim())
+    const at = (key: string) => (map.value[key] ? header.indexOf(map.value[key]) : -1)
+    const [w, zh, ph, cat] = ['w', 'zh', 'ph', 'cat'].map(at)
+    const cell = (cells: string[], i: number) => (i < 0 ? '' : (cells[i] ?? '').trim())
+    if (w < 0) return []
+    return lines
+      .slice(1)
+      .map((line) => line.split(sep))
+      .map((cells) => ({
+        word: cell(cells, w),
+        zh: cell(cells, zh),
+        phonetic: cell(cells, ph),
+        pos: '',
+        topic: cell(cells, cat),
+        example: '',
+      }))
+  }
+
+  async function confirmImport() {
+    const t = i18n.global.t
+    const words = file.value ? mappedWords(file.value) : []
+    if (!words.length) {
+      message.warning(t('dict.nothingToImport'))
+      return
+    }
+    try {
+      const { added, skipped } = await api.dictionary.import({ skipDuplicates: dedupe.value, words })
+      await reload()
+      message.success(t('dict.imported', { added, skipped }))
+      importOpen.value = false
+      file.value = null
+    } catch (e) {
+      message.error(
+        e instanceof ApiError && e.failed?.length
+          ? t('dict.importFailedRows', { rows: e.failed.join(', ') })
+          : t('dict.importFailed'),
+      )
+    }
   }
 
   return {
@@ -89,6 +138,7 @@ export const useDictionaryStore = defineStore('dictionary', () => {
     map,
     dedupe,
     load,
+    reload,
     listFor,
     loadFile,
     closeImport,

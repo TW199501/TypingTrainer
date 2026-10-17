@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { FMAP, SHIFTED, SRS_DAYS, TEXTS, ZHUYIN, ZH_REV, type Finger } from '@/data/constants'
+import { FMAP, SHIFTED, PRACTICE_KINDS, SRS_DAYS, ZHUYIN, ZH_REV, type Finger } from '@/data/constants'
 import { api, type KeystrokeDto } from '@/api'
 import type { BookEntry, Category, LayoutKind } from '@/data/types'
 import { useLibraryStore } from './library'
@@ -61,6 +61,10 @@ export const useSessionStore = defineStore('session', () => {
   const comp = ref('')
   const composing = ref(false)
 
+  /** The text being typed; null while it loads or when the category has none. */
+  const text = ref<{ id: number; content: string } | null>(null)
+  const textLoading = ref(false)
+
   const book = ref<BookEntry[]>([])
   const bookLoaded = ref(false)
 
@@ -92,8 +96,7 @@ export const useSessionStore = defineStore('session', () => {
     if (cat.value.kind === 'bilingual') {
       return dictList.value.map((d) => d.zh.split('；')[0] + ' ' + d.w).join('　')
     }
-    const g = TEXTS[cat.value.kind] || TEXTS.custom
-    return g.items[idx.value % g.items.length]
+    return text.value?.content ?? ''
   })
 
   const limit = computed(() => (cat.value.kind === 'timed' ? TIMED_SECONDS : 0))
@@ -161,7 +164,7 @@ export const useSessionStore = defineStore('session', () => {
   )
   /** i18n key suffix under `practice.meta.*`; null while reviewing. */
   const metaKey = computed(() =>
-    reviewText.value ? null : cat.value.kind in TEXTS ? cat.value.kind : 'custom',
+    reviewText.value ? null : (PRACTICE_KINDS.find((k) => k === cat.value.kind) ?? 'custom'),
   )
 
   /* ------------------------------------------------------------- actions */
@@ -214,14 +217,53 @@ export const useSessionStore = defineStore('session', () => {
     }, 1000)
   }
 
+  /** Bumped by every load and by `setText`, so an answer that arrives late is dropped. */
+  let textRequest = 0
+
+  function setText(t: { id: number; content: string } | null) {
+    textRequest++
+    text.value = t
+    textLoading.value = false
+  }
+
+  /** Fetches the text for the current category and topic: the one at `idx`, wrapping round the list. */
+  async function loadText() {
+    const request = ++textRequest
+    text.value = null
+    textLoading.value = true
+    try {
+      const category = mode.value
+      let list = sub.value ? await api.texts.list({ category, sub: sub.value }) : []
+      if (!list.length) list = await api.texts.list({ category })
+      const chosen = list.length ? list[idx.value % list.length] : null
+      const full = chosen ? await api.texts.get(chosen.id) : null
+      if (request !== textRequest) return
+      text.value = full ? { id: full.id, content: full.content ?? '' } : null
+    } catch {
+      // The notice for a lost connection is the connection store's job; the text stays empty.
+    } finally {
+      if (request === textRequest) textLoading.value = false
+    }
+  }
+
+  /** Practises one chosen text in the category it belongs to. */
+  async function startText(id: number) {
+    const full = await api.texts.get(id)
+    reset({ mode: full.categoryId, sub: full.subId, idx: 0 })
+    setText({ id: full.id, content: full.content ?? '' })
+  }
+
   function pickCategory(c: Category) {
     reset({ mode: c.id, sub: c.children[0]?.id || '', idx: 0 })
+    if (!isWord.value) void loadText()
   }
   function pickTopic(topicId: string, i: number) {
     reset({ sub: topicId, idx: i })
+    if (!isWord.value) void loadText()
   }
   function nextText() {
     reset({ idx: idx.value + 1 })
+    if (!isWord.value) void loadText()
   }
 
   async function loadBook() {
@@ -310,6 +352,7 @@ export const useSessionStore = defineStore('session', () => {
 
     const lay = layout.value
     const t = target.value
+    if (!t) return false
 
     // Chinese goes through the IME input; here we only mirror the physical key.
     if (lay === 'zh') {
@@ -373,6 +416,7 @@ export const useSessionStore = defineStore('session', () => {
   /** Shared by the IME input's change and compositionend handlers. */
   function applyImeValue(raw: string) {
     const t = target.value
+    if (!t) return
     const v = (raw || '').slice(0, t.length)
     const grew = v.length > typed.value.length
     const nextErrors = { ...errors.value }
@@ -446,6 +490,8 @@ export const useSessionStore = defineStore('session', () => {
     count,
     armed,
     reviewText,
+    text,
+    textLoading,
     comp,
     composing,
     book,
@@ -483,6 +529,10 @@ export const useSessionStore = defineStore('session', () => {
     press,
     reset,
     startRun,
+    setText,
+    loadText,
+    startText,
+    applyImeValue,
     pickCategory,
     pickTopic,
     nextText,

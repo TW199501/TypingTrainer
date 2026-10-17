@@ -57,6 +57,7 @@
     "toggleSidebar": "收起／展开侧栏",
     "synced": "{minutes} 分钟前已同步",
     "offline": "离线 · {count} 条待同步",
+    "reconnecting": "连接中断，正在重新连接…",
     "shortcutHint": "Ctrl+Enter 开始 · Ctrl+N 换一篇"
   },
   "page": {
@@ -277,6 +278,10 @@
     }
   },
   "dict": {
+    "imported": "已导入 {added} 个单词，跳过 {skipped} 个重复",
+    "nothingToImport": "没有可导入的内容：请选择“单词”列，并确认文件有数据行",
+    "importFailed": "导入失败，没有新增任何单词。",
+    "importFailedRows": "导入失败，这些数据行被拒绝：{rows}",
     "search": "搜索单词、中文或主题",
     "count": "分类词典 · {count} 条",
     "import": "导入词典",

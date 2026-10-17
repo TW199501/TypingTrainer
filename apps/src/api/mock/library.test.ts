@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import {
   createCategory,
   createText,
+  getText,
   listCategories,
   listTexts,
   removeCategory,
@@ -50,5 +51,41 @@ describe('mock library: deleting categories', () => {
     expect(() => removeCategory('Web')).toThrow()
     expect(listTexts()).toHaveLength(before)
     expect(listCategories().some((c) => c.id === 'english')).toBe(true)
+  })
+})
+
+describe('mock library: practice texts', () => {
+  beforeEach(() => {
+    resetMockLibrary()
+  })
+
+  it('lists the practice texts of a category, in the order they were written', () => {
+    const list = listTexts({ category: 'basic' })
+    expect(list).toHaveLength(3)
+    expect(list[0].categoryId).toBe('basic')
+    expect(list.every((t) => t.content === undefined)).toBe(true)
+  })
+
+  it('narrows to the first topic, and has nothing for the others', () => {
+    expect(listTexts({ category: 'basic', sub: 'Home row' })).toHaveLength(3)
+    expect(listTexts({ category: 'basic', sub: 'Numbers' })).toEqual([])
+  })
+
+  it('gives a category without texts the custom ones', () => {
+    const { id } = createCategory({ level: 'top', name: 'Mine' })
+    expect(listTexts({ category: id }).map((t) => t.categoryId)).toEqual(['custom'])
+  })
+
+  it('returns the content of a practice text', () => {
+    const [first] = listTexts({ category: 'basic' })
+    expect(getText(first.id).content).toBe('asdf jkl; asdf jkl; fjdk slas dkfj gh')
+  })
+
+  it('returns a text you added with its own content, and a seeded one with its category first text', () => {
+    const mine = createText({ title: 'mine', content: 'hello', categoryId: 'english', sub: 'Web' })
+    expect(getText(mine.id).content).toBe('hello')
+    const seeded = listTexts().find((t) => t.isBuiltIn && t.categoryId === 'chinese')!
+    expect(getText(seeded.id)).toMatchObject({ id: seeded.id, categoryId: 'chinese' })
+    expect(getText(seeded.id).content).toMatch(/打字練習/)
   })
 })

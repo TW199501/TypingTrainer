@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import { defineComponent, h } from 'vue'
 import { i18n } from '@/i18n'
 
@@ -39,10 +40,13 @@ const session = {
   startClock: vi.fn(),
   stopClock: vi.fn(),
   loadBook: vi.fn(),
+  loadText: vi.fn(),
+  nextText: vi.fn(),
+  startRun: vi.fn(),
   handleKey: vi.fn(),
 }
-const library = { load: vi.fn() }
-const dictionary = { load: vi.fn() }
+const library = { load: vi.fn(), reload: vi.fn() }
+const dictionary = { load: vi.fn(), reload: vi.fn() }
 vi.mock('@/stores/session', () => ({ useSessionStore: () => session }))
 vi.mock('@/stores/library', () => ({ useLibraryStore: () => library }))
 vi.mock('@/stores/dictionary', () => ({ useDictionaryStore: () => dictionary }))
@@ -72,6 +76,7 @@ function render() {
 }
 
 beforeEach(() => {
+  setActivePinia(createPinia())
   vi.clearAllMocks()
   failedHandlers.length = 0
   readyHandlers.length = 0
@@ -84,6 +89,7 @@ function expectStartedOnce() {
   expect(library.load).toHaveBeenCalledOnce()
   expect(dictionary.load).toHaveBeenCalledOnce()
   expect(session.loadBook).toHaveBeenCalledOnce()
+  expect(session.loadText).toHaveBeenCalledOnce()
   expect(session.startClock).toHaveBeenCalledOnce()
 }
 

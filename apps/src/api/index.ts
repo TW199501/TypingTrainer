@@ -13,6 +13,8 @@ import type {
   CompareRowDto,
   DictEntryDto,
   HistoryItemDto,
+  ImportWordsBody,
+  ImportWordsResult,
   KeyErrorRateDto,
   LeaderboardRowDto,
   LoginRequest,
@@ -50,9 +52,14 @@ export function usesRealApi(group: ApiGroup, desktop = IS_DESKTOP, mock = USE_MO
   return desktop ? DESKTOP_REAL_GROUPS.has(group) : !mock
 }
 
-/** Per call, decides whether the fixture or the endpoint answers. */
-async function pick<T>(group: ApiGroup, mock: () => T, real: () => Promise<{ data: T }>): Promise<T> {
-  if (!usesRealApi(group)) return delay(mock())
+/** Per call, decides whether the fixture or the endpoint answers; `mockDelayMs` overrides the mock's pause. */
+async function pick<T>(
+  group: ApiGroup,
+  mock: () => T,
+  real: () => Promise<{ data: T }>,
+  mockDelayMs?: number,
+): Promise<T> {
+  if (!usesRealApi(group)) return delay(mock(), mockDelayMs)
   const res = await real()
   return res.data
 }
@@ -99,17 +106,19 @@ export const api = {
 
   texts: {
     /** Walks every page, so the caller always gets the full list. */
-    list: (params: Record<string, unknown> = {}): Promise<TextDto[]> =>
+    list: (params: { category?: string; sub?: string } = {}): Promise<TextDto[]> =>
       pick(
         'texts',
-        () => lib.listTexts(),
+        () => lib.listTexts(params),
         async () => ({ data: await fetchAllPages<TextDto>('/texts', params) }),
+        0,
       ),
     get: (id: number): Promise<TextDto> =>
       pick(
         'texts',
         () => lib.getText(id),
         () => http.get<TextDto>(`/texts/${id}`),
+        0,
       ),
     create: (body: CreateTextBody): Promise<TextDto> =>
       pick(
@@ -132,11 +141,18 @@ export const api = {
   },
 
   dictionary: {
+    /** Walks every page, so the caller always gets the full list. */
     list: (params: { topic?: string; q?: string } = {}): Promise<DictEntryDto[]> =>
       pick(
         'dictionary',
         () => fx.DICTIONARY,
-        () => http.get<DictEntryDto[]>('/words', { params }),
+        async () => ({ data: await fetchAllPages<DictEntryDto>('/words', params) }),
+      ),
+    import: (body: ImportWordsBody): Promise<ImportWordsResult> =>
+      pick(
+        'dictionary',
+        () => ({ added: body.words.length, skipped: 0 }),
+        () => http.post<ImportWordsResult>('/words/import', body),
       ),
   },
 

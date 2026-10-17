@@ -57,6 +57,7 @@
     "toggleSidebar": "收合／展開側欄",
     "synced": "{minutes} 分鐘前已同步",
     "offline": "離線 · {count} 筆待同步",
+    "reconnecting": "連線中斷，正在重新連線…",
     "shortcutHint": "Ctrl+Enter 開始 · Ctrl+N 換一篇"
   },
   "page": {
@@ -277,6 +278,10 @@
     }
   },
   "dict": {
+    "imported": "已匯入 {added} 個單字，略過 {skipped} 個重複",
+    "nothingToImport": "沒有可匯入的內容：請選擇「單字」欄，並確認檔案有資料列",
+    "importFailed": "匯入失敗，沒有新增任何單字。",
+    "importFailedRows": "匯入失敗，這些資料列被拒絕：{rows}",
     "search": "搜尋單字、中文或主題",
     "count": "分類字典 · {count} 筆",
     "import": "匯入字典",

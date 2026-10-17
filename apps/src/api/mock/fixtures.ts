@@ -711,3 +711,83 @@ export function prompts(locale = 'en'): PromptDto[] {
     isBuiltIn: true,
   }))
 }
+
+/* ------------------------------------------------------------ practice texts */
+
+/**
+ * What the practice screen types in the web build, one group per category kind.
+ * Their ids start at 9001 so they never meet the library fixtures or the
+ * ids the mock library hands out.
+ */
+const META: Record<string, [category: string, sub: string]> = {
+  basic: ['Basics', 'Home row'],
+  english: ['English', 'Web'],
+  chinese: ['Chinese', 'Finance'],
+  zhuyin: ['Bopomofo', 'Initials'],
+  bilingual: ['Vocabulary', 'Banking'],
+  code: ['Code', 'C#'],
+  timed: ['Timed', '1 min'],
+  custom: ['Custom', 'Uncategorised'],
+}
+
+const SRC: Record<string, { items: string[] }> = {
+  basic: {
+    items: [
+      'asdf jkl; asdf jkl; fjdk slas dkfj gh',
+      'the quick fox jumps over a lazy dog by the river',
+      'sad lads ask dad; fall glass half gaff jail',
+    ],
+  },
+  english: {
+    items: [
+      'Design is not just what it looks like and feels like. Design is how it works. A good interface disappears into the task, leaving the person free to think about the work itself.',
+      'Typing well is a quiet skill. It rewards patience over speed, accuracy over bursts, and steady daily practice over a single long session.',
+    ],
+  },
+  chinese: {
+    items: [
+      '打字練習的重點不在速度，而在穩定。每天固定練十分鐘，手指會自己記住位置，速度自然跟上來。',
+      '好的介面會消失在任務裡，讓人專心想事情本身，而不是想著手上的工具怎麼操作。',
+    ],
+  },
+  zhuyin: {
+    items: [
+      'ㄅㄆㄇㄈ ㄉㄊㄋㄌ ㄍㄎㄏ ㄐㄑㄒ',
+      'ㄓㄔㄕㄖ ㄗㄘㄙ ㄧㄨㄩ ㄚㄛㄜㄝ',
+      'ㄞㄟㄠㄡ ㄢㄣㄤㄥ ㄦ ˊˇˋ˙',
+    ],
+  },
+  bilingual: { items: [] },
+  code: {
+    items: [
+      'const wpm = (chars, ms) => Math.round((chars / 5) / (ms / 60000));',
+      'if (typed[i] !== target[i]) { errors.set(target[i], (errors.get(target[i]) ?? 0) + 1); }',
+      'SELECT UserId, AVG(WPM) FROM Sessions WHERE CreatedAt > @start GROUP BY UserId;',
+    ],
+  },
+  timed: {
+    items: [
+      'A calm mind types faster than a rushed one. Focus on the next character, not the whole paragraph, and the speed will follow on its own.',
+    ],
+  },
+  custom: {
+    items: ['Paste your own paragraph here to practise exactly the words you write every day at work.'],
+  },
+}
+
+export const PRACTICE_TEXTS: TextDto[] = Object.entries(SRC).flatMap(([kind, group], g) =>
+  group.items.map((content, i) => ({
+    id: 9001 + g * 10 + i,
+    title: `${META[kind][0]} ${i + 1}`,
+    category: META[kind][0],
+    sub: META[kind][1],
+    categoryId: kind,
+    subId: META[kind][1],
+    level: 'L3',
+    chars: content.length,
+    best: null,
+    lastPractisedAt: null,
+    isBuiltIn: true,
+    content,
+  })),
+)

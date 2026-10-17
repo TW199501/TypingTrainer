@@ -51,6 +51,12 @@ export const useLibraryStore = defineStore('library', () => {
     }
   }
 
+  /** Reads everything again even when it was loaded before, e.g. after the API restarted. */
+  async function reload() {
+    await refresh()
+    loaded.value = true
+  }
+
   /** Re-reads the tree and the texts after a write, so the screen shows what the store really holds. */
   async function refresh() {
     const [cats, list] = await Promise.all([api.categories.list(), api.texts.list()])
@@ -229,6 +235,7 @@ export const useLibraryStore = defineStore('library', () => {
     catCount,
     byId,
     load,
+    reload,
     loading,
     loaded,
     composerOpen,

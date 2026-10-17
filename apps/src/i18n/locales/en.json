@@ -57,6 +57,7 @@
     "toggleSidebar": "Toggle sidebar",
     "synced": "Synced {minutes} min ago",
     "offline": "Offline · {count} pending",
+    "reconnecting": "Connection lost — reconnecting…",
     "shortcutHint": "Ctrl+Enter Start · Ctrl+N Next text"
   },
   "page": {
@@ -277,6 +278,10 @@
     }
   },
   "dict": {
+    "imported": "Imported {added} words, skipped {skipped} duplicates",
+    "nothingToImport": "Nothing to import: pick the column that holds the word, and make sure the file has rows",
+    "importFailed": "Could not import. Nothing was added.",
+    "importFailedRows": "Could not import. These rows were rejected: {rows}",
     "search": "Search word, meaning or topic",
     "count": "Thematic dictionary · {count} entries",
     "import": "Import dictionary",

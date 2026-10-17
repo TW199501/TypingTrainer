@@ -4,7 +4,7 @@
  */
 import type { CategoryDto, CreateCategoryBody, CreateTextBody, SubCategoryDto, TextDto } from '../types'
 import { ApiError } from '../http'
-import { CATEGORIES, TEXTS } from './fixtures'
+import { CATEGORIES, PRACTICE_TEXTS, TEXTS } from './fixtures'
 
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T
 
@@ -21,12 +21,32 @@ export function resetMockLibrary() {
 
 export const listCategories = (): CategoryDto[] => clone(categories)
 
-export const listTexts = (): TextDto[] => clone(texts).map(({ content: _content, ...rest }) => rest)
+const withoutContent = ({ content: _content, ...rest }: TextDto): TextDto => rest
 
+/** The kind of a category id: the stored category's kind, or the id itself for the built-in groups. */
+const kindOf = (id: string): string => categories.find((c) => c.id === id)?.kind ?? id
+
+/** The practice texts of one category kind; kinds without texts of their own use the custom group. */
+function practiceOf(kind: string): TextDto[] {
+  const own = PRACTICE_TEXTS.filter((t) => t.categoryId === kind)
+  return own.length ? own : PRACTICE_TEXTS.filter((t) => t.categoryId === 'custom')
+}
+
+/** With a category (and sub), the practice texts of it; without, the library list. */
+export const listTexts = (params: { category?: string; sub?: string } = {}): TextDto[] => {
+  if (!params.category) return clone(texts).map(withoutContent)
+  const list = practiceOf(kindOf(params.category)).filter((t) => !params.sub || t.subId === params.sub)
+  return clone(list).map(withoutContent)
+}
+
+/** A library text keeps its own content; a seeded one has none, so it practises its category's first text. */
 export const getText = (id: number): TextDto => {
+  const practice = PRACTICE_TEXTS.find((x) => x.id === id)
+  if (practice) return clone(practice)
   const t = texts.find((x) => x.id === id)
   if (!t) throw new Error('Text not found')
-  return clone(t)
+  if (t.content) return clone(t)
+  return { ...clone(t), content: practiceOf(kindOf(t.categoryId))[0]?.content ?? '' }
 }
 
 export function createCategory(body: CreateCategoryBody): { id: string } {

@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { ExportOutlined } from '@ant-design/icons-vue'
 import { catTotal, TAG_BY_CAT } from '@/data/constants'
 import { useLibraryStore } from '@/stores/library'
+import { useSessionStore } from '@/stores/session'
 import { useGridLayout } from '@/composables/useGridLayout'
 
 const { t } = useI18n()
 const library = useLibraryStore()
+const session = useSessionStore()
+const router = useRouter()
 const { libCols, libRows } = useGridLayout()
 
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -22,6 +26,16 @@ async function rename(e: Event, groupId: string, topicId: string | null) {
   await library.commitRename(groupId, topicId, el.value)
   const group = library.byId(groupId)
   el.value = (topicId === null ? group : group?.children.find((x) => x.id === topicId))?.name ?? el.value
+}
+/** Opens the chosen text on the practice screen. */
+async function practise(id: number) {
+  try {
+    await session.startText(id)
+  } catch {
+    // A lost connection already shows its own notice; stay on the library.
+    return
+  }
+  router.push({ name: 'practice' })
 }
 const blurOnEnter = (e: KeyboardEvent) => (e.target as HTMLInputElement).blur()
 
@@ -223,7 +237,7 @@ const modalPlaceholder = computed(() =>
             </div>
             <span class="col-level" :style="{ color: row.levelColor, fontWeight: 500 }">{{ row.level }}</span>
             <span class="col-best nums">{{ row.best }}</span>
-            <span class="col-action drill">{{ t('common.drill') }}</span>
+            <span class="col-action drill" @click="practise(row.id)">{{ t('common.drill') }}</span>
             <span
               v-if="!row.isBuiltIn"
               class="remove"

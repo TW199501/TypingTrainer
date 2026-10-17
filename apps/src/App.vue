@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { checkHealth, initBackend, onBackendFailed, onBackendReady } from '@/api/backend'
 import { IS_DESKTOP } from '@/api/desktop'
+import { useConnectionStore } from '@/stores/connection'
 import { useDictionaryStore } from '@/stores/dictionary'
 import { useLibraryStore } from '@/stores/library'
 import { useSessionStore } from '@/stores/session'
@@ -20,6 +21,7 @@ const session = useSessionStore()
 const settings = useSettingsStore()
 const library = useLibraryStore()
 const dictionary = useDictionaryStore()
+const connection = useConnectionStore()
 
 const theme = {
   token: {
@@ -68,7 +70,7 @@ function onKeydown(e: KeyboardEvent) {
     } else if (k === 'n') {
       e.preventDefault()
       goPractice()
-      session.idx += 1
+      session.nextText()
       session.startRun()
     } else if (k === 'b') {
       e.preventDefault()
@@ -104,6 +106,7 @@ function start() {
   void library.load()
   void dictionary.load()
   void session.loadBook()
+  void session.loadText()
 }
 
 let stopWatchingFailed: (() => void) | undefined
@@ -117,11 +120,20 @@ onMounted(async () => {
   // A handshake announced after the check failed (e.g. a start slower than the
   // wait) may mean the API is up after all; /health decides.
   stopWatchingReady = onBackendReady(async () => {
+    // A restarted API while the app runs: drop the notice and read the data again.
+    if (ready.value && !backendError.value) {
+      connection.markRestored()
+      void library.reload()
+      void dictionary.reload()
+      return
+    }
     if (!backendError.value || backendFailed || updateInstalling) return
     const health = await checkHealth()
     if (ready.value || backendFailed || updateInstalling) return
-    if (health.ok) start()
-    else backendError.value = health.reason
+    if (health.ok) {
+      connection.markRestored()
+      start()
+    } else backendError.value = health.reason
   })
   const backend = await initBackend()
   // A failure announced while the check was still running wins over its result.
@@ -146,6 +158,7 @@ onBeforeUnmount(() => {
     <div v-else-if="ready" class="shell">
       <AppSider />
       <div class="main">
+        <a-alert v-if="connection.lost" banner type="warning" :message="t('shell.reconnecting')" />
         <TopBar />
         <div class="content">
           <router-view />
