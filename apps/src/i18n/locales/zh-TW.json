@@ -94,6 +94,8 @@
     "thenEnglish": "再打英文",
     "loadingText": "正在載入文本…",
     "emptyCategory": "這個分類還沒有文本，請到「題庫管理」新增一篇",
+    "loadError": "無法載入文本，連線恢復後會自動重新載入",
+    "retry": "重試",
     "openLibrary": "前往題庫管理",
     "fingers": {
       "pinkyL": "左小指",

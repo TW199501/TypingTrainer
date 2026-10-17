@@ -279,6 +279,21 @@ describe('practice text', () => {
     expect(session.text).toBeNull()
   })
 
+  it('marks a failed load as an error, and a later good load clears it', async () => {
+    const list = vi.spyOn(api.texts, 'list').mockRejectedValue(new Error('offline'))
+    vi.spyOn(api.texts, 'get').mockImplementation(async (id) => dto(id, 'basic', 'Home row', `c${id}`))
+    await session.loadText()
+
+    expect(session.textError).toBe(true)
+    expect(session.textLoading).toBe(false)
+    expect(session.text).toBeNull()
+
+    list.mockResolvedValue([dto(3, 'basic', 'Home row')])
+    await session.loadText()
+    expect(session.textError).toBe(false)
+    expect(session.text?.content).toBe('c3')
+  })
+
   it('ignores a load that a newer choice has overtaken', async () => {
     let release!: (v: TextDto[]) => void
     vi.spyOn(api.texts, 'list')

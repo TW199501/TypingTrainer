@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { i18n } from '@/i18n'
-import { CATEGORIES } from '@/api/mock/fixtures'
+import { api } from '@/api'
+import { CATEGORIES, TEXTS } from '@/api/mock/fixtures'
 import type { Category } from '@/data/types'
 import { useLibraryStore } from '@/stores/library'
 import { useSessionStore } from '@/stores/session'
@@ -53,6 +54,7 @@ afterEach(() => {
   wrapper?.unmount()
   wrapper = undefined
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 /** The rendered sequence inside the text box: a character, or `|` for a line break. */
@@ -106,6 +108,24 @@ describe('PracticeView text card', () => {
 
     expect(w.find('.text-state').exists()).toBe(false)
     expect(document.activeElement).toBe(ime.element)
+  })
+
+  it('says the load failed, not that the category is empty, and retries on request', async () => {
+    const list = vi.spyOn(api.texts, 'list').mockRejectedValue(new Error('offline'))
+    vi.spyOn(api.texts, 'get').mockResolvedValue({ ...TEXTS[0], id: 9, content: 'back again' })
+    session.reset({ mode: 'english', idx: 0 })
+    await session.loadText()
+    const w = await render()
+
+    const state = w.get('.text-state')
+    expect(state.text()).toContain("Couldn't load the text. It loads again when the connection is back.")
+    expect(state.text()).not.toContain('No texts in this category yet')
+
+    list.mockResolvedValue([{ ...TEXTS[0], id: 9 }])
+    await state.get('.btn-slot').trigger('click')
+    await flushPromises()
+    expect(w.find('.text-state').exists()).toBe(false)
+    expect(session.text?.content).toBe('back again')
   })
 
   it('shows no empty state for a word drill', async () => {

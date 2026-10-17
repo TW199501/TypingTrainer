@@ -94,6 +94,8 @@
     "thenEnglish": "再打英文",
     "loadingText": "正在加载文本…",
     "emptyCategory": "这个分类还没有文本，请到“题库管理”添加一篇",
+    "loadError": "无法加载文本，连接恢复后会自动重新加载",
+    "retry": "重试",
     "openLibrary": "前往题库管理",
     "fingers": {
       "pinkyL": "左小指",

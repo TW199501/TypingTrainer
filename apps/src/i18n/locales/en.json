@@ -94,6 +94,8 @@
     "thenEnglish": "then English",
     "loadingText": "Loading text…",
     "emptyCategory": "No texts in this category yet — add one in the Library",
+    "loadError": "Couldn't load the text. It loads again when the connection is back.",
+    "retry": "Retry",
     "openLibrary": "Open Library",
     "fingers": {
       "pinkyL": "L pinky",

@@ -64,6 +64,8 @@ export const useSessionStore = defineStore('session', () => {
   /** The text being typed; null while it loads or when the category has none. */
   const text = ref<{ id: number; content: string } | null>(null)
   const textLoading = ref(false)
+  /** True when the last text load failed, so the screen can say so instead of "no texts". */
+  const textError = ref(false)
 
   const book = ref<BookEntry[]>([])
   const bookLoaded = ref(false)
@@ -242,6 +244,7 @@ export const useSessionStore = defineStore('session', () => {
     textRequest++
     text.value = t
     textLoading.value = false
+    textError.value = false
   }
 
   /** Fetches the text for the current category and topic: the one at `idx`, wrapping round the list. */
@@ -249,6 +252,7 @@ export const useSessionStore = defineStore('session', () => {
     const request = ++textRequest
     text.value = null
     textLoading.value = true
+    textError.value = false
     try {
       const category = mode.value
       let list = sub.value ? await api.texts.list({ category, sub: sub.value }) : []
@@ -258,7 +262,8 @@ export const useSessionStore = defineStore('session', () => {
       if (request !== textRequest) return
       text.value = full ? { id: full.id, content: full.content ?? '' } : null
     } catch {
-      // The notice for a lost connection is the connection store's job; the text stays empty.
+      // The connection store owns the lost-connection banner; the practice card says it failed.
+      if (request === textRequest) textError.value = true
     } finally {
       if (request === textRequest) textLoading.value = false
     }
@@ -516,6 +521,7 @@ export const useSessionStore = defineStore('session', () => {
     reviewText,
     text,
     textLoading,
+    textError,
     comp,
     composing,
     book,

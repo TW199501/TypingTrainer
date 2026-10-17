@@ -142,10 +142,11 @@ const prompt = computed(() => {
   }
 })
 
-/** Why there is nothing to type: the text is still loading, or the category has none. */
-const textState = computed<'loading' | 'empty' | null>(() => {
+/** Why there is nothing to type: the text is still loading, it failed to load, or the category has none. */
+const textState = computed<'loading' | 'error' | 'empty' | null>(() => {
   if (session.target || session.isWord || session.reviewText) return null
-  return session.textLoading ? 'loading' : 'empty'
+  if (session.textLoading) return 'loading'
+  return session.textError ? 'error' : 'empty'
 })
 
 const textCategory = computed(() => (session.reviewText ? t('practice.errorReview') : session.cat.name))
@@ -286,6 +287,12 @@ onMounted(() => nextTick(() => imeRef.value?.focus()))
 
       <div v-if="textState === 'loading'" class="text-state" role="status">
         <span class="dim">{{ t('practice.loadingText') }}</span>
+      </div>
+      <div v-else-if="textState === 'error'" class="text-state" role="alert">
+        <span class="dim">{{ t('practice.loadError') }}</span>
+        <div class="btn-slot" @click="session.loadText()">
+          <a-button>{{ t('practice.retry') }}</a-button>
+        </div>
       </div>
       <div v-else-if="textState === 'empty'" class="text-state">
         <span class="dim">{{ t('practice.emptyCategory') }}</span>
