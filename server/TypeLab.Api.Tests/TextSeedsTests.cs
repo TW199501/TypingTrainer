@@ -64,4 +64,27 @@ public class TextSeedsTests
         Assert.Equal(2, text.Level);
         Assert.Equal("en", text.Language);
     }
+
+    [Fact]
+    public void Seed_restores_drifted_text_and_leaves_user_texts_alone()
+    {
+        using var t = NewDb();
+        TextSeeds.Seed(t.Db);
+
+        var basic = t.Db.Queryable<PracticeText>().First(x => x.Code == "basic.1");
+        var shipped = basic.Content;
+        basic.Content = "edited";
+        t.Db.Updateable(basic).ExecuteCommand();
+        var catId = basic.CategoryId;
+        var userId = t.Db.Insertable(new PracticeText { CategoryId = catId, Title = "mine", Content = "mine", Chars = 4 })
+            .ExecuteReturnIdentity();
+
+        TextSeeds.Seed(t.Db);
+
+        Assert.Equal(shipped, t.Db.Queryable<PracticeText>().First(x => x.Code == "basic.1").Content);
+        var mine = t.Db.Queryable<PracticeText>().First(x => x.Id == userId);
+        Assert.Equal("mine", mine.Content);
+        Assert.Null(mine.Code);
+        Assert.Equal(16, t.Db.Queryable<PracticeText>().Count());
+    }
 }
