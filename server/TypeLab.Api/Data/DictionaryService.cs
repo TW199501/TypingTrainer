@@ -16,7 +16,7 @@ public class DictionaryService(ISqlSugarClient db, IExcelImporter importer)
     /// <summary>Words stored per insert batch.</summary>
     private const int InsertBatch = 1000;
 
-    /// <summary>Record numbers a rejected import lists; the total comes as <c>failedCount</c>.</summary>
+    /// <summary>Data-row numbers a rejected import lists; the total comes as <c>failedCount</c>.</summary>
     public const int MaxFailedReported = 50;
 
     public async Task<(List<DictEntryDto> Rows, int Total)> ListAsync(string? topic, string? q, int page, int size)
@@ -86,7 +86,7 @@ public class DictionaryService(ISqlSugarClient db, IExcelImporter importer)
 
     /// <summary>
     /// Imports every data row of a file, reading each field from the header <paramref name="map"/>
-    /// names. All or nothing: a row whose word is blank fails the whole file with the record
+    /// names. All or nothing: a row whose word is blank fails the whole file with the data-row
     /// numbers of such rows, and nothing is written. Rows are read one at a time and stored in
     /// batches inside one transaction.
     /// </summary>
@@ -132,7 +132,7 @@ public class DictionaryService(ISqlSugarClient db, IExcelImporter importer)
                     failedCount++;
                     if (failed.Count < MaxFailedReported)
                     {
-                        failed.Add(row.RowNumber.ToString());
+                        failed.Add(WordFile.DataRowNumber(row, options).ToString());
                     }
 
                     continue;

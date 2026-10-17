@@ -165,7 +165,7 @@ describe('dictionary import', () => {
     await dictionary.confirmImport()
 
     expect(message.error).toHaveBeenCalledWith(t('dict.importFailedRows', { rows: '2, 5' }))
-    expect(message.error.mock.calls[0][0]).toContain('Records without a word: 2, 5')
+    expect(message.error.mock.calls[0][0]).toContain('Data rows without a word: 2, 5')
     expect(dictionary.importOpen).toBe(true)
     expect(dictionary.file).not.toBeNull()
   })
@@ -305,7 +305,7 @@ describe('dictionary file, desktop API', () => {
     expect(dictionary.importing).toBe(false)
   })
 
-  it('names the records without a word, and how many more there are', async () => {
+  it('names the data rows without a word, and how many more there are', async () => {
     api.dictionary.importFile.mockRejectedValue(new ApiError('Some rows have no word.', 400, ['3', '5'], 12))
     const { dictionary } = await chosen()
     await dictionary.confirmImport()
@@ -314,7 +314,7 @@ describe('dictionary file, desktop API', () => {
     expect(shown).toBe(
       t('dict.importFailedRows', { rows: '3, 5' }) + t('dict.importFailedMore', { count: 10 }),
     )
-    expect(shown).toBe('Could not import. Nothing was added. Records without a word: 3, 5 and 10 more')
+    expect(shown).toBe('Could not import. Nothing was added. Data rows without a word: 3, 5 and 10 more')
     expect(dictionary.importOpen).toBe(true)
     expect(dictionary.file).not.toBeNull()
   })

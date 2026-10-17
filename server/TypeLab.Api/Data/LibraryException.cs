@@ -6,7 +6,7 @@ public class LibraryException(int status, string message, IReadOnlyList<string>?
 {
     public int Status { get; } = status;
 
-    /// <summary>Which items of a batch were rejected (file names, 1-based positions, or file record numbers).</summary>
+    /// <summary>Which items of a batch were rejected (file names, or 1-based positions or data-row numbers).</summary>
     public IReadOnlyList<string>? Failed { get; } = failed;
 
     /// <summary>How many items were rejected in all, when <see cref="Failed"/> lists only the first of them.</summary>

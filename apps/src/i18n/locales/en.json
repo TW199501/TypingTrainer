@@ -287,7 +287,7 @@
     "imported": "Imported {added} words, skipped {skipped} duplicates",
     "nothingToImport": "Nothing to import: pick the column that holds the word, and make sure the file has rows",
     "importFailed": "Could not import. Nothing was added.",
-    "importFailedRows": "Could not import. Nothing was added. Records without a word: {rows}",
+    "importFailedRows": "Could not import. Nothing was added. Data rows without a word: {rows}",
     "importFailedMore": " and {count} more",
     "listSep": ", ",
     "tooLarge": "The file is larger than 256 MB and cannot be imported",

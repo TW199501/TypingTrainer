@@ -136,8 +136,9 @@ file name: `.xlsx` (read by its signature), `.csv` (comma), `.tsv` (tab) and
 `.txt` (tab if the first non-empty line has one, else comma). Any other
 extension, `.json` and `.xls` included, is a `400`. Text files may be UTF-8,
 with or without a BOM, or Big5; quoted fields (RFC 4180, commas and line breaks
-inside quotes) are read as one value. The first row is the header row, and rows
-whose cells are all empty are skipped.
+inside quotes) are read as one value. The first row is the header row; in a
+text file, blank lines (nothing but spaces or tabs) above it are skipped, so the
+first non-empty line is the header. Rows whose cells are all empty are skipped.
 
 Limits: a request body up to 256 MiB on these two endpoints only (other
 endpoints keep the server default); a larger upload is a `413`. A file over the
@@ -161,10 +162,11 @@ duplicates when word and topic both match, ignoring case in the word and
 exactly in the topic, whether the earlier one is stored or comes earlier in the
 file. With `skipDuplicates` they are skipped and counted; without it they are
 written anyway. All or nothing: a row whose `word` is blank makes the whole
-import a `400` whose top-level `failed` lists the record numbers of such rows
+import a `400` whose top-level `failed` lists the data-row numbers of such rows
 (at most the first 50, as strings) and `failedCount` the total; nothing is
-saved. A record number counts the header as 1, so the first data row is 2; in a
-text file a quoted line break does not start a new record, so the number can
+saved. Data rows are numbered from 1, the first row under the header; skipped
+blank lines above the header do not count, empty rows between data rows do. In
+a text file a quoted line break does not start a new row, so a number can
 differ from the editor's line number. Rows are stored in batches inside one
 transaction.
 

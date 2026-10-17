@@ -287,7 +287,7 @@
     "imported": "已匯入 {added} 個單字，略過 {skipped} 個重複",
     "nothingToImport": "沒有可匯入的內容：請選擇「單字」欄，並確認檔案有資料列",
     "importFailed": "匯入失敗，沒有新增任何單字。",
-    "importFailedRows": "匯入失敗，沒有新增任何單字。第 {rows} 筆沒有單字",
+    "importFailedRows": "匯入失敗，沒有新增任何單字。第 {rows} 筆資料沒有單字",
     "importFailedMore": "，另有 {count} 筆",
     "listSep": "、",
     "tooLarge": "檔案超過 256 MB，無法匯入",

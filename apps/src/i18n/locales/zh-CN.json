@@ -287,7 +287,7 @@
     "imported": "已导入 {added} 个单词，跳过 {skipped} 个重复",
     "nothingToImport": "没有可导入的内容：请选择“单词”列，并确认文件有数据行",
     "importFailed": "导入失败，没有新增任何单词。",
-    "importFailedRows": "导入失败，没有新增任何单词。第 {rows} 条没有单词",
+    "importFailedRows": "导入失败，没有新增任何单词。第 {rows} 条数据没有单词",
     "importFailedMore": "，另有 {count} 条",
     "listSep": "、",
     "tooLarge": "文件超过 256 MB，无法导入",

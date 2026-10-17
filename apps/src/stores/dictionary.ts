@@ -195,7 +195,7 @@ export const useDictionaryStore = defineStore('dictionary', () => {
     return { word: map.value.w ?? '', zh: pick('zh'), phonetic: pick('ph'), topic: pick('cat') }
   }
 
-  /** Names the record numbers the server rejected, "record N" / "第 N 筆" rather than line numbers. */
+  /** Names the data rows the server rejected, counted from the first row under the header. */
   function failureMessage(e: unknown): string {
     const t = i18n.global.t
     if (e instanceof ApiError && e.failed?.length) {

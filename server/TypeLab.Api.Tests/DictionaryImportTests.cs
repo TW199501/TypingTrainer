@@ -225,18 +225,69 @@ public class DictionaryImportTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public async Task Blank_words_reject_the_file_with_their_record_numbers()
+    public async Task Blank_words_reject_the_file_with_their_data_row_numbers()
     {
         using var t = NewDb();
-        // Record 3 has a quoted line break inside it, so its successor is record 4, on line 5.
+        // Data row 2 has a quoted line break inside it; it is still one row, so the last is row 4.
         var csv = "word,zh,topic\nok,甲,T\n  ,\"two\nlines\",T\nfine,丙,T\n,丁,T\n";
 
         var ex = await Assert.ThrowsAsync<LibraryException>(() => Import(t, "w.csv", Utf8(csv)));
 
         Assert.Equal(400, ex.Status);
-        Assert.Equal(["3", "5"], ex.Failed);
+        Assert.Equal(["2", "4"], ex.Failed);
         Assert.Equal(2, ex.FailedCount);
         Assert.Equal(14, t.Db.Queryable<Word>().Count());
+    }
+
+    [Theory]
+    [InlineData("w.csv", "\n  \r\n\t\nword,zh,topic\nok,甲,T\n,乙,T\n")]
+    [InlineData("w.tsv", "\r\n\r\nword\tzh\ttopic\nok\t甲\tT\n\t乙\tT\n")]
+    [InlineData("w.txt", "\n\nword\tzh\ttopic\nok\t甲\tT\n\t乙\tT\n")]
+    public async Task Blank_lines_above_the_header_are_skipped_and_rows_count_from_the_first_data_row(
+        string name, string text)
+    {
+        using var t = NewDb();
+
+        var preview = await Dict(t).PreviewAsync(Utf8(text), name);
+        var ex = await Assert.ThrowsAsync<LibraryException>(() => Import(t, name, Utf8(text)));
+
+        Assert.Equal(["word", "zh", "topic"], preview.Headers);
+        Assert.Equal([["ok", "甲", "T"], ["", "乙", "T"]], preview.Sample);
+        Assert.Equal(["2"], ex.Failed);
+        Assert.Equal(14, t.Db.Queryable<Word>().Count());
+    }
+
+    [Fact]
+    public async Task Blank_lines_above_the_header_are_skipped_on_import()
+    {
+        using var t = NewDb();
+
+        var result = await Import(t, "w.csv", Utf8("\r\n\r\nword,zh,topic\r\nhello,你好,Greet\r\n"));
+
+        Assert.Equal(new ImportWordsResult(1, 0), result);
+        Assert.Equal(("你好", "Greet"), (Saved(t, "hello").Zh, Saved(t, "hello").Topic));
+    }
+
+    [Fact]
+    public async Task Blank_lines_above_the_header_of_a_header_only_file_are_skipped()
+    {
+        using var t = NewDb();
+
+        var preview = await Dict(t).PreviewAsync(Utf8("\n\nword,zh,topic\n"), "w.csv");
+
+        Assert.Equal(["word", "zh", "topic"], preview.Headers);
+        Assert.Empty(preview.Sample);
+    }
+
+    [Fact]
+    public async Task A_blank_word_in_a_workbook_is_numbered_from_the_first_data_row()
+    {
+        using var t = NewDb();
+        await using var file = await Xlsx(new Row("ledger", "總帳", "A", ""), new Row("", "空", "A", ""));
+
+        var ex = await Assert.ThrowsAsync<LibraryException>(() => Import(t, "w.xlsx", file));
+
+        Assert.Equal(["2"], ex.Failed);
     }
 
     [Fact]
@@ -257,7 +308,7 @@ public class DictionaryImportTests(ITestOutputHelper output)
         var ex = await Assert.ThrowsAsync<LibraryException>(() => Import(t, "w.csv", Utf8(csv.ToString())));
 
         Assert.Equal(DictionaryService.MaxFailedReported, ex.Failed!.Count);
-        Assert.Equal("2502", ex.Failed[0]);
+        Assert.Equal("2501", ex.Failed[0]);
         Assert.Equal(60, ex.FailedCount);
         Assert.Equal(14, t.Db.Queryable<Word>().Count());
         Assert.Equal(14, t.Db.Queryable<WordExample>().Count());

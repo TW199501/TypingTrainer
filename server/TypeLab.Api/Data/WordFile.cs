@@ -15,31 +15,55 @@ public static class WordFile
     /// <summary>The largest upload the import endpoints accept, the same as the importer's own limit (256 MiB).</summary>
     public const long MaxBytes = ExcelConstants.DefaultMaxImportBytes;
 
-    /// <summary>How far into a .txt file the delimiter sniff looks for its first non-empty line.</summary>
+    /// <summary>How far into a text file the sniff looks for its first non-empty line.</summary>
     private const int SniffBytes = 64 * 1024;
 
     /// <summary>
     /// The format name and read options for <paramref name="fileName"/>: .xlsx is detected by
-    /// its signature, .csv reads commas, .tsv tabs, and .txt whichever its first non-empty line uses.
+    /// its signature, .csv reads commas, .tsv tabs, and .txt whichever its first non-empty line
+    /// uses. In a text file the blank lines above the header are skipped, so the first
+    /// non-empty line is the header.
     /// </summary>
     public static (string Format, ExcelImportOptions Options) OptionsFor(string? fileName, Stream stream)
     {
         var options = new ExcelImportOptions { TrimHeaders = true, TrimValues = true, SkipEmptyRows = true };
-        return Path.GetExtension(fileName ?? "").ToLowerInvariant() switch
+        var extension = Path.GetExtension(fileName ?? "").ToLowerInvariant();
+        if (extension == ".xlsx")
         {
-            ".xlsx" => ("xlsx", options),
+            return ("xlsx", options);
+        }
+
+        if (extension is not (".csv" or ".tsv" or ".txt"))
+        {
+            throw new LibraryException(400, "Unsupported file type. Use .xlsx, .csv, .tsv or .txt.");
+        }
+
+        var head = Sniff(stream);
+        options = options with { HeaderRowIndex = head.BlankLines };
+        return extension switch
+        {
             ".csv" => ("csv", options with { Format = ExcelImportFormat.Csv, Delimiter = ',' }),
             ".tsv" => ("tsv", options with { Format = ExcelImportFormat.Csv, Delimiter = '\t' }),
-            ".txt" => ("txt", options with { Format = ExcelImportFormat.Txt, Delimiter = HasTab(stream) ? '\t' : ',' }),
-            _ => throw new LibraryException(400, "Unsupported file type. Use .xlsx, .csv, .tsv or .txt."),
+            _ => ("txt", options with { Format = ExcelImportFormat.Txt, Delimiter = head.HasTab ? '\t' : ',' }),
         };
     }
 
     /// <summary>
-    /// True when the first non-empty line of the file contains a tab. Tab, comma and line
+    /// The 1-based number of a data row counted from the first row under the header, from the
+    /// importer's <see cref="ExcelImportRow.RowNumber"/>, which also counts the header and the
+    /// lines skipped above it.
+    /// </summary>
+    public static int DataRowNumber(ExcelImportRow row, ExcelImportOptions options) =>
+        row.RowNumber - options.HeaderRowIndex - 1;
+
+    /// <summary>The blank lines above the first non-empty line, and whether that line holds a tab.</summary>
+    private readonly record struct Head(int BlankLines, bool HasTab);
+
+    /// <summary>
+    /// Finds the first line that holds more than spaces and tabs. Tab, space, comma and line
     /// breaks are single bytes in UTF-8 and never a Big5 trail byte, so bytes are enough.
     /// </summary>
-    private static bool HasTab(Stream stream)
+    private static Head Sniff(Stream stream)
     {
         var buffer = new byte[SniffBytes];
         stream.Position = 0;
@@ -52,29 +76,38 @@ public static class WordFile
 
         stream.Position = 0;
         var start = read >= 3 && buffer[0] == 0xEF && buffer[1] == 0xBB && buffer[2] == 0xBF ? 3 : 0;
+        var blankLines = 0;
         var lineHasText = false;
+        var lineHasTab = false;
         for (var i = start; i < read; i++)
         {
-            switch (buffer[i])
+            var b = buffer[i];
+            if (b is (byte)'\r' or (byte)'\n')
             {
-                case (byte)'\t':
-                    return true;
-                case (byte)'\n' or (byte)'\r':
-                    if (lineHasText)
-                    {
-                        return false;
-                    }
+                if (lineHasText)
+                {
+                    return new Head(blankLines, lineHasTab);
+                }
 
-                    break;
-                case (byte)' ':
-                    break;
-                default:
-                    lineHasText = true;
-                    break;
+                blankLines++;
+                lineHasTab = false;
+                if (b == (byte)'\r' && i + 1 < read && buffer[i + 1] == (byte)'\n')
+                {
+                    i++;
+                }
+            }
+            else if (b == (byte)'\t')
+            {
+                lineHasTab = true;
+            }
+            else if (b != (byte)' ')
+            {
+                lineHasText = true;
             }
         }
 
-        return false;
+        // No line break after the first text, or nothing but blank lines in the window.
+        return lineHasText ? new Head(blankLines, lineHasTab) : new Head(0, false);
     }
 
     /// <summary>One cell as text: workbook numbers, dates and booleans in an invariant form, an empty cell as "".</summary>

@@ -46,7 +46,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     readonly status?: number,
-    /** Files, 1-based positions or file record numbers the server rejected in an import. */
+    /** Files, 1-based positions or data-row numbers the server rejected in an import. */
     readonly failed?: string[],
     /** How many were rejected in all, when `failed` lists only the first of them. */
     readonly failedCount?: number,
