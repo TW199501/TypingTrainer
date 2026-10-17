@@ -1,3 +1,4 @@
+using ELF.Modules.Excel.Extensions.DependencyInjection;
 using ELF.Modules.Hosting.Sidecar;
 using ELF.Modules.Hosting.Sidecar.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.HostFiltering;
@@ -49,6 +50,10 @@ builder.Services.AddSqlSugar(builder.Configuration, builder.Environment);
 builder.Services.AddSingleton<ModelStorage>();
 builder.Services.AddSingleton<LibraryService>();
 builder.Services.AddSingleton<DictionaryService>();
+
+// Dictionary files are read by ELF.Modules.Excel (.xlsx, and .csv/.tsv/.txt in UTF-8 or Big5).
+// Registering it also installs the code-page encodings, Big5 among them, for the whole process.
+builder.Services.AddElfExcel(builder.Configuration);
 
 // Translation: the router plus its providers. OpenCC handles Chinese script
 // conversion offline; Google covers the rest and stays dormant until

@@ -11,35 +11,36 @@ behaviour are hand-written.
 
 ## Endpoints
 
-| Method        | Path                           | Purpose                                                                    |
-| ------------- | ------------------------------ | -------------------------------------------------------------------------- |
-| POST          | `/auth/login`                  | `LoginRequest` → `AuthUserDto`                                             |
-| POST          | `/auth/register`               | same shape as login                                                        |
-| GET           | `/categories`                  | two-level category tree (`CategoryDto[]`)                                  |
-| POST          | `/categories`                  | create a top-level or sub category (`CreateCategoryRequest`)               |
-| PUT · DELETE  | `/categories/{id}`             | rename / delete a user category (built-in → 409)                           |
-| GET           | `/texts`                       | text list without `content`, total in `X-Total-Count`                      |
-| GET           | `/texts/{id}`                  | one text, with `content`                                                   |
-| POST          | `/texts`                       | store a pasted text (`CreateTextRequest` → `TextDto`)                      |
-| POST          | `/texts/import`                | store several texts atomically (`{ texts: [...] }`)                        |
-| DELETE        | `/texts/{id}`                  | delete a user text (built-in → 409)                                        |
-| GET           | `/words?topic=&q=&page=&size=` | dictionary page (`DictEntryDto[]`), total in `X-Total-Count`               |
-| POST          | `/words/import`                | add words in one transaction (`ImportWordsRequest` → `{ added, skipped }`) |
-| POST          | `/sessions`                    | submit a run (`SessionSubmitDto` → `SessionResultDto`)                     |
-| GET           | `/sessions/me`                 | recent history (`HistoryItemDto[]`)                                        |
-| GET           | `/stats/summary`               | headline numbers (`StatsSummaryDto`)                                       |
-| GET           | `/stats/trend?lang=&days=30`   | trend series (`TrendPointDto[]`)                                           |
-| GET           | `/stats/keys`                  | per-key error rate for the heatmap                                         |
-| GET           | `/stats/compare?period=`       | this period vs previous                                                    |
-| GET           | `/stats/bests`                 | personal best per text                                                     |
-| GET           | `/leaderboard?lang=&period=`   | leaderboard rows                                                           |
-| GET           | `/coach`                       | level, targets and today's recommendations                                 |
-| GET · PUT     | `/book`                        | error book (spaced repetition state)                                       |
-| GET           | `/models?locale=`              | model catalogue + the install directory for this runtime                   |
-| POST · DELETE | `/models/{code}/install`       | mark a model installed / remove it                                         |
-| GET           | `/prompts?locale=`             | built-in prompt catalogue (Name/Description localised)                     |
-| GET           | `/translate/providers`         | registered translators and whether each is configured                      |
-| POST          | `/translate/locales`           | one locale in, the remaining UI locales out                                |
+| Method        | Path                           | Purpose                                                          |
+| ------------- | ------------------------------ | ---------------------------------------------------------------- |
+| POST          | `/auth/login`                  | `LoginRequest` → `AuthUserDto`                                   |
+| POST          | `/auth/register`               | same shape as login                                              |
+| GET           | `/categories`                  | two-level category tree (`CategoryDto[]`)                        |
+| POST          | `/categories`                  | create a top-level or sub category (`CreateCategoryRequest`)     |
+| PUT · DELETE  | `/categories/{id}`             | rename / delete a user category (built-in → 409)                 |
+| GET           | `/texts`                       | text list without `content`, total in `X-Total-Count`            |
+| GET           | `/texts/{id}`                  | one text, with `content`                                         |
+| POST          | `/texts`                       | store a pasted text (`CreateTextRequest` → `TextDto`)            |
+| POST          | `/texts/import`                | store several texts atomically (`{ texts: [...] }`)              |
+| DELETE        | `/texts/{id}`                  | delete a user text (built-in → 409)                              |
+| GET           | `/words?topic=&q=&page=&size=` | dictionary page (`DictEntryDto[]`), total in `X-Total-Count`     |
+| POST          | `/words/import/preview`        | multipart `file` → `{ headers, sample, format }`                 |
+| POST          | `/words/import/file`           | multipart `file`, `map`, `skipDuplicates` → `{ added, skipped }` |
+| POST          | `/sessions`                    | submit a run (`SessionSubmitDto` → `SessionResultDto`)           |
+| GET           | `/sessions/me`                 | recent history (`HistoryItemDto[]`)                              |
+| GET           | `/stats/summary`               | headline numbers (`StatsSummaryDto`)                             |
+| GET           | `/stats/trend?lang=&days=30`   | trend series (`TrendPointDto[]`)                                 |
+| GET           | `/stats/keys`                  | per-key error rate for the heatmap                               |
+| GET           | `/stats/compare?period=`       | this period vs previous                                          |
+| GET           | `/stats/bests`                 | personal best per text                                           |
+| GET           | `/leaderboard?lang=&period=`   | leaderboard rows                                                 |
+| GET           | `/coach`                       | level, targets and today's recommendations                       |
+| GET · PUT     | `/book`                        | error book (spaced repetition state)                             |
+| GET           | `/models?locale=`              | model catalogue + the install directory for this runtime         |
+| POST · DELETE | `/models/{code}/install`       | mark a model installed / remove it                               |
+| GET           | `/prompts?locale=`             | built-in prompt catalogue (Name/Description localised)           |
+| GET           | `/translate/providers`         | registered translators and whether each is configured            |
+| POST          | `/translate/locales`           | one locale in, the remaining UI locales out                      |
 
 ### Library: categories and texts
 
@@ -120,13 +121,47 @@ match; `q` matches `word` or `zh`, ignoring case. `page` defaults to 1 and
 `size` to 50 (1 to 500). `mastery` is the local user's value, 0 if none;
 `example` is the first stored sentence, or an empty string.
 
-`POST /words/import` takes `{ skipDuplicates, words: [{ word, zh, phonetic, pos,
-topic, example }] }` and answers `200 { added, skipped }`. A blank `topic`
-becomes `Uncategorised`. Two words are duplicates when word and topic both
-match, ignoring case in the word and exactly in the topic, whether the earlier one is stored or comes earlier in the
-same batch. With `skipDuplicates` they are skipped and counted; without it
-they are written anyway. A blank `word` is a `400` whose top-level `failed`
-array lists the 1-based row numbers; nothing is saved.
+Both import endpoints take `multipart/form-data` with the file in a `file`
+field; the server reads it with `ELF.Modules.Excel`. The format comes from the
+file name: `.xlsx` (read by its signature), `.csv` (comma), `.tsv` (tab) and
+`.txt` (tab if the first non-empty line has one, else comma). Any other
+extension, `.json` and `.xls` included, is a `400`. Text files may be UTF-8,
+with or without a BOM, or Big5; quoted fields (RFC 4180, commas and line breaks
+inside quotes) are read as one value. The first row is the header row, and rows
+whose cells are all empty are skipped.
+
+Limits: a request body up to 256 MiB on these two endpoints only (other
+endpoints keep the server default); a larger upload is a `413`. A file over the
+importer's own limits (256 MiB, 1,000,000 rows) or one it cannot read (a
+damaged workbook, an undecodable text file) is a `400`. The server sets no
+request timeout; the desktop client waits for the import without one.
+
+`POST /words/import/preview` answers `200 { headers, sample, format }`:
+`headers` are the header names in file order, `sample` holds up to three data
+rows as strings in `headers` order (workbook numbers and dates in an invariant
+form, an empty cell as `""`), and `format` is `xlsx`, `csv`, `tsv` or `txt`.
+Nothing is stored.
+
+`POST /words/import/file` also takes the form fields `map`, JSON
+`{ word, zh?, phonetic?, pos?, topic?, example? }` whose values are header
+names from the preview, and `skipDuplicates` (`true`/`false`, default `false`).
+It answers `200 { added, skipped }`. Only `word` is required; a mapped header
+the file does not have is a `400`. Values are trimmed; a blank `topic` becomes
+`Uncategorised`, and an `example` becomes one stored sentence. Two words are
+duplicates when word and topic both match, ignoring case in the word and
+exactly in the topic, whether the earlier one is stored or comes earlier in the
+file. With `skipDuplicates` they are skipped and counted; without it they are
+written anyway. All or nothing: a row whose `word` is blank makes the whole
+import a `400` whose top-level `failed` lists the record numbers of such rows
+(at most the first 50, as strings) and `failedCount` the total; nothing is
+saved. A record number counts the header as 1, so the first data row is 2; in a
+text file a quoted line break does not start a new record, so the number can
+differ from the editor's line number. Rows are stored in batches inside one
+transaction.
+
+The JSON `POST /words/import` of earlier builds is gone; the web build's mock
+still parses `.csv`, `.tsv` and `.txt` in the browser and does not import
+`.xlsx`.
 
 ### Anti-cheat
 

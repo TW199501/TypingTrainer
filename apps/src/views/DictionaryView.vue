@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { useDictionaryStore } from '@/stores/dictionary'
+import { DICT_EXTENSIONS, useDictionaryStore } from '@/stores/dictionary'
 import { useLibraryStore } from '@/stores/library'
 import { useSessionStore } from '@/stores/session'
 import { useGridLayout } from '@/composables/useGridLayout'
@@ -77,16 +77,29 @@ const mapFields = computed<[key: string, label: string][]>(() => [
 const dropTitle = computed(() =>
   dragOver.value
     ? t('dict.importModal.release')
-    : dictionary.file
-      ? t('dict.importModal.another')
-      : t('dict.importModal.drop'),
+    : dictionary.previewing
+      ? t('dict.importModal.reading')
+      : dictionary.file
+        ? t('dict.importModal.another')
+        : t('dict.importModal.drop'),
 )
 
-const importBtn = computed(() =>
-  dictionary.file
-    ? t('dict.importModal.submit', { count: dictionary.file.rows })
-    : t('dict.importModal.submitEmpty'),
-)
+/** The file's row count when it is known (web), otherwise the format the server read it as. */
+const fileInfo = computed(() => {
+  const f = dictionary.file
+  if (!f) return ''
+  return f.rows === null
+    ? t('dict.importModal.format', { format: f.format.toUpperCase() })
+    : t('dict.importModal.detected', { count: f.rows })
+})
+
+const importBtn = computed(() => {
+  if (dictionary.phase === 'uploading')
+    return t('dict.importModal.uploading', { percent: dictionary.progress })
+  if (dictionary.phase === 'processing') return t('dict.importModal.processing')
+  const rows = dictionary.file?.rows
+  return rows == null ? t('dict.importModal.submitEmpty') : t('dict.importModal.submit', { count: rows })
+})
 
 function onDrop(e: DragEvent) {
   e.preventDefault()
@@ -195,7 +208,7 @@ function closeImport() {
             <input
               ref="fileInput"
               type="file"
-              accept=".csv,.tsv,.json,.txt"
+              :accept="DICT_EXTENSIONS.join(',')"
               style="display: none"
               @change="onFile"
             />
@@ -204,9 +217,7 @@ function closeImport() {
           <div v-if="dictionary.file" class="mapping">
             <div class="mapping-head">
               <span class="ell">{{ dictionary.file.name }}</span>
-              <span style="white-space: nowrap">
-                {{ t('dict.importModal.detected', { count: dictionary.file.rows }) }}
-              </span>
+              <span style="white-space: nowrap">{{ fileInfo }}</span>
             </div>
             <div class="mapping-fields">
               <div v-for="[key, label] in mapFields" :key="key" class="field">
@@ -222,7 +233,7 @@ function closeImport() {
                 <span style="flex: 1; min-width: 0">{{ t('dict.colChinese') }}</span>
                 <span style="width: 76px; flex-shrink: 0">{{ t('dict.importModal.previewTopic') }}</span>
               </div>
-              <div v-for="(pv, i) in dictionary.file.preview" :key="i" class="preview-row">
+              <div v-for="(pv, i) in dictionary.preview" :key="i" class="preview-row">
                 <span class="ell" style="flex: 1; min-width: 0">{{ pv.w }}</span>
                 <span class="ell dim-2" style="flex: 1; min-width: 0">{{ pv.zh }}</span>
                 <span class="ell dim" style="width: 76px; flex-shrink: 0">{{ pv.cat }}</span>
@@ -239,7 +250,7 @@ function closeImport() {
               <div class="btn-slot" style="width: 80px" @click="closeImport()">
                 <a-button>{{ t('common.cancel') }}</a-button>
               </div>
-              <div class="btn-slot" style="width: 96px" @click="dictionary.confirmImport()">
+              <div class="btn-slot" style="min-width: 96px" @click="dictionary.confirmImport()">
                 <a-button type="primary">{{ importBtn }}</a-button>
               </div>
             </div>

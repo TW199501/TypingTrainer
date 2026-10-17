@@ -13,6 +13,7 @@ import type {
   CompareRowDto,
   DictEntryDto,
   HistoryItemDto,
+  ImportPreviewDto,
   ImportWordsBody,
   ImportWordsResult,
   KeyErrorRateDto,
@@ -26,7 +27,11 @@ import type {
   StatsSummaryDto,
   TextDto,
   TrendPointDto,
+  WordImportMap,
 } from './types'
+
+/** A preview uploads the whole file too, so it gets far longer than the default 15 seconds. */
+const UPLOAD_TIMEOUT_MS = 5 * 60_000
 
 export type ApiGroup =
   | 'auth'
@@ -148,12 +153,38 @@ export const api = {
         () => fx.DICTIONARY,
         async () => ({ data: await fetchAllPages<DictEntryDto>('/words', params) }),
       ),
+    /** Web mock only: rows the browser parsed itself. The API reads the file, see `importFile`. */
     import: (body: ImportWordsBody): Promise<ImportWordsResult> =>
-      pick(
-        'dictionary',
-        () => ({ added: body.words.length, skipped: 0 }),
-        () => http.post<ImportWordsResult>('/words/import', body),
-      ),
+      delay({ added: body.words.length, skipped: 0 }),
+    /** API only: uploads the file and returns its headers and first rows, read on the server. */
+    async preview(file: File): Promise<ImportPreviewDto> {
+      const form = new FormData()
+      form.append('file', file)
+      const res = await http.post<ImportPreviewDto>('/words/import/preview', form, {
+        timeout: UPLOAD_TIMEOUT_MS,
+      })
+      return res.data
+    },
+    /**
+     * API only: uploads the file with the column map. No timeout: a file of hundreds of
+     * thousands of rows takes a while, and `onProgress` (0–1) reports the upload.
+     */
+    async importFile(
+      file: File,
+      map: WordImportMap,
+      skipDuplicates: boolean,
+      onProgress?: (fraction: number) => void,
+    ): Promise<ImportWordsResult> {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('map', JSON.stringify(map))
+      form.append('skipDuplicates', String(skipDuplicates))
+      const res = await http.post<ImportWordsResult>('/words/import/file', form, {
+        timeout: 0,
+        onUploadProgress: (e) => onProgress?.(e.total ? e.loaded / e.total : (e.progress ?? 0)),
+      })
+      return res.data
+    },
   },
 
   sessions: {

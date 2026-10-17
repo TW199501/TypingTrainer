@@ -46,8 +46,10 @@ export class ApiError extends Error {
   constructor(
     message: string,
     readonly status?: number,
-    /** Files (or 1-based positions) the server rejected in an import. */
+    /** Files, 1-based positions or file record numbers the server rejected in an import. */
     readonly failed?: string[],
+    /** How many were rejected in all, when `failed` lists only the first of them. */
+    readonly failedCount?: number,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -56,11 +58,13 @@ export class ApiError extends Error {
 
 function normalizeError(error: unknown): ApiError {
   if (axios.isAxiosError(error)) {
-    const data = error.response?.data as { message?: string; title?: string; failed?: string[] } | undefined
+    const data = error.response?.data as
+      { message?: string; title?: string; failed?: string[]; failedCount?: number } | undefined
     return new ApiError(
       data?.message || data?.title || error.message,
       error.response?.status,
       Array.isArray(data?.failed) ? data.failed : undefined,
+      typeof data?.failedCount === 'number' ? data.failedCount : undefined,
     )
   }
   return new ApiError(error instanceof Error ? error.message : String(error))

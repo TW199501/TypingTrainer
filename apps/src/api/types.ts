@@ -76,7 +76,7 @@ export interface DictEntryDto {
   mastery: number
 }
 
-/** One row of a dictionary import. */
+/** One row of a dictionary import parsed in the browser; only the web mock takes rows, the API takes the file. */
 export interface ImportWordDto {
   word: string
   zh: string
@@ -94,6 +94,24 @@ export interface ImportWordsBody {
 export interface ImportWordsResult {
   added: number
   skipped: number
+}
+
+/** `POST /words/import/preview`: the header row and the first data rows of an uploaded file. */
+export interface ImportPreviewDto {
+  headers: string[]
+  /** Up to three data rows, cells in `headers` order. */
+  sample: string[][]
+  format: 'xlsx' | 'csv' | 'tsv' | 'txt'
+}
+
+/** The `map` field of `POST /words/import/file`: the header that holds each field; only `word` is required. */
+export interface WordImportMap {
+  word: string
+  zh?: string
+  phonetic?: string
+  pos?: string
+  topic?: string
+  example?: string
 }
 
 /** One physical key event, sent with the run so the server can re-verify the score. */

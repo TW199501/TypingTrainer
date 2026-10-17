@@ -71,9 +71,16 @@ public static class LibraryEndpoints
         }
         catch (LibraryException ex)
         {
-            var extensions = ex.Failed is null
-                ? null
-                : new Dictionary<string, object?> { ["failed"] = ex.Failed };
+            var extensions = new Dictionary<string, object?>();
+            if (ex.Failed is not null)
+            {
+                extensions["failed"] = ex.Failed;
+            }
+
+            if (ex.FailedCount is not null)
+            {
+                extensions["failedCount"] = ex.FailedCount;
+            }
             return Results.Problem(statusCode: ex.Status, title: ex.Message, extensions: extensions);
         }
     }

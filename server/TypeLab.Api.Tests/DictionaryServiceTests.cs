@@ -13,9 +13,6 @@ public class DictionaryServiceTests
         return t;
     }
 
-    private static ImportWordRow Row(string word, string? topic = null, string? example = null) =>
-        new(word, "zh " + word, null, null, topic, example);
-
     [Fact]
     public void Seed_twice_keeps_14_words()
     {
@@ -31,7 +28,7 @@ public class DictionaryServiceTests
     public async Task List_reports_total_and_pages()
     {
         using var t = NewDb();
-        var dict = new DictionaryService(t.Db);
+        var dict = new DictionaryService(t.Db, DictionaryImportTests.Importer);
 
         var first = await dict.ListAsync(null, null, 1, 5);
         var last = await dict.ListAsync(null, null, 3, 5);
@@ -49,7 +46,7 @@ public class DictionaryServiceTests
     public async Task List_filters_by_topic_and_query()
     {
         using var t = NewDb();
-        var dict = new DictionaryService(t.Db);
+        var dict = new DictionaryService(t.Db, DictionaryImportTests.Importer);
 
         var banking = await dict.ListAsync("Banking", null, 1, 50);
         Assert.NotEmpty(banking.Rows);
@@ -78,70 +75,9 @@ public class DictionaryServiceTests
         var rate = t.Db.Queryable<Word>().First(w => w.Text == "exchange rate");
         t.Db.Insertable(new UserWordMastery { UserId = other, WordId = rate.Id, Mastery = 55 }).ExecuteCommand();
 
-        var rows = (await new DictionaryService(t.Db).ListAsync(null, null, 1, 50)).Rows;
+        var rows = (await new DictionaryService(t.Db, DictionaryImportTests.Importer).ListAsync(null, null, 1, 50)).Rows;
 
         Assert.Equal(81, rows.Single(r => r.Word == "balance").Mastery);
         Assert.Equal(0, rows.Single(r => r.Word == "exchange rate").Mastery);
-    }
-
-    [Fact]
-    public async Task Import_skips_duplicates_in_db_and_in_batch()
-    {
-        using var t = NewDb();
-        var dict = new DictionaryService(t.Db);
-
-        var result = await dict.ImportAsync(new(true,
-        [
-            Row("Balance", "Banking"),
-            Row("novel", "Misc"),
-            Row("NOVEL", "Misc"),
-            Row("novel", "misc"),
-            Row("fresh", "Misc"),
-        ]));
-
-        Assert.Equal(3, result.Added);
-        Assert.Equal(2, result.Skipped);
-        Assert.Equal(17, t.Db.Queryable<Word>().Count());
-    }
-
-    [Fact]
-    public async Task Import_without_skip_keeps_duplicates()
-    {
-        using var t = NewDb();
-        var dict = new DictionaryService(t.Db);
-
-        var result = await dict.ImportAsync(new(false, [Row("balance", "Banking"), Row("balance", "Banking", "A sentence.")]));
-
-        Assert.Equal(2, result.Added);
-        Assert.Equal(0, result.Skipped);
-        Assert.Equal(3, t.Db.Queryable<Word>().Count(w => w.Text == "balance"));
-        Assert.Equal(15, t.Db.Queryable<WordExample>().Count());
-    }
-
-    [Fact]
-    public async Task Import_blank_word_saves_nothing()
-    {
-        using var t = NewDb();
-        var dict = new DictionaryService(t.Db);
-
-        var ex = await Assert.ThrowsAsync<LibraryException>(() =>
-            dict.ImportAsync(new(true, [Row("ok"), Row("   "), Row("also ok")])));
-
-        Assert.Equal(400, ex.Status);
-        Assert.Equal(["2"], ex.Failed);
-        Assert.Equal(14, t.Db.Queryable<Word>().Count());
-    }
-
-    [Fact]
-    public async Task Import_blank_topic_becomes_uncategorised()
-    {
-        using var t = NewDb();
-        var dict = new DictionaryService(t.Db);
-
-        await dict.ImportAsync(new(true, [Row("  spare  ", "  ", "An example.")]));
-
-        var saved = (await dict.ListAsync("Uncategorised", null, 1, 50)).Rows.Single();
-        Assert.Equal("spare", saved.Word);
-        Assert.Equal("An example.", saved.Example);
     }
 }

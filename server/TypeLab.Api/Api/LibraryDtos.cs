@@ -54,14 +54,16 @@ public record DictEntryDto(
     string Example,
     int Mastery);
 
-public record ImportWordRow(
+/// <summary>Which header of an import file holds each field of a word; only <see cref="Word"/> is required.</summary>
+public record WordImportMap(
     string Word,
-    string? Zh,
-    string? Phonetic,
-    string? Pos,
-    string? Topic,
-    string? Example);
+    string? Zh = null,
+    string? Phonetic = null,
+    string? Pos = null,
+    string? Topic = null,
+    string? Example = null);
 
-public record ImportWordsRequest(bool SkipDuplicates, List<ImportWordRow> Words);
+/// <summary>The header row and the first data rows of an import file, and the format it was read as.</summary>
+public record ImportPreviewDto(List<string> Headers, List<List<string>> Sample, string Format);
 
 public record ImportWordsResult(int Added, int Skipped);
