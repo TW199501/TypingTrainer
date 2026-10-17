@@ -32,7 +32,14 @@ public static class WordSeeds
     /// <summary>Inserts the words that are missing, matched on Text ignoring case and Topic exactly.</summary>
     public static void Seed(ISqlSugarClient db)
     {
-        var existing = db.Queryable<Word>().ToList()
+        // Only rows that could match a seed are read, not the whole dictionary: the seed
+        // texts are ASCII, so SQLite's ASCII-only lower() agrees with ToLowerInvariant here.
+        var texts = Entries.Select(e => e.Text.ToLowerInvariant()).Distinct().ToList();
+        var topics = Entries.Select(e => e.Topic).Distinct().ToList();
+        var existing = db.Queryable<Word>()
+            .Where(w => topics.Contains(w.Topic!) && texts.Contains(w.Text.ToLower()))
+            .Select(w => new { w.Text, w.Topic })
+            .ToList()
             .Select(w => Key(w.Text, w.Topic))
             .ToHashSet();
 

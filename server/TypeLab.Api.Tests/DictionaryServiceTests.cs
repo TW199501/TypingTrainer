@@ -25,6 +25,26 @@ public class DictionaryServiceTests
     }
 
     [Fact]
+    public void Seed_matches_text_ignoring_case_and_topic_exactly_and_restores_a_deleted_word()
+    {
+        using var t = new TestDb(typeof(Word), typeof(WordExample), typeof(UserWordMastery), typeof(User));
+        t.Db.Insertable(new Word { Text = "BALANCE", Topic = "Banking" }).ExecuteCommand();
+        t.Db.Insertable(new Word { Text = "receipt", Topic = "Shopping" }).ExecuteCommand();
+        t.Db.Insertable(new Word { Text = "unrelated", Topic = "Banking" }).ExecuteCommand();
+
+        WordSeeds.Seed(t.Db);
+
+        Assert.Equal(1, t.Db.Queryable<Word>().Count(w => w.Text.ToLower() == "balance"));
+        Assert.Equal(2, t.Db.Queryable<Word>().Count(w => w.Text == "receipt"));
+        Assert.Equal(3 + 13, t.Db.Queryable<Word>().Count());
+
+        t.Db.Deleteable<Word>().Where(w => w.Text == "latency").ExecuteCommand();
+        WordSeeds.Seed(t.Db);
+        Assert.Equal(1, t.Db.Queryable<Word>().Count(w => w.Text == "latency"));
+        Assert.Equal(3 + 13, t.Db.Queryable<Word>().Count());
+    }
+
+    [Fact]
     public async Task List_reports_total_and_pages()
     {
         using var t = NewDb();
