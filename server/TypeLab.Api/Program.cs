@@ -105,9 +105,12 @@ api.MapGet("/health", () => Results.Ok(new { status = "ok", utc = DateTime.UtcNo
 // Hand-written: the dictionary rows carry the local user's mastery and import rules.
 api.MapWords();
 
+// Hand-written: built-in categories and texts are read-only, and texts are filed
+// under a sub-category.
+api.MapLibrary();
+
 // Hand-written: the storage path is resolved per runtime, and the built-in
 // prompt rows must not be deletable through a generic DELETE.
-api.MapLibrary();
 api.MapModels();
 api.MapPrompts();
 api.MapTranslation();

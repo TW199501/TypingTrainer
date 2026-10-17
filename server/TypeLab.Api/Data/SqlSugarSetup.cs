@@ -131,6 +131,8 @@ public static class SqlSugarSetup
             PromptSeeds.Seed(db);
             ModelSeeds.Seed(db);
             CatalogueTranslationSeeds.Seed(db);
+            // Texts saved before writes were normalised; clean rows are skipped.
+            TextContent.NormaliseStored(db);
         }
         finally
         {

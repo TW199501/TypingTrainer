@@ -38,9 +38,7 @@ public static class LibraryEndpoints
                 return Results.Ok(result.Rows);
             }))
             .WithName("GetTexts");
-        texts.MapGet("/{id:int}", (LibraryService lib, int id) => Guard(async () =>
-                await lib.GetTextAsync(id) is { } text ? Results.Ok(text) : Results.NotFound()))
-            .WithName("GetText");
+        texts.MapGet("/{id:int}", GetTextAsync).WithName("GetText");
         texts.MapPost("/", (LibraryService lib, CreateTextRequest body) => Guard(async () =>
             {
                 var text = await lib.CreateTextAsync(body);
@@ -59,6 +57,10 @@ public static class LibraryEndpoints
 
         return app;
     }
+
+    /// <summary>One text with its content; an unknown id is a ProblemDetails 404 like every other error.</summary>
+    public static Task<IResult> GetTextAsync(LibraryService lib, int id) => Guard(async () =>
+        Results.Ok(await lib.GetTextAsync(id) ?? throw new LibraryException(404, "Text not found.")));
 
     /// <summary>Runs <paramref name="action"/>, turning a <see cref="LibraryException"/> into a ProblemDetails response.</summary>
     internal static async Task<IResult> Guard(Func<Task<IResult>> action)

@@ -53,6 +53,22 @@ public class LibraryServiceTests
     }
 
     [Fact]
+    public async Task User_top_categories_sort_before_uncategorised()
+    {
+        using var t = NewDb();
+        var lib = new LibraryService(t.Db);
+
+        var first = await lib.CreateCategoryAsync(new("top", null, "Poems", null));
+        var second = await lib.CreateCategoryAsync(new("top", null, "Letters", null));
+        CategorySeeds.Seed(t.Db);
+
+        var ids = (await lib.GetCategoriesAsync()).Select(c => c.Id).ToList();
+        Assert.Equal("custom", ids[^1]);
+        Assert.Equal([first, second], ids[^3..^1]);
+        Assert.Equal("basic", ids[0]);
+    }
+
+    [Fact]
     public async Task Rename_user_category()
     {
         using var t = NewDb();

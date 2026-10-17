@@ -29,7 +29,7 @@ public static class WordSeeds
         new("receipt", "/rɪˈsiːt/", "n.", "收據", "Daily life", "Keep the receipt in case you want to return the jacket."),
     ];
 
-    /// <summary>Inserts the words that are missing, matched on (Text, Topic) ignoring case.</summary>
+    /// <summary>Inserts the words that are missing, matched on Text ignoring case and Topic exactly.</summary>
     public static void Seed(ISqlSugarClient db)
     {
         var existing = db.Queryable<Word>().ToList()

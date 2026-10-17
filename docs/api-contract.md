@@ -84,14 +84,26 @@ ImportTextsRequest    { texts: CreateTextRequest[] }
 
 A text goes into the sub-category of `categoryId` whose name matches `sub`
 (case-insensitive); a missing sub is created with the parent's kind, layout and
-colour. A missing or unknown `categoryId` files it under `custom` ->
-Uncategorised. `level` defaults to 3.
+colour, and a blank `sub` goes to the first sub-category. `categoryId` may also
+name a sub-category, which then takes the text and `sub` is ignored. A missing
+or unknown `categoryId` files it under `custom` -> Uncategorised. `level`
+defaults to 3.
 
-**Errors** are ProblemDetails. `400` blank title/content (or blank category
-name), `404` unknown id, `409` renaming or deleting a built-in row. For a rejected
-text the body carries a top-level `failed` array: the `fileName` of each bad
-text, or its 1-based position when it has none. An import saves all texts or
-none.
+Text content is normalised on every write (`POST /texts` and
+`POST /texts/import`), and once on start for user texts saved before: CRLF and
+lone CR become LF, a tab becomes one space, trailing whitespace is stripped from
+each line, and blank lines at the start and end are removed. `chars` is the
+length of the normalised content.
+
+The tree lists top-level categories in shipped order, then the user's in the
+order they were created, with `custom` (Uncategorised) always last.
+
+**Errors** are ProblemDetails (`{ type, title, status }`, `title` carries the
+reason). `400` blank title/content, blank category name, or a category `level`
+other than `top` / `sub`; `404` unknown id (including `GET /texts/{id}`); `409`
+renaming or deleting a built-in row. For a rejected text the body carries a
+top-level `failed` array: the `fileName` of each bad text, or its 1-based
+position when it has none. An import saves all texts or none.
 
 Deleting a category deletes its sub-categories and moves their texts to
 Uncategorised; deleting a text also deletes its segmentations.

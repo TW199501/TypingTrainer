@@ -20,7 +20,9 @@ public class LibraryService(ISqlSugarClient db)
                 .ToListAsync())
             .ToDictionary(x => x.CategoryId, x => x.Count);
 
+        // Uncategorised stays last, below the top-level categories the user adds.
         return all.Where(c => c.ParentId is null)
+            .OrderBy(c => c.Code == CategorySeeds.UncategorisedCode ? 1 : 0)
             .Select(top => new CategoryDto(
                 IdOf(top), top.Name, top.Color ?? DefaultColor, top.Layout ?? "en", top.Kind, top.Code is not null,
                 all.Where(s => s.ParentId == top.Id)
@@ -318,13 +320,14 @@ public class LibraryService(ISqlSugarClient db)
     private async Task<int> InsertTextAsync(CreateTextRequest request, int userId)
     {
         var (sub, top) = await ResolveTargetAsync(request);
+        var content = TextContent.Normalise(request.Content);
         var row = new PracticeText
         {
             CategoryId = sub.Id,
             Title = request.Title.Trim(),
-            Content = request.Content,
+            Content = content,
             Level = ParseLevel(request.Level, 3),
-            Chars = request.Content.Length,
+            Chars = content.Length,
             Language = top.Layout is "zh" or "zhuyin" ? "zh" : "en",
             CreatedBy = userId,
             CreatedAt = DateTime.UtcNow,

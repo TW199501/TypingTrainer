@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.DependencyInjection;
 using SqlSugar;
 using TypeLab.Api.Data;
 using TypeLab.Api.Models;
@@ -74,6 +75,49 @@ public class UpgradeTests
             var old = Assert.Single(texts, t => t.Title == "old");
             Assert.Null(old.Code);
             Assert.Equal(0, old.SortOrder);
+        }
+        finally
+        {
+            SqliteConnection.ClearAllPools();
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void InitDatabase_normalises_stored_user_texts_and_a_restart_changes_nothing()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"typelab-normalise-{Guid.NewGuid():N}.db");
+        try
+        {
+            var cs = new SqliteConnectionStringBuilder { DataSource = path, Pooling = false }.ToString();
+            var services = new ServiceCollection()
+                .AddSingleton<ISqlSugarClient>(_ => new SqlSugarScope(new ConnectionConfig
+                {
+                    DbType = DbType.Sqlite,
+                    ConnectionString = cs,
+                    IsAutoCloseConnection = true,
+                    InitKeyType = InitKeyType.Attribute,
+                }))
+                .BuildServiceProvider();
+            services.InitDatabase();
+            var db = services.GetRequiredService<ISqlSugarClient>();
+            var sub = db.Queryable<Category>().First(c => c.Code == CategorySeeds.UncategorisedSubCode);
+            var id = db.Insertable(new PracticeText
+            {
+                CategoryId = sub.Id, Title = "pasted", Content = "Hi,\r\n\tteam  \r\n", Level = 3, Chars = 13,
+                Language = "en", CreatedAt = DateTime.UtcNow,
+            }).ExecuteReturnIdentity();
+
+            services.InitDatabase();
+            var once = db.Queryable<PracticeText>().First(t => t.Id == id);
+            services.InitDatabase();
+            var twice = db.Queryable<PracticeText>().First(t => t.Id == id);
+
+            Assert.Equal("Hi,\n team", once.Content);
+            Assert.Equal(9, once.Chars);
+            Assert.Equal(once.Content, twice.Content);
+            Assert.Equal(16, db.Queryable<PracticeText>().Count());
+            services.Dispose();
         }
         finally
         {
