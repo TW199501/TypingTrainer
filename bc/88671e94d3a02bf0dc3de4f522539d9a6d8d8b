@@ -1,0 +1,25 @@
+apps/src/lib/decode.test.ts
+  s_128d3d106ddb5d::t_9b914e18e0016f 1-32
+apps/src/lib/decode.ts
+  s_128d3d106ddb5d::t_1825adacd2fd9c 1-28
+apps/src/stores/library.test.ts
+  s_128d3d106ddb5d::t_6c6b60772a1fab 106-113
+apps/src/stores/library.ts
+  s_128d3d106ddb5d::t_7ab0f8804ed948 7,216,220-238
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bc88671e94d3a02bf0dc3de4f522539d9a6d8d8b",
+  "prompts": {},
+  "sessions": {
+    "s_128d3d106ddb5d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0575194d-0384-4e39-b2cb-35bcd33faec7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": null
+    }
+  }
+}
