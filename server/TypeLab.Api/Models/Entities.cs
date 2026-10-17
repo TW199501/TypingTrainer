@@ -37,6 +37,7 @@ public class User
 }
 
 [SugarTable("Categories")]
+[SugarIndex("ux_categories_code", nameof(Code), OrderByType.Asc, true)]
 public class Category
 {
     [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
@@ -72,7 +73,15 @@ public class Category
     [SugarColumn(Length = 32, IsNullable = true)]
     public string? Layout { get; set; }
 
-    /// <summary>basics · english · chinese · bopomofo · vocab · code · timed</summary>
+    /// <summary>
+    /// Stable code of a built-in row: a top-level category is <c>basic</c>,
+    /// <c>english</c>…; a sub-category is <c>{parent}/{name lower-cased, spaces as -}</c>.
+    /// Null for rows the user created, so <c>Code != null</c> means built-in.
+    /// </summary>
+    [SugarColumn(Length = 64, IsNullable = true)]
+    public string? Code { get; set; }
+
+    /// <summary>basic · english · chinese · zhuyin · bilingual · code · timed · custom</summary>
     [SugarColumn(Length = 32)]
     public string Kind { get; set; } = string.Empty;
 
@@ -83,12 +92,19 @@ public class Category
 }
 
 [SugarTable("Texts")]
+[SugarIndex("ux_texts_code", nameof(Code), OrderByType.Asc, true)]
 public class PracticeText
 {
     [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
     public int Id { get; set; }
 
     public int CategoryId { get; set; }
+
+    /// <summary>Stable code of a built-in text, <c>{kind}.{n}</c> such as <c>basic.1</c>; null for user texts.</summary>
+    [SugarColumn(Length = 64, IsNullable = true)]
+    public string? Code { get; set; }
+
+    public int SortOrder { get; set; }
 
     [SugarColumn(Length = 256)]
     public string Title { get; set; } = string.Empty;

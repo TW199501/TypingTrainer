@@ -26,8 +26,11 @@ CREATE TABLE "Categories"(
 "I18nKey" varchar(64) NULL  ,
 "Color" varchar(32) NULL  ,
 "Layout" varchar(32) NULL  ,
+"Code" varchar(64) NULL  ,
 "Kind" varchar(32) NOT NULL  ,
 "SortOrder" integer NOT NULL    );
+
+CREATE UNIQUE INDEX ux_categories_code ON `Categories`(`Code` Asc);
 
 CREATE TABLE "ErrorBook"(
 "Id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -125,6 +128,8 @@ CREATE UNIQUE INDEX ux_segments_pass_seq ON `TextSegments`(`SegmentationId` Asc,
 CREATE TABLE "Texts"(
 "Id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
 "CategoryId" integer NOT NULL  ,
+"Code" varchar(64) NULL  ,
+"SortOrder" integer NOT NULL  ,
 "Title" varchar(256) NOT NULL  ,
 "Content" text NOT NULL  ,
 "Level" integer NOT NULL  ,
@@ -132,6 +137,8 @@ CREATE TABLE "Texts"(
 "Language" varchar(16) NOT NULL  ,
 "CreatedBy" integer NULL  ,
 "CreatedAt" datetime NOT NULL    );
+
+CREATE UNIQUE INDEX ux_texts_code ON `Texts`(`Code` Asc);
 
 CREATE TABLE "Translations"(
 "Id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
