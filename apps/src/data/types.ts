@@ -8,6 +8,7 @@ export interface SubCategory {
   id: string
   name: string
   count: number
+  isBuiltIn: boolean
 }
 
 export interface Category {
@@ -16,10 +17,15 @@ export interface Category {
   color: string
   layout: LayoutKind
   kind: CategoryKind
+  isBuiltIn: boolean
   children: SubCategory[]
 }
 
 export interface TextItem {
+  id: number
+  isBuiltIn: boolean
+  categoryId: string
+  subId: string
   title: string
   category: string
   sub: string

@@ -19,6 +19,7 @@ export interface SubCategoryDto {
   id: string
   name: string
   count: number
+  isBuiltIn: boolean
 }
 
 export interface CategoryDto {
@@ -28,7 +29,24 @@ export interface CategoryDto {
   /** Which keyboard the group is typed on. */
   layout: 'en' | 'zh' | 'zhuyin'
   kind: 'basic' | 'english' | 'chinese' | 'zhuyin' | 'bilingual' | 'code' | 'timed' | 'custom'
+  isBuiltIn: boolean
   children: SubCategoryDto[]
+}
+
+export interface CreateCategoryBody {
+  level: 'top' | 'sub'
+  parentId?: string
+  name: string
+  color?: string
+}
+
+export interface CreateTextBody {
+  title: string
+  content: string
+  categoryId?: string
+  sub?: string
+  level?: string
+  fileName?: string
 }
 
 export interface TextDto {
@@ -36,11 +54,14 @@ export interface TextDto {
   title: string
   category: string
   sub: string
+  categoryId: string
+  subId: string
   level: string
   chars: number
   /** Personal best for this text; `null` until it has been drilled once. */
   best: number | null
   lastPractisedAt: string | null
+  isBuiltIn: boolean
   content?: string
 }
 

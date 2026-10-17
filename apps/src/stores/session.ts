@@ -25,6 +25,7 @@ const FALLBACK_CAT: Category = {
   name: 'Basics',
   color: '#8a9a5b',
   layout: 'en',
+  isBuiltIn: true,
   kind: 'basic',
   children: [],
 }

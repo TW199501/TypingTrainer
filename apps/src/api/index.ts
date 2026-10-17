@@ -1,11 +1,15 @@
-import { desktopModelDir } from './desktop'
+import { desktopModelDir, IS_DESKTOP } from './desktop'
 import { delay, http, USE_MOCK, writeToken } from './http'
 import * as fx from './mock/fixtures'
+import * as lib from './mock/library'
+import { fetchAllPages } from './paging'
 import type {
   AuthUserDto,
   BookEntryDto,
   CategoryDto,
   CoachDto,
+  CreateCategoryBody,
+  CreateTextBody,
   CompareRowDto,
   DictEntryDto,
   HistoryItemDto,
@@ -22,9 +26,33 @@ import type {
   TrendPointDto,
 } from './types'
 
-/** `VITE_USE_MOCK` decides per call whether the fixture or the endpoint answers. */
-async function pick<T>(mock: () => T, real: () => Promise<{ data: T }>): Promise<T> {
-  if (USE_MOCK) return delay(mock())
+export type ApiGroup =
+  | 'auth'
+  | 'categories'
+  | 'texts'
+  | 'dictionary'
+  | 'sessions'
+  | 'stats'
+  | 'leaderboard'
+  | 'models'
+  | 'prompts'
+  | 'coach'
+
+/** Groups the bundled API answers on desktop even though the build flag says mock. */
+export const DESKTOP_REAL_GROUPS: ReadonlySet<ApiGroup> = new Set<ApiGroup>([
+  'categories',
+  'texts',
+  'dictionary',
+])
+
+/** Desktop follows `DESKTOP_REAL_GROUPS`; the web build follows `VITE_USE_MOCK`. */
+export function usesRealApi(group: ApiGroup, desktop = IS_DESKTOP, mock = USE_MOCK): boolean {
+  return desktop ? DESKTOP_REAL_GROUPS.has(group) : !mock
+}
+
+/** Per call, decides whether the fixture or the endpoint answers. */
+async function pick<T>(group: ApiGroup, mock: () => T, real: () => Promise<{ data: T }>): Promise<T> {
+  if (!usesRealApi(group)) return delay(mock())
   const res = await real()
   return res.data
 }
@@ -33,6 +61,7 @@ export const api = {
   auth: {
     async login(body: LoginRequest): Promise<AuthUserDto> {
       const user = await pick(
+        'auth',
         () => ({ id: 1, username: body.username, keyboardLayout: 'QWERTY', token: 'mock-token' }),
         () => http.post<AuthUserDto>('/auth/login', body),
       )
@@ -44,22 +73,68 @@ export const api = {
   categories: {
     list: (): Promise<CategoryDto[]> =>
       pick(
-        () => fx.CATEGORIES,
+        'categories',
+        () => lib.listCategories(),
         () => http.get<CategoryDto[]>('/categories'),
+      ),
+    create: (body: CreateCategoryBody): Promise<{ id: string }> =>
+      pick(
+        'categories',
+        () => lib.createCategory(body),
+        () => http.post<{ id: string }>('/categories', body),
+      ),
+    rename: (id: string, name: string): Promise<void> =>
+      pick(
+        'categories',
+        () => lib.renameCategory(id, name),
+        () => http.put<void>(`/categories/${id}`, { name }),
+      ),
+    remove: (id: string): Promise<void> =>
+      pick(
+        'categories',
+        () => lib.removeCategory(id),
+        () => http.delete<void>(`/categories/${id}`),
       ),
   },
 
   texts: {
-    list: (params: { category?: string; level?: string } = {}): Promise<TextDto[]> =>
+    /** Walks every page, so the caller always gets the full list. */
+    list: (params: Record<string, unknown> = {}): Promise<TextDto[]> =>
       pick(
-        () => fx.TEXTS,
-        () => http.get<TextDto[]>('/texts', { params }),
+        'texts',
+        () => lib.listTexts(),
+        async () => ({ data: await fetchAllPages<TextDto>('/texts', params) }),
+      ),
+    get: (id: number): Promise<TextDto> =>
+      pick(
+        'texts',
+        () => lib.getText(id),
+        () => http.get<TextDto>(`/texts/${id}`),
+      ),
+    create: (body: CreateTextBody): Promise<TextDto> =>
+      pick(
+        'texts',
+        () => lib.createText(body),
+        () => http.post<TextDto>('/texts', body),
+      ),
+    import: (texts: CreateTextBody[]): Promise<TextDto[]> =>
+      pick(
+        'texts',
+        () => texts.map((t) => lib.createText(t)),
+        () => http.post<TextDto[]>('/texts/import', { texts }),
+      ),
+    remove: (id: number): Promise<void> =>
+      pick(
+        'texts',
+        () => lib.removeText(id),
+        () => http.delete<void>(`/texts/${id}`),
       ),
   },
 
   dictionary: {
     list: (params: { topic?: string; q?: string } = {}): Promise<DictEntryDto[]> =>
       pick(
+        'dictionary',
         () => fx.DICTIONARY,
         () => http.get<DictEntryDto[]>('/words', { params }),
       ),
@@ -69,6 +144,7 @@ export const api = {
     /** The keystroke array travels with the run so the server can re-verify the score. */
     submit: (body: SessionSubmitDto): Promise<SessionResultDto> =>
       pick(
+        'sessions',
         () => ({ id: Date.now(), isPersonalBest: false }),
         () => http.post<SessionResultDto>('/sessions', body),
       ),
@@ -77,21 +153,25 @@ export const api = {
   stats: {
     summary: (): Promise<StatsSummaryDto> =>
       pick(
+        'stats',
         () => fx.SUMMARY,
         () => http.get<StatsSummaryDto>('/stats/summary'),
       ),
     trend: (lang: 'en' | 'zh', days = 30): Promise<TrendPointDto[]> =>
       pick(
+        'stats',
         () => (lang === 'zh' ? fx.TREND_ZH : fx.TREND_EN),
         () => http.get<TrendPointDto[]>('/stats/trend', { params: { lang, days } }),
       ),
     history: (): Promise<HistoryItemDto[]> =>
       pick(
+        'stats',
         () => fx.HISTORY,
         () => http.get<HistoryItemDto[]>('/sessions/me'),
       ),
     keyErrors: (): Promise<KeyErrorRateDto[]> =>
       pick(
+        'stats',
         () => fx.KEY_ERRORS,
         () => http.get<KeyErrorRateDto[]>('/stats/keys'),
       ),
@@ -100,16 +180,19 @@ export const api = {
   leaderboard: {
     board: (lang: 'en' | 'zh', period: 'weekly' | 'monthly'): Promise<LeaderboardRowDto[]> =>
       pick(
+        'leaderboard',
         () => (lang === 'zh' ? fx.LEADERBOARD_ZH : fx.LEADERBOARD_EN),
         () => http.get<LeaderboardRowDto[]>('/leaderboard', { params: { lang, period } }),
       ),
     compare: (period: 'weekly' | 'monthly'): Promise<CompareRowDto[]> =>
       pick(
+        'leaderboard',
         () => fx.compareRows(period),
         () => http.get<CompareRowDto[]>('/stats/compare', { params: { period } }),
       ),
     personalBests: (): Promise<PersonalBestDto[]> =>
       pick(
+        'leaderboard',
         () => fx.PERSONAL_BESTS,
         () => http.get<PersonalBestDto[]>('/stats/bests'),
       ),
@@ -123,6 +206,7 @@ export const api = {
      */
     async storage(locale?: string): Promise<ModelStorageDto> {
       const dto = await pick(
+        'models',
         () => fx.modelStorage(locale),
         () => http.get<ModelStorageDto>('/models', { params: { locale } }),
       )
@@ -131,11 +215,13 @@ export const api = {
     },
     install: (code: string): Promise<void> =>
       pick(
+        'models',
         () => undefined,
         () => http.post<void>(`/models/${code}/install`),
       ),
     remove: (code: string): Promise<void> =>
       pick(
+        'models',
         () => undefined,
         () => http.delete<void>(`/models/${code}/install`),
       ),
@@ -144,6 +230,7 @@ export const api = {
   prompts: {
     list: (locale?: string): Promise<PromptDto[]> =>
       pick(
+        'prompts',
         () => fx.prompts(locale),
         () => http.get<PromptDto[]>('/prompts', { params: { locale } }),
       ),
@@ -152,16 +239,19 @@ export const api = {
   coach: {
     get: (): Promise<CoachDto> =>
       pick(
+        'coach',
         () => fx.COACH,
         () => http.get<CoachDto>('/coach'),
       ),
     book: (): Promise<BookEntryDto[]> =>
       pick(
+        'coach',
         () => fx.BOOK,
         () => http.get<BookEntryDto[]>('/book'),
       ),
     saveBook: (book: BookEntryDto[]): Promise<void> =>
       pick(
+        'coach',
         () => undefined,
         () => http.put<void>('/book', book),
       ),
