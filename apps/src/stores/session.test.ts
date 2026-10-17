@@ -112,6 +112,54 @@ describe('typing engine', () => {
   })
 })
 
+describe('line breaks', () => {
+  let session: ReturnType<typeof useSessionStore>
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    const library = useLibraryStore()
+    library.categories = CATEGORIES.map((c) => ({ ...c, children: c.children.slice() })) as Category[]
+    session = useSessionStore()
+  })
+
+  it('drops line breaks from a Chinese target and remembers where they were', () => {
+    session.reset({ mode: 'chinese', idx: 0 })
+    session.setText({ id: 1, content: '第一段。\n第二段。' })
+
+    expect(session.target).toBe('第一段。第二段。')
+    expect(session.breaks).toEqual([4])
+
+    session.applyImeValue('第一段。第二段')
+    expect(session.done).toBe(false)
+    session.applyImeValue('第一段。第二段。')
+    expect(session.done).toBe(true)
+    expect(session.errors).toEqual({})
+  })
+
+  it('drops line breaks from a bopomofo target too', () => {
+    session.reset({ mode: 'zhuyin', idx: 0 })
+    session.setText({ id: 2, content: 'ㄅㄆ\n\nㄇㄈ' })
+
+    expect(session.target).toBe('ㄅㄆㄇㄈ')
+    expect(session.breaks).toEqual([2, 2])
+    type(session, '1qaz')
+    expect(session.done).toBe(true)
+  })
+
+  it('keeps line breaks in a latin target, typed with Enter', () => {
+    session.reset({ mode: 'english', idx: 0 })
+    session.setText({ id: 3, content: 'ab\ncd' })
+
+    expect(session.target).toBe('ab\ncd')
+    expect(session.breaks).toEqual([])
+    type(session, 'ab')
+    session.handleKey(key('Enter'), true)
+    type(session, 'cd')
+    expect(session.done).toBe(true)
+    expect(session.errors).toEqual({})
+  })
+})
+
 describe('error book', () => {
   beforeEach(() => {
     setActivePinia(createPinia())

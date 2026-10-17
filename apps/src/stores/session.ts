@@ -91,13 +91,31 @@ export const useSessionStore = defineStore('session', () => {
 
   const dictList = computed(() => dictionary.listFor(subName.value, dictionary.start))
 
-  const target = computed(() => {
-    if (reviewText.value) return reviewText.value
+  /**
+   * The text to type, plus the target indices a line break preceded. An IME has no
+   * key for a line break, so Chinese and bopomofo texts are typed straight across
+   * and their breaks are display only; latin texts keep `\n`, typed with Enter.
+   */
+  const lines = computed<{ target: string; breaks: number[] }>(() => {
+    if (reviewText.value) return { target: reviewText.value, breaks: [] }
     if (cat.value.kind === 'bilingual') {
-      return dictList.value.map((d) => d.zh.split('；')[0] + ' ' + d.w).join('　')
+      return {
+        target: dictList.value.map((d) => d.zh.split('；')[0] + ' ' + d.w).join('　'),
+        breaks: [],
+      }
     }
-    return text.value?.content ?? ''
+    const content = text.value?.content ?? ''
+    if (!cellMode.value) return { target: content, breaks: [] }
+    let out = ''
+    const breaks: number[] = []
+    for (const ch of content) {
+      if (ch === '\n') breaks.push(out.length)
+      else if (ch !== '\r') out += ch
+    }
+    return { target: out, breaks }
   })
+  const target = computed(() => lines.value.target)
+  const breaks = computed(() => lines.value.breaks)
 
   const limit = computed(() => (cat.value.kind === 'timed' ? TIMED_SECONDS : 0))
   const elapsedMs = computed(() => {
@@ -511,6 +529,7 @@ export const useSessionStore = defineStore('session', () => {
     isZh,
     dictList,
     target,
+    breaks,
     limit,
     elapsedMs,
     correctChars,

@@ -123,8 +123,13 @@ onMounted(async () => {
     // A restarted API while the app runs: drop the notice and read the data again.
     if (ready.value && !backendError.value) {
       connection.markRestored()
-      void library.reload()
-      void dictionary.reload()
+      // A failed reload leaves the old lists on screen; the connection banner covers it.
+      library.reload().catch(() => {})
+      dictionary.reload().catch(() => {})
+      // A text that failed to load while the API was down is fetched again.
+      if (!session.text && !session.textLoading && !session.isWord && !session.reviewText) {
+        void session.loadText()
+      }
       return
     }
     if (!backendError.value || backendFailed || updateInstalling) return

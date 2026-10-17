@@ -32,8 +32,8 @@ const session = {
   loadText: vi.fn(),
   handleKey: vi.fn(),
 }
-const library = { load: vi.fn(), reload: vi.fn() }
-const dictionary = { load: vi.fn(), reload: vi.fn() }
+const library = { load: vi.fn(), reload: vi.fn(async () => {}) }
+const dictionary = { load: vi.fn(), reload: vi.fn(async () => {}) }
 vi.mock('@/stores/session', () => ({ useSessionStore: () => session }))
 vi.mock('@/stores/library', () => ({ useLibraryStore: () => library }))
 vi.mock('@/stores/dictionary', () => ({ useDictionaryStore: () => dictionary }))
