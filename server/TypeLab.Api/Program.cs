@@ -47,6 +47,7 @@ if (!string.IsNullOrWhiteSpace(modelDir))
 builder.Services.AddOpenApi();
 builder.Services.AddSqlSugar(builder.Configuration, builder.Environment);
 builder.Services.AddSingleton<ModelStorage>();
+builder.Services.AddSingleton<LibraryService>();
 
 // Translation: the router plus its providers. OpenCC handles Chinese script
 // conversion offline; Google covers the rest and stays dormant until
@@ -63,7 +64,8 @@ builder.Services.AddCors(o => o.AddPolicy(WebCors, p => p
         builder.Configuration.GetSection("Cors:Origins").Get<string[]>()
             ?? ["http://localhost:5173", "http://tauri.localhost", "tauri://localhost"])
     .AllowAnyHeader()
-    .AllowAnyMethod()));
+    .AllowAnyMethod()
+    .WithExposedHeaders("X-Total-Count")));
 
 var app = builder.Build();
 
@@ -102,12 +104,11 @@ api.MapGet("/health", () => Results.Ok(new { status = "ok", utc = DateTime.UtcNo
 // Plumbing routes generated straight from the entities. Endpoints carrying real
 // behaviour (auth, session scoring and anti-cheat, stats, coach, error book)
 // are still to be written — see docs/api-contract.md.
-api.MapCrud<Category>("/categories");
-api.MapCrud<PracticeText>("/texts");
 api.MapCrud<Word>("/words");
 
 // Hand-written: the storage path is resolved per runtime, and the built-in
 // prompt rows must not be deletable through a generic DELETE.
+api.MapLibrary();
 api.MapModels();
 api.MapPrompts();
 api.MapTranslation();

@@ -16,8 +16,13 @@ behaviour are hand-written.
 | POST          | `/auth/login`                | `LoginRequest` → `AuthUserDto`                           |
 | POST          | `/auth/register`             | same shape as login                                      |
 | GET           | `/categories`                | two-level category tree (`CategoryDto[]`)                |
-| GET           | `/texts?category=&level=`    | practice texts (`TextDto[]`)                             |
-| POST          | `/texts`                     | store a pasted or imported text                          |
+| POST          | `/categories`                | create a top-level or sub category (`CreateCategoryRequest`) |
+| PUT · DELETE  | `/categories/{id}`           | rename / delete a user category (built-in → 409)         |
+| GET           | `/texts`                     | text list without `content`, total in `X-Total-Count`    |
+| GET           | `/texts/{id}`                | one text, with `content`                                 |
+| POST          | `/texts`                     | store a pasted text (`CreateTextRequest` → `TextDto`)    |
+| POST          | `/texts/import`              | store several texts atomically (`{ texts: [...] }`)      |
+| DELETE        | `/texts/{id}`                | delete a user text (built-in → 409)                      |
 | GET           | `/words?topic=&q=`           | dictionary entries (`DictEntryDto[]`)                    |
 | POST          | `/words/import`              | dictionary import (ECDICT / CC-CEDICT / custom)          |
 | POST          | `/sessions`                  | submit a run (`SessionSubmitDto` → `SessionResultDto`)   |
@@ -36,6 +41,61 @@ behaviour are hand-written.
 | GET           | `/translate/providers`       | registered translators and whether each is configured    |
 | POST          | `/translate/locales`         | one locale in, the remaining UI locales out              |
 
+### Library: categories and texts
+
+Hand-written in `Api/LibraryEndpoints.cs`, backed by `Data/LibraryService.cs`.
+JSON is camelCase.
+
+**Ids.** A built-in top-level category is addressed by its code (`basic`,
+`english`, `chinese`, `zhuyin`, `bilingual`, `code`, `timed`, `custom`); every
+other category and every sub-category by its numeric row id as a string. The
+server tries an integer first, then a top-level code.
+
+```ts
+CategoryDto    { id, name, color, layout, kind, isBuiltIn, children: SubCategoryDto[] }
+SubCategoryDto { id, name, count, isBuiltIn }
+TextDto        { id, title, category, sub, categoryId, subId, level /* "L3" */, chars,
+                 best /* null for now */, lastPractisedAt /* null for now */,
+                 isBuiltIn, content? /* omitted in lists */ }
+```
+
+`isBuiltIn` is true for rows that ship with the app (they carry a `Code`).
+`categoryId` / `subId` are the ids of the top-level category and the sub-category
+a text sits under; `category` / `sub` are their names.
+
+**`GET /texts`** query: `category` (top-level id), `sub` (sub id), `level`
+(`L3` or `3`), `builtIn` (`true` / `false`), `page` (from 1), `size` (1-500,
+default 50). The body is an array of `TextDto` with no `content`; the total
+before paging is in the `X-Total-Count` header (exposed through CORS). Order:
+the user's texts newest first, then built-in texts in shipped order.
+
+**Requests**
+
+```ts
+CreateCategoryRequest { level: 'top' | 'sub', parentId?: string, name: string, color?: string }
+RenameCategoryRequest { name: string }
+CreateTextRequest     { title, content, categoryId?, sub?, level?, fileName? }
+ImportTextsRequest    { texts: CreateTextRequest[] }
+```
+
+`POST /categories` answers `201 { id }`. A new top-level category is `kind:
+"custom"`, `layout: "en"`. `POST /texts` answers `201 TextDto`;
+`POST /texts/import` answers `200 TextDto[]` in request order.
+
+A text goes into the sub-category of `categoryId` whose name matches `sub`
+(case-insensitive); a missing sub is created with the parent's kind, layout and
+colour. A missing or unknown `categoryId` files it under `custom` ->
+Uncategorised. `level` defaults to 3.
+
+**Errors** are ProblemDetails. `400` blank title/content (or blank category
+name), `404` unknown id, `409` renaming or deleting a built-in row. For a rejected
+text the body carries a top-level `failed` array: the `fileName` of each bad
+text, or its 1-based position when it has none. An import saves all texts or
+none.
+
+Deleting a category deletes its sub-categories and moves their texts to
+Uncategorised; deleting a text also deletes its segmentations.
+
 ### Anti-cheat
 
 `POST /sessions` carries the full keystroke array (`{ k, t, ok }[]`). The server
@@ -53,8 +113,8 @@ rows reflectively, so entities use defaults rather than `required` members.
 | Table                               | Columns                                                                                  |
 | ----------------------------------- | ---------------------------------------------------------------------------------------- |
 | `Users`                             | Id, Username, PasswordHash, KeyboardLayout, UiLanguage, CreatedAt                        |
-| `Categories`                        | Id, ParentId, Name, I18nKey, Color, Layout, Kind, SortOrder                              |
-| `Texts`                             | Id, CategoryId, Title, Content, Level, Chars, Language, CreatedBy, CreatedAt             |
+| `Categories`                        | Id, ParentId, Name, I18nKey, Color, Layout, Code, Kind, SortOrder                        |
+| `Texts`                             | Id, CategoryId, Code, SortOrder, Title, Content, Level, Chars, Language, CreatedBy, CreatedAt |
 | `Sessions`                          | Id, UserId, TextId, Mode, Speed, Unit, Accuracy, DurationSec, ErrorCount, CreatedAt      |
 | `SessionKeystrokes`                 | SessionId, Seq, KeyChar, OffsetMs, IsCorrect                                             |
 | `KeyErrors`                         | SessionId, KeyChar, Count                                                                |
