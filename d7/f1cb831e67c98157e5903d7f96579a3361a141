@@ -1,0 +1,25 @@
+apps/src/lib/normalise.ts
+  s_128d3d106ddb5d::t_860f8b7e838f48 1-26
+apps/src/lib/normalise.test.ts
+  s_128d3d106ddb5d::t_f5ad5cd55212a1 1-30
+apps/src/api/mock/library.test.ts
+  s_128d3d106ddb5d::t_ba9000d8ea9dc5 92-106
+apps/src/api/mock/library.ts
+  s_128d3d106ddb5d::t_35b1fc1730cd2c 6,140-141,150,154
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d7f1cb831e67c98157e5903d7f96579a3361a141",
+  "prompts": {},
+  "sessions": {
+    "s_128d3d106ddb5d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0575194d-0384-4e39-b2cb-35bcd33faec7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
