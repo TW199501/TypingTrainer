@@ -1,0 +1,22 @@
+apps/src/api/mock/library.test.ts
+  s_128d3d106ddb5d::t_226eed4ed09ebf 1-44
+  s_128d3d106ddb5d::t_d5de8786437715 45-54
+apps/src/api/mock/library.ts
+  s_128d3d106ddb5d::t_bc114178995c6c 6,67-71,74-84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d6fc0f6f08af06f04feed49fb5a7438a7ae879ef",
+  "prompts": {},
+  "sessions": {
+    "s_128d3d106ddb5d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0575194d-0384-4e39-b2cb-35bcd33faec7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
