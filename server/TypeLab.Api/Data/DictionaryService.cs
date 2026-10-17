@@ -111,7 +111,7 @@ public class DictionaryService(ISqlSugarClient db)
     }
 
     private static string Key(string text, string? topic) =>
-        text.ToLowerInvariant() + "\u0000" + (topic ?? "").ToLowerInvariant();
+        text.ToLowerInvariant() + "\u001F" + (topic ?? "");
 
     private static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 

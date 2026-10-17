@@ -111,7 +111,7 @@ match; `q` matches `word` or `zh`, ignoring case. `page` defaults to 1 and
 `POST /words/import` takes `{ skipDuplicates, words: [{ word, zh, phonetic, pos,
 topic, example }] }` and answers `200 { added, skipped }`. A blank `topic`
 becomes `Uncategorised`. Two words are duplicates when word and topic both
-match, ignoring case, whether the earlier one is stored or comes earlier in the
+match, ignoring case in the word and exactly in the topic, whether the earlier one is stored or comes earlier in the
 same batch. With `skipDuplicates` they are skipped and counted; without it
 they are written anyway. A blank `word` is a `400` whose top-level `failed`
 array lists the 1-based row numbers; nothing is saved.

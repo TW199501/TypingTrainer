@@ -94,13 +94,14 @@ public class DictionaryServiceTests
         [
             Row("Balance", "Banking"),
             Row("novel", "Misc"),
-            Row("NOVEL", "misc"),
+            Row("NOVEL", "Misc"),
+            Row("novel", "misc"),
             Row("fresh", "Misc"),
         ]));
 
-        Assert.Equal(2, result.Added);
+        Assert.Equal(3, result.Added);
         Assert.Equal(2, result.Skipped);
-        Assert.Equal(16, t.Db.Queryable<Word>().Count());
+        Assert.Equal(17, t.Db.Queryable<Word>().Count());
     }
 
     [Fact]
