@@ -42,6 +42,15 @@ behaviour are hand-written.
 | GET           | `/translate/providers`         | registered translators and whether each is configured            |
 | POST          | `/translate/locales`           | one locale in, the remaining UI locales out                      |
 
+Writes are checked against the page that sent them: a `POST`, `PUT`, `PATCH`
+or `DELETE` whose `Origin` header is present but neither in the CORS allowlist
+(`Cors:Origins`, the same list the CORS policy uses) nor the API's own host is
+a `403` ProblemDetails. This covers requests CORS lets through without a
+preflight, such as a multipart form. Reads, preflights and requests without an
+`Origin` (the desktop shell, curl, tests) are not checked. Same-origin compares
+the host name, and the port only when the `Host` header carries one, so the
+Docker image works behind nginx's `proxy_set_header Host $host`.
+
 ### Library: categories and texts
 
 Hand-written in `Api/LibraryEndpoints.cs`, backed by `Data/LibraryService.cs`.

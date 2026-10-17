@@ -65,10 +65,10 @@ builder.Services.AddXiHanGoogleTranslator(builder.Configuration);
 // The web app is served from Vite in development and from file:// inside the
 // Tauri shell, so both origins have to be allowed.
 const string WebCors = "web";
+var webOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>()
+    ?? ["http://localhost:5173", "http://tauri.localhost", "tauri://localhost"];
 builder.Services.AddCors(o => o.AddPolicy(WebCors, p => p
-    .WithOrigins(
-        builder.Configuration.GetSection("Cors:Origins").Get<string[]>()
-            ?? ["http://localhost:5173", "http://tauri.localhost", "tauri://localhost"])
+    .WithOrigins(webOrigins)
     .AllowAnyHeader()
     .AllowAnyMethod()
     .WithExposedHeaders("X-Total-Count")));
@@ -99,6 +99,9 @@ if (!app.Services.GetRequiredService<ISidecarContext>().IsSidecar)
     app.UseHttpsRedirection();
 }
 
+// A write from a page outside the CORS allowlist is refused, even one CORS lets through
+// without a preflight (a multipart form). Same list as the policy, so the two cannot drift.
+app.UseMiddleware<OriginGuard>((IReadOnlyCollection<string>)webOrigins);
 app.UseCors(WebCors);
 
 // VITE_API_BASE_URL points at this prefix.
