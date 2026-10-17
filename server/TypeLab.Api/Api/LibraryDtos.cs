@@ -43,3 +43,25 @@ public record CreateTextRequest(
 public record ImportTextsRequest(List<CreateTextRequest> Texts);
 
 public record TextPage(List<TextDto> Rows, int Total);
+
+public record DictEntryDto(
+    int Id,
+    string Word,
+    string Phonetic,
+    string Pos,
+    string Zh,
+    string Topic,
+    string Example,
+    int Mastery);
+
+public record ImportWordRow(
+    string Word,
+    string? Zh,
+    string? Phonetic,
+    string? Pos,
+    string? Topic,
+    string? Example);
+
+public record ImportWordsRequest(bool SkipDuplicates, List<ImportWordRow> Words);
+
+public record ImportWordsResult(int Added, int Skipped);

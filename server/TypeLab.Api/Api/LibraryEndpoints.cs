@@ -61,7 +61,7 @@ public static class LibraryEndpoints
     }
 
     /// <summary>Runs <paramref name="action"/>, turning a <see cref="LibraryException"/> into a ProblemDetails response.</summary>
-    private static async Task<IResult> Guard(Func<Task<IResult>> action)
+    internal static async Task<IResult> Guard(Func<Task<IResult>> action)
     {
         try
         {

@@ -127,6 +127,7 @@ public static class SqlSugarSetup
             LocalUserSeeds.Seed(db);
             CategorySeeds.Seed(db);
             TextSeeds.Seed(db);
+            WordSeeds.Seed(db);
             PromptSeeds.Seed(db);
             ModelSeeds.Seed(db);
             CatalogueTranslationSeeds.Seed(db);

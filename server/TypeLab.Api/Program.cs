@@ -48,6 +48,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddSqlSugar(builder.Configuration, builder.Environment);
 builder.Services.AddSingleton<ModelStorage>();
 builder.Services.AddSingleton<LibraryService>();
+builder.Services.AddSingleton<DictionaryService>();
 
 // Translation: the router plus its providers. OpenCC handles Chinese script
 // conversion offline; Google covers the rest and stays dormant until
@@ -101,10 +102,8 @@ var api = app.MapGroup("/api");
 api.MapGet("/health", () => Results.Ok(new { status = "ok", utc = DateTime.UtcNow }))
     .WithName("Health");
 
-// Plumbing routes generated straight from the entities. Endpoints carrying real
-// behaviour (auth, session scoring and anti-cheat, stats, coach, error book)
-// are still to be written — see docs/api-contract.md.
-api.MapCrud<Word>("/words");
+// Hand-written: the dictionary rows carry the local user's mastery and import rules.
+api.MapWords();
 
 // Hand-written: the storage path is resolved per runtime, and the built-in
 // prompt rows must not be deletable through a generic DELETE.

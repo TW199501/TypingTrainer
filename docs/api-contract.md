@@ -11,35 +11,35 @@ behaviour are hand-written.
 
 ## Endpoints
 
-| Method        | Path                         | Purpose                                                      |
-| ------------- | ---------------------------- | ------------------------------------------------------------ |
-| POST          | `/auth/login`                | `LoginRequest` → `AuthUserDto`                               |
-| POST          | `/auth/register`             | same shape as login                                          |
-| GET           | `/categories`                | two-level category tree (`CategoryDto[]`)                    |
-| POST          | `/categories`                | create a top-level or sub category (`CreateCategoryRequest`) |
-| PUT · DELETE  | `/categories/{id}`           | rename / delete a user category (built-in → 409)             |
-| GET           | `/texts`                     | text list without `content`, total in `X-Total-Count`        |
-| GET           | `/texts/{id}`                | one text, with `content`                                     |
-| POST          | `/texts`                     | store a pasted text (`CreateTextRequest` → `TextDto`)        |
-| POST          | `/texts/import`              | store several texts atomically (`{ texts: [...] }`)          |
-| DELETE        | `/texts/{id}`                | delete a user text (built-in → 409)                          |
-| GET           | `/words?topic=&q=`           | dictionary entries (`DictEntryDto[]`)                        |
-| POST          | `/words/import`              | dictionary import (ECDICT / CC-CEDICT / custom)              |
-| POST          | `/sessions`                  | submit a run (`SessionSubmitDto` → `SessionResultDto`)       |
-| GET           | `/sessions/me`               | recent history (`HistoryItemDto[]`)                          |
-| GET           | `/stats/summary`             | headline numbers (`StatsSummaryDto`)                         |
-| GET           | `/stats/trend?lang=&days=30` | trend series (`TrendPointDto[]`)                             |
-| GET           | `/stats/keys`                | per-key error rate for the heatmap                           |
-| GET           | `/stats/compare?period=`     | this period vs previous                                      |
-| GET           | `/stats/bests`               | personal best per text                                       |
-| GET           | `/leaderboard?lang=&period=` | leaderboard rows                                             |
-| GET           | `/coach`                     | level, targets and today's recommendations                   |
-| GET · PUT     | `/book`                      | error book (spaced repetition state)                         |
-| GET           | `/models?locale=`            | model catalogue + the install directory for this runtime     |
-| POST · DELETE | `/models/{code}/install`     | mark a model installed / remove it                           |
-| GET           | `/prompts?locale=`           | built-in prompt catalogue (Name/Description localised)       |
-| GET           | `/translate/providers`       | registered translators and whether each is configured        |
-| POST          | `/translate/locales`         | one locale in, the remaining UI locales out                  |
+| Method        | Path                           | Purpose                                                                    |
+| ------------- | ------------------------------ | -------------------------------------------------------------------------- |
+| POST          | `/auth/login`                  | `LoginRequest` → `AuthUserDto`                                             |
+| POST          | `/auth/register`               | same shape as login                                                        |
+| GET           | `/categories`                  | two-level category tree (`CategoryDto[]`)                                  |
+| POST          | `/categories`                  | create a top-level or sub category (`CreateCategoryRequest`)               |
+| PUT · DELETE  | `/categories/{id}`             | rename / delete a user category (built-in → 409)                           |
+| GET           | `/texts`                       | text list without `content`, total in `X-Total-Count`                      |
+| GET           | `/texts/{id}`                  | one text, with `content`                                                   |
+| POST          | `/texts`                       | store a pasted text (`CreateTextRequest` → `TextDto`)                      |
+| POST          | `/texts/import`                | store several texts atomically (`{ texts: [...] }`)                        |
+| DELETE        | `/texts/{id}`                  | delete a user text (built-in → 409)                                        |
+| GET           | `/words?topic=&q=&page=&size=` | dictionary page (`DictEntryDto[]`), total in `X-Total-Count`               |
+| POST          | `/words/import`                | add words in one transaction (`ImportWordsRequest` → `{ added, skipped }`) |
+| POST          | `/sessions`                    | submit a run (`SessionSubmitDto` → `SessionResultDto`)                     |
+| GET           | `/sessions/me`                 | recent history (`HistoryItemDto[]`)                                        |
+| GET           | `/stats/summary`               | headline numbers (`StatsSummaryDto`)                                       |
+| GET           | `/stats/trend?lang=&days=30`   | trend series (`TrendPointDto[]`)                                           |
+| GET           | `/stats/keys`                  | per-key error rate for the heatmap                                         |
+| GET           | `/stats/compare?period=`       | this period vs previous                                                    |
+| GET           | `/stats/bests`                 | personal best per text                                                     |
+| GET           | `/leaderboard?lang=&period=`   | leaderboard rows                                                           |
+| GET           | `/coach`                       | level, targets and today's recommendations                                 |
+| GET · PUT     | `/book`                        | error book (spaced repetition state)                                       |
+| GET           | `/models?locale=`              | model catalogue + the install directory for this runtime                   |
+| POST · DELETE | `/models/{code}/install`       | mark a model installed / remove it                                         |
+| GET           | `/prompts?locale=`             | built-in prompt catalogue (Name/Description localised)                     |
+| GET           | `/translate/providers`         | registered translators and whether each is configured                      |
+| POST          | `/translate/locales`           | one locale in, the remaining UI locales out                                |
 
 ### Library: categories and texts
 
@@ -95,6 +95,26 @@ none.
 
 Deleting a category deletes its sub-categories and moves their texts to
 Uncategorised; deleting a text also deletes its segmentations.
+
+### Dictionary
+
+Hand-written in `Api/WordEndpoints.cs`, backed by `Data/DictionaryService.cs`.
+JSON is camelCase. The 14 words of `DICTIONARY` in the mock fixtures are seeded
+on first start (matched on word + topic, so a restart adds nothing).
+
+`GET /words` answers an array of `{ id, word, phonetic, pos, zh, topic, example,
+mastery }` in id order, with the total in `X-Total-Count`. `topic` is an exact
+match; `q` matches `word` or `zh`, ignoring case. `page` defaults to 1 and
+`size` to 50 (1 to 500). `mastery` is the local user's value, 0 if none;
+`example` is the first stored sentence, or an empty string.
+
+`POST /words/import` takes `{ skipDuplicates, words: [{ word, zh, phonetic, pos,
+topic, example }] }` and answers `200 { added, skipped }`. A blank `topic`
+becomes `Uncategorised`. Two words are duplicates when word and topic both
+match, ignoring case, whether the earlier one is stored or comes earlier in the
+same batch. With `skipDuplicates` they are skipped and counted; without it
+they are written anyway. A blank `word` is a `400` whose top-level `failed`
+array lists the 1-based row numbers; nothing is saved.
 
 ### Anti-cheat
 
