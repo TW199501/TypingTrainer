@@ -1,0 +1,23 @@
+apps/src/stores/session.test.ts
+  s_128d3d106ddb5d::t_311fc905b0480e 257-278
+apps/src/stores/session.ts
+  s_128d3d106ddb5d::t_7a73535000e706 256-261,541
+apps/src/views/CoachView.vue
+  s_128d3d106ddb5d::t_8708c9b3a3fc98 60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d8ee72553c63ee6f4cb9192a91611eec5feef7b2",
+  "prompts": {},
+  "sessions": {
+    "s_128d3d106ddb5d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0575194d-0384-4e39-b2cb-35bcd33faec7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
