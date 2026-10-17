@@ -253,6 +253,12 @@ export const useSessionStore = defineStore('session', () => {
     setText({ id: full.id, content: full.content ?? '' })
   }
 
+  /** Opens a category (and topic) from outside the practice screen, with its own text. */
+  async function startCategory(categoryId: string, topicId?: string) {
+    reset({ mode: categoryId, sub: topicId ?? '', idx: 0 })
+    if (!isWord.value) await loadText()
+  }
+
   function pickCategory(c: Category) {
     reset({ mode: c.id, sub: c.children[0]?.id || '', idx: 0 })
     if (!isWord.value) void loadText()
@@ -532,6 +538,7 @@ export const useSessionStore = defineStore('session', () => {
     setText,
     loadText,
     startText,
+    startCategory,
     applyImeValue,
     pickCategory,
     pickTopic,

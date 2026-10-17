@@ -254,4 +254,26 @@ describe('practice text', () => {
     expect(session.text).toEqual({ id: 5, content: 'ㄅㄆㄇㄈ' })
     expect(session.target).toBe('ㄅㄆㄇㄈ')
   })
+
+  it('startCategory loads a text of the new category, not the previous one', async () => {
+    const list = vi
+      .spyOn(api.texts, 'list')
+      .mockImplementation(async (p) => (p?.category === 'chinese' ? [dto(9, 'chinese', 'Finance')] : []))
+    vi.spyOn(api.texts, 'get').mockResolvedValue(dto(9, 'chinese', 'Finance', '打字練習'))
+    session.setText({ id: 1, content: 'asdf jkl;' })
+    await session.startCategory('chinese')
+    await vi.waitFor(() => expect(session.target).toBe('打字練習'))
+
+    expect(session.mode).toBe('chinese')
+    expect(session.sub).toBe('')
+    expect(list).toHaveBeenCalledWith({ category: 'chinese' })
+  })
+
+  it('startCategory leaves the vocabulary drill to the dictionary', async () => {
+    const list = vi.spyOn(api.texts, 'list')
+    await session.startCategory('bilingual', 'Banking')
+    expect(list).not.toHaveBeenCalled()
+    expect(session.mode).toBe('bilingual')
+    expect(session.sub).toBe('Banking')
+  })
 })
