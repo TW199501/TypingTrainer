@@ -4,6 +4,7 @@ import { message } from 'ant-design-vue'
 import { api, ApiError, type CategoryDto, type CreateTextBody, type TextDto } from '@/api'
 import { i18n } from '@/i18n'
 import { analyzeText } from '@/lib/analyze'
+import { readTextFile } from '@/lib/decode'
 import type { AnalysisResult, Category, ImportFile, TextItem } from '@/data/types'
 
 export interface CatModal {
@@ -212,28 +213,29 @@ export const useLibraryStore = defineStore('library', () => {
     )
   }
 
-  /** Reads dropped/selected files and pre-labels each one with the AI guess. */
+  /** Reads dropped/selected files (UTF-8, or Big5) and pre-labels each one with the AI guess. */
   function addFiles(list: File[]) {
     if (!list.length) return
     list.slice(0, 20).forEach((file) => {
-      const reader = new FileReader()
-      reader.onload = () => {
-        const text = String(reader.result || '')
-        const ext = (file.name.split('.').pop() || '').toUpperCase()
-        const size = file.size < 1024 ? file.size + ' B' : (file.size / 1024).toFixed(1) + ' KB'
-        const a = analyzeText(text)
-        importFiles.value = [
-          ...importFiles.value,
-          {
-            name: file.name,
-            ext,
-            size,
-            text,
-            note: a ? a.category + ' › ' + a.sub + '　' + a.level : '',
-          },
-        ]
-      }
-      reader.readAsText(file)
+      // A file that cannot be read is left out, as before.
+      readTextFile(file).then(
+        (text) => {
+          const ext = (file.name.split('.').pop() || '').toUpperCase()
+          const size = file.size < 1024 ? file.size + ' B' : (file.size / 1024).toFixed(1) + ' KB'
+          const a = analyzeText(text)
+          importFiles.value = [
+            ...importFiles.value,
+            {
+              name: file.name,
+              ext,
+              size,
+              text,
+              note: a ? a.category + ' › ' + a.sub + '　' + a.level : '',
+            },
+          ]
+        },
+        () => {},
+      )
     })
   }
 

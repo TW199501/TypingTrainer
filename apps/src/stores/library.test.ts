@@ -103,6 +103,14 @@ describe('library store', () => {
     expect(library.importFiles).toHaveLength(2)
   })
 
+  it('decodes a Big5 file it is given', async () => {
+    const library = await loaded()
+    library.addFiles([new File([new Uint8Array([0xa4, 0xa4, 0xa4, 0xe5])], 'old.txt')])
+
+    await vi.waitFor(() => expect(library.importFiles).toHaveLength(1))
+    expect(library.importFiles[0]).toMatchObject({ name: 'old.txt', ext: 'TXT', text: '中文' })
+  })
+
   it('sends no category for a manual import', async () => {
     const library = await loaded()
     api.texts.import.mockResolvedValue([])
