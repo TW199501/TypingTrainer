@@ -14,3 +14,6 @@ server/**/obj
 # copy of every file, including docs/design, whose ignore rule above is
 # anchored to the root and so does not reach them.
 .kilo/
+
+# Agent working files (plans, task briefs, review packages); never committed.
+.superpowers/
