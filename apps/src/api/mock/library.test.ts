@@ -89,3 +89,18 @@ describe('mock library: practice texts', () => {
     expect(getText(seeded.id).content).toMatch(/打字練習/)
   })
 })
+
+describe('mock library: writing texts', () => {
+  beforeEach(() => {
+    resetMockLibrary()
+  })
+
+  it('cleans the content like the server, so every character can be typed', () => {
+    const raw = '\r\n第一段。\t \r\n第二段。\rthird  \n\n'
+    const text = createText({ title: 'mine', content: raw, categoryId: 'english', sub: 'Web' })
+
+    expect(text.content).toBe('第一段。\n第二段。\nthird')
+    expect(text.chars).toBe('第一段。\n第二段。\nthird'.length)
+    expect(getText(text.id).content).toBe('第一段。\n第二段。\nthird')
+  })
+})

@@ -3,6 +3,7 @@
  * rename and delete write into. A page reload restores the fixtures.
  */
 import type { CategoryDto, CreateCategoryBody, CreateTextBody, SubCategoryDto, TextDto } from '../types'
+import { normaliseContent } from '@/lib/normalise'
 import { ApiError } from '../http'
 import { CATEGORIES, PRACTICE_TEXTS, TEXTS } from './fixtures'
 
@@ -136,6 +137,8 @@ export function createText(body: CreateTextBody): TextDto {
   const parent = categories.find((c) => c.id === body.categoryId) ?? uncategorised()
   const sub = subFor(parent, parent.id === body.categoryId ? body.sub : 'Uncategorised')
   sub.count += 1
+  // Cleaned like the server does on every write, so the text can be typed.
+  const content = normaliseContent(body.content)
   const text: TextDto = {
     id: ++seq,
     title: body.title,
@@ -144,11 +147,11 @@ export function createText(body: CreateTextBody): TextDto {
     categoryId: parent.id,
     subId: sub.id,
     level: body.level?.startsWith('L') ? body.level : `L${body.level || 3}`,
-    chars: body.content.length,
+    chars: content.length,
     best: null,
     lastPractisedAt: null,
     isBuiltIn: false,
-    content: body.content,
+    content,
   }
   texts.unshift(text)
   return clone(text)
