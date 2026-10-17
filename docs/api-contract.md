@@ -145,6 +145,8 @@ endpoints keep the server default); a larger upload is a `413`. A file over the
 importer's own limits (256 MiB, 1,000,000 rows) or one it cannot read (a
 damaged workbook, an undecodable text file) is a `400`. The server sets no
 request timeout; the desktop client waits for the import without one.
+Behind the Docker web image, nginx allows the same 256 MiB body and waits up
+to 600 s for the answer.
 
 `POST /words/import/preview` answers `200 { headers, sample, format }`:
 `headers` are the header names in file order, `sample` holds up to three data

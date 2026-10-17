@@ -341,6 +341,36 @@ describe('dictionary file, desktop API', () => {
     expect(dictionary.previewing).toBe(false)
   })
 
+  it('drops the earlier file when the next choice fails to preview, so Import cannot upload it', async () => {
+    const { dictionary } = await chosen('a.xlsx')
+    api.dictionary.preview.mockRejectedValue(new ApiError('The file could not be read', 400))
+    await dictionary.loadFile(new File(['PK'], 'b.xlsx'))
+    await dictionary.confirmImport()
+
+    expect(dictionary.file).toBeNull()
+    expect(dictionary.map).toEqual({})
+    expect(api.dictionary.importFile).not.toHaveBeenCalled()
+  })
+
+  it('drops the earlier file as soon as a new choice starts previewing', async () => {
+    const { dictionary } = await chosen('a.xlsx')
+    api.dictionary.preview.mockReturnValue(new Promise(() => {}))
+    void dictionary.loadFile(new File(['PK'], 'b.xlsx'))
+    await dictionary.confirmImport()
+
+    expect(dictionary.file).toBeNull()
+    expect(api.dictionary.importFile).not.toHaveBeenCalled()
+  })
+
+  it('drops the earlier file when the next choice has an unsupported extension', async () => {
+    const { dictionary } = await chosen('a.xlsx')
+    await dictionary.loadFile(new File(['[]'], 'b.json'))
+    await dictionary.confirmImport()
+
+    expect(dictionary.file).toBeNull()
+    expect(api.dictionary.importFile).not.toHaveBeenCalled()
+  })
+
   it('keeps the file chosen last when an earlier preview answers late', async () => {
     let first!: (v: typeof PREVIEW) => void
     api.dictionary.preview

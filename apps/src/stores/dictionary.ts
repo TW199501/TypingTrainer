@@ -118,12 +118,15 @@ export const useDictionaryStore = defineStore('dictionary', () => {
   async function loadFile(f: File | undefined) {
     if (!f) return
     const t = i18n.global.t
+    // A new choice replaces the loaded file at once, so Import never uploads an earlier one.
+    const request = ++fileRequest
+    file.value = null
+    map.value = {}
     const extension = extensionOf(f.name)
     if (!(DICT_EXTENSIONS as readonly string[]).includes(extension)) {
       message.warning(t('dict.unsupportedFile'))
       return
     }
-    const request = ++fileRequest
 
     if (usesRealApi('dictionary')) {
       previewing.value = true
