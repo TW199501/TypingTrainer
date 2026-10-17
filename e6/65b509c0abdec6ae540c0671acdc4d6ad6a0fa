@@ -1,0 +1,44 @@
+docs/api-contract.md
+  s_128d3d106ddb5d::t_6d83d047872bb1 101-117
+  s_128d3d106ddb5d::t_00c6de98c60ec2 99-100
+  s_128d3d106ddb5d::t_4d76d6123d6780 118
+  s_2e67dec3eb5a29::t_6eba40a7725188 14-42
+server/TypeLab.Api.Tests/DictionaryServiceTests.cs
+  s_128d3d106ddb5d::t_0854337c3704c2 1-146
+server/TypeLab.Api/Api/LibraryDtos.cs
+  s_128d3d106ddb5d::t_8238a16b5a7ec2 46-67
+server/TypeLab.Api/Api/LibraryEndpoints.cs
+  s_128d3d106ddb5d::t_a2069180f759e9 64
+server/TypeLab.Api/Api/WordEndpoints.cs
+  s_128d3d106ddb5d::t_4db16a25623314 1-25
+server/TypeLab.Api/Data/DictionaryService.cs
+  s_128d3d106ddb5d::t_260d4ec8e62d7e 1-144
+server/TypeLab.Api/Data/SqlSugarSetup.cs
+  s_128d3d106ddb5d::t_a0b83786574320 130
+server/TypeLab.Api/Program.cs
+  s_128d3d106ddb5d::t_a0e30c2bcc0d04 51,105-106
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e665b509c0abdec6ae540c0671acdc4d6ad6a0fa",
+  "prompts": {},
+  "sessions": {
+    "s_128d3d106ddb5d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0575194d-0384-4e39-b2cb-35bcd33faec7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    },
+    "s_2e67dec3eb5a29": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a7ad65ef6eb945882",
+        "model": "unknown"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
