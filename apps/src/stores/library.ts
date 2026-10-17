@@ -64,16 +64,40 @@ export const useLibraryStore = defineStore('library', () => {
     texts.value = list.map(toText)
   }
 
-  /** Runs a write; any failure becomes one toast and the screen keeps its old state. */
-  async function save(write: () => Promise<void>, onError?: (e: unknown) => string | null): Promise<boolean> {
+  /** True while a write is in flight; a second save started meanwhile does nothing. */
+  const saving = ref(false)
+
+  interface SaveOptions {
+    /** The message for a failed write; null falls back to the generic one. */
+    onError?: (e: unknown) => string | null
+    /** Runs as soon as the write resolved, before the lists are read again. */
+    onSaved?: () => void
+  }
+
+  /**
+   * Runs a write. A failed write becomes one toast and the screen keeps its old state.
+   * Once the write resolved it counts as saved, whatever happens to the reload that
+   * follows; a failed reload gets a toast of its own.
+   */
+  async function save(write: () => Promise<void>, opts: SaveOptions = {}): Promise<boolean> {
+    if (saving.value) return false
+    saving.value = true
     try {
-      await write()
-      await refresh()
+      try {
+        await write()
+      } catch (e) {
+        message.error(opts.onError?.(e) ?? i18n.global.t('library.saveFailed'))
+        return false
+      }
+      opts.onSaved?.()
+      try {
+        await refresh()
+      } catch {
+        message.warning(i18n.global.t('library.reloadFailed'))
+      }
       return true
-    } catch (e) {
-      const text = onError?.(e) ?? i18n.global.t('library.saveFailed')
-      message.error(text)
-      return false
+    } finally {
+      saving.value = false
     }
   }
 
@@ -114,15 +138,15 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   async function removeGroup(id: string) {
-    await save(() => api.categories.remove(id), deleteError)
+    await save(() => api.categories.remove(id), { onError: deleteError })
   }
 
   async function removeTopic(_groupId: string, topicId: string) {
-    await save(() => api.categories.remove(topicId), deleteError)
+    await save(() => api.categories.remove(topicId), { onError: deleteError })
   }
 
   async function removeText(id: number) {
-    await save(() => api.texts.remove(id), deleteError)
+    await save(() => api.texts.remove(id), { onError: deleteError })
   }
 
   function openCatModal() {
@@ -139,17 +163,22 @@ export const useLibraryStore = defineStore('library', () => {
     if (!name) return
 
     let openId = m.parent
-    const ok = await save(async () => {
-      const body =
-        m.level === 'top'
-          ? { level: 'top' as const, name, color: PALETTE[categories.value.length % PALETTE.length] }
-          : { level: 'sub' as const, parentId: m.parent, name }
-      const { id } = await api.categories.create(body)
-      if (m.level === 'top') openId = id
-    })
-    if (!ok) return
-    expanded.value = { ...expanded.value, [openId]: true }
-    catModal.value = null
+    await save(
+      async () => {
+        const body =
+          m.level === 'top'
+            ? { level: 'top' as const, name, color: PALETTE[categories.value.length % PALETTE.length] }
+            : { level: 'sub' as const, parentId: m.parent, name }
+        const { id } = await api.categories.create(body)
+        if (m.level === 'top') openId = id
+      },
+      {
+        onSaved: () => {
+          expanded.value = { ...expanded.value, [openId]: true }
+          catModal.value = null
+        },
+      },
+    )
   }
 
   function analyzeDraft() {
@@ -163,19 +192,24 @@ export const useLibraryStore = defineStore('library', () => {
   async function saveDraft() {
     const a = ai.value || analyzeText(draft.value)
     if (!a) return
-    const ok = await save(async () => {
-      await api.texts.create({
-        title: a.title,
-        content: draft.value,
-        categoryId: categoryFor(a.category)?.id,
-        sub: a.sub,
-        level: a.level,
-      })
-    })
-    if (!ok) return
-    draft.value = ''
-    ai.value = null
-    composerOpen.value = false
+    await save(
+      async () => {
+        await api.texts.create({
+          title: a.title,
+          content: draft.value,
+          categoryId: categoryFor(a.category)?.id,
+          sub: a.sub,
+          level: a.level,
+        })
+      },
+      {
+        onSaved: () => {
+          draft.value = ''
+          ai.value = null
+          composerOpen.value = false
+        },
+      },
+    )
   }
 
   /** Reads dropped/selected files and pre-labels each one with the AI guess. */
@@ -214,18 +248,21 @@ export const useLibraryStore = defineStore('library', () => {
       const base = { title: a?.title || fl.name.replace(/\.[^.]+$/, ''), content: fl.text, fileName: fl.name }
       return a ? { ...base, categoryId: categoryFor(a.category)?.id, sub: a.sub, level: a.level } : base
     })
-    const ok = await save(
+    await save(
       async () => {
         await api.texts.import(body)
       },
-      (e) =>
-        e instanceof ApiError && e.failed?.length
-          ? i18n.global.t('library.importFailed', { files: e.failed.join(', ') })
-          : null,
+      {
+        onError: (e) =>
+          e instanceof ApiError && e.failed?.length
+            ? i18n.global.t('library.importFailed', { files: e.failed.join(', ') })
+            : null,
+        onSaved: () => {
+          importFiles.value = []
+          importOpen.value = false
+        },
+      },
     )
-    if (!ok) return
-    importFiles.value = []
-    importOpen.value = false
   }
 
   return {
@@ -238,6 +275,7 @@ export const useLibraryStore = defineStore('library', () => {
     reload,
     loading,
     loaded,
+    saving,
     composerOpen,
     draft,
     ai,

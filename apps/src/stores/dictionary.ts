@@ -39,6 +39,8 @@ export const useDictionaryStore = defineStore('dictionary', () => {
   const file = ref<DictFile | null>(null)
   const map = ref<Record<string, string>>({})
   const dedupe = ref(true)
+  /** True while an import is in flight; a second click meanwhile does nothing. */
+  const importing = ref(false)
 
   async function load() {
     if (loaded.value) return
@@ -111,18 +113,31 @@ export const useDictionaryStore = defineStore('dictionary', () => {
       message.warning(t('dict.nothingToImport'))
       return
     }
+    if (importing.value) return
+    importing.value = true
     try {
-      const { added, skipped } = await api.dictionary.import({ skipDuplicates: dedupe.value, words })
-      await reload()
-      message.success(t('dict.imported', { added, skipped }))
+      let result: { added: number; skipped: number }
+      try {
+        result = await api.dictionary.import({ skipDuplicates: dedupe.value, words })
+      } catch (e) {
+        message.error(
+          e instanceof ApiError && e.failed?.length
+            ? t('dict.importFailedRows', { rows: e.failed.join(', ') })
+            : t('dict.importFailed'),
+        )
+        return
+      }
+      // The words are stored now; a failed reload must not report the import as failed.
+      message.success(t('dict.imported', result))
       importOpen.value = false
       file.value = null
-    } catch (e) {
-      message.error(
-        e instanceof ApiError && e.failed?.length
-          ? t('dict.importFailedRows', { rows: e.failed.join(', ') })
-          : t('dict.importFailed'),
-      )
+      try {
+        await reload()
+      } catch {
+        message.warning(t('dict.reloadFailed'))
+      }
+    } finally {
+      importing.value = false
     }
   }
 
@@ -137,6 +152,7 @@ export const useDictionaryStore = defineStore('dictionary', () => {
     file,
     map,
     dedupe,
+    importing,
     load,
     reload,
     listFor,

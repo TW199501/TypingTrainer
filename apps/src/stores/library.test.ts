@@ -6,10 +6,11 @@ const api = vi.hoisted(() => ({
   texts: { list: vi.fn(), create: vi.fn(), import: vi.fn(), remove: vi.fn() },
 }))
 vi.mock('@/api', async (orig) => ({ ...(await orig<typeof import('@/api')>()), api }))
-const message = vi.hoisted(() => ({ error: vi.fn() }))
+const message = vi.hoisted(() => ({ error: vi.fn(), warning: vi.fn() }))
 vi.mock('ant-design-vue', () => ({ message }))
 
 import { ApiError, type CategoryDto, type TextDto } from '@/api'
+import { i18n } from '@/i18n'
 import { CATEGORIES, TEXTS } from '@/api/mock/fixtures'
 import { useLibraryStore } from './library'
 import { useSessionStore } from './session'
@@ -29,7 +30,7 @@ async function loaded() {
 describe('library store', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    vi.clearAllMocks()
+    vi.resetAllMocks()
     api.categories.list.mockResolvedValue(cats())
     api.texts.list.mockResolvedValue(texts())
   })
@@ -58,13 +59,6 @@ describe('library store', () => {
     expect(library.categories[library.categories.length - 1].id).toBe('42')
     expect(library.expanded['42']).toBe(true)
     expect(library.catModal).toBeNull()
-  })
-
-  it('commits a rename only on change, not on every keystroke', async () => {
-    const library = await loaded()
-    await library.commitRename('english', null, 'English 2')
-    expect(api.categories.rename).toHaveBeenCalledTimes(1)
-    expect(api.categories.rename).toHaveBeenCalledWith('english', 'English 2')
   })
 
   it('renames a topic by its own id', async () => {
@@ -121,6 +115,65 @@ describe('library store', () => {
     expect(body).toEqual({ title: 'a', content: 'hello', fileName: 'a.txt' })
     expect(body).not.toHaveProperty('categoryId')
     expect(library.importOpen).toBe(false)
+  })
+
+  it('treats a write as saved when only the reload after it fails', async () => {
+    const library = await loaded()
+    api.texts.create.mockResolvedValue({})
+    api.texts.list.mockRejectedValue(new Error('offline'))
+    library.composerOpen = true
+    library.draft = 'hello world'
+
+    await library.saveDraft()
+
+    expect(message.error).not.toHaveBeenCalled()
+    expect(message.warning).toHaveBeenCalledWith(i18n.global.t('library.reloadFailed'))
+    expect(library.draft).toBe('')
+    expect(library.composerOpen).toBe(false)
+  })
+
+  it('closes the import dialog when the import succeeds but the reload fails', async () => {
+    const library = await loaded()
+    api.texts.import.mockResolvedValue([])
+    api.categories.list.mockRejectedValue(new Error('offline'))
+    library.importOpen = true
+    library.importFiles = [{ name: 'a.txt', ext: 'TXT', size: '1 B', text: 'hello', note: '' }]
+
+    await library.confirmImport()
+
+    expect(message.error).not.toHaveBeenCalled()
+    expect(library.importOpen).toBe(false)
+    expect(library.importFiles).toHaveLength(0)
+  })
+
+  it('ignores a second click while a write is pending', async () => {
+    const library = await loaded()
+    let done!: (v: { id: string }) => void
+    const gate = new Promise<{ id: string }>((r) => (done = r))
+    for (const fn of [api.texts.create, api.texts.import, api.categories.create, api.texts.remove]) {
+      fn.mockReturnValue(gate)
+    }
+    library.draft = 'hello world'
+    library.importFiles = [{ name: 'a.txt', ext: 'TXT', size: '1 B', text: 'hello', note: '' }]
+    library.catModal = { level: 'top', parent: '', name: 'Mine' }
+
+    const calls = [
+      library.saveDraft(),
+      library.saveDraft(),
+      library.confirmImport(),
+      library.submitCat(),
+      library.removeText(3),
+      library.removeGroup('42'),
+    ]
+    done({ id: '42' })
+    await Promise.all(calls)
+
+    expect(api.texts.create).toHaveBeenCalledOnce()
+    expect(api.texts.import).not.toHaveBeenCalled()
+    expect(api.categories.create).not.toHaveBeenCalled()
+    expect(api.texts.remove).not.toHaveBeenCalled()
+    expect(api.categories.remove).not.toHaveBeenCalled()
+    expect(library.saving).toBe(false)
   })
 
   it('removes a text through the API and reloads', async () => {

@@ -106,6 +106,32 @@ describe('dictionary import', () => {
     expect(dictionary.entries.map((d) => d.id)).toEqual([1, 2])
   })
 
+  it('reports an import that went through even when the reload after it fails', async () => {
+    api.dictionary.import.mockResolvedValue({ added: 3, skipped: 0 })
+    api.dictionary.list.mockRejectedValue(new Error('offline'))
+    const dictionary = withFile()
+    await dictionary.confirmImport()
+
+    expect(message.success).toHaveBeenCalledWith(t('dict.imported', { added: 3, skipped: 0 }))
+    expect(message.error).not.toHaveBeenCalled()
+    expect(message.warning).toHaveBeenCalledWith(t('dict.reloadFailed'))
+    expect(dictionary.importOpen).toBe(false)
+    expect(dictionary.file).toBeNull()
+  })
+
+  it('ignores a second click while the import is pending', async () => {
+    let done!: (v: { added: number; skipped: number }) => void
+    api.dictionary.import.mockReturnValue(new Promise((r) => (done = r)))
+    const dictionary = withFile()
+
+    const calls = [dictionary.confirmImport(), dictionary.confirmImport()]
+    done({ added: 3, skipped: 0 })
+    await Promise.all(calls)
+
+    expect(api.dictionary.import).toHaveBeenCalledOnce()
+    expect(message.success).toHaveBeenCalledOnce()
+  })
+
   it('does not import when no word column is mapped', async () => {
     const dictionary = withFile()
     dictionary.map = { ...dictionary.map, w: '' }
