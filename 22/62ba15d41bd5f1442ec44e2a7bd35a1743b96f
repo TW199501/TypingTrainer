@@ -1,0 +1,21 @@
+apps/src/views/PracticeView.vue
+  s_128d3d106ddb5d::t_c2c41bb425aa45 18,31,62-64,87-95,104-105,186-188,191,196,326,341-344,348,351,516,540-542,544-566,568,570-571,577,579
+e2e/chinese-ime.spec.ts
+  s_128d3d106ddb5d::t_bba54894672a40 115-117,126,128-129,151,162,166-194,217,225,232
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2262ba15d41bd5f1442ec44e2a7bd35a1743b96f",
+  "prompts": {},
+  "sessions": {
+    "s_128d3d106ddb5d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0575194d-0384-4e39-b2cb-35bcd33faec7",
+        "model": "unknown"
+      },
+      "human_author": "楊清雲 <41539966+TW199501@users.noreply.github.com>"
+    }
+  }
+}
