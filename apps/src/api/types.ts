@@ -19,6 +19,7 @@ export interface SubCategoryDto {
   id: string
   name: string
   count: number
+  isBuiltIn: boolean
 }
 
 export interface CategoryDto {
@@ -28,7 +29,24 @@ export interface CategoryDto {
   /** Which keyboard the group is typed on. */
   layout: 'en' | 'zh' | 'zhuyin'
   kind: 'basic' | 'english' | 'chinese' | 'zhuyin' | 'bilingual' | 'code' | 'timed' | 'custom'
+  isBuiltIn: boolean
   children: SubCategoryDto[]
+}
+
+export interface CreateCategoryBody {
+  level: 'top' | 'sub'
+  parentId?: string
+  name: string
+  color?: string
+}
+
+export interface CreateTextBody {
+  title: string
+  content: string
+  categoryId?: string
+  sub?: string
+  level?: string
+  fileName?: string
 }
 
 export interface TextDto {
@@ -36,11 +54,14 @@ export interface TextDto {
   title: string
   category: string
   sub: string
+  categoryId: string
+  subId: string
   level: string
   chars: number
   /** Personal best for this text; `null` until it has been drilled once. */
   best: number | null
   lastPractisedAt: string | null
+  isBuiltIn: boolean
   content?: string
 }
 
@@ -53,6 +74,44 @@ export interface DictEntryDto {
   topic: string
   example: string
   mastery: number
+}
+
+/** One row of a dictionary import parsed in the browser; only the web mock takes rows, the API takes the file. */
+export interface ImportWordDto {
+  word: string
+  zh: string
+  phonetic: string
+  pos: string
+  topic: string
+  example: string
+}
+
+export interface ImportWordsBody {
+  skipDuplicates: boolean
+  words: ImportWordDto[]
+}
+
+export interface ImportWordsResult {
+  added: number
+  skipped: number
+}
+
+/** `POST /words/import/preview`: the header row and the first data rows of an uploaded file. */
+export interface ImportPreviewDto {
+  headers: string[]
+  /** Up to three data rows, cells in `headers` order. */
+  sample: string[][]
+  format: 'xlsx' | 'csv' | 'tsv' | 'txt'
+}
+
+/** The `map` field of `POST /words/import/file`: the header that holds each field; only `word` is required. */
+export interface WordImportMap {
+  word: string
+  zh?: string
+  phonetic?: string
+  pos?: string
+  topic?: string
+  example?: string
 }
 
 /** One physical key event, sent with the run so the server can re-verify the score. */

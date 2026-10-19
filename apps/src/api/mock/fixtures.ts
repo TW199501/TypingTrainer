@@ -22,7 +22,7 @@ import type {
 } from '../types'
 
 const subs = (arr: [string, number][]): SubCategoryDto[] =>
-  arr.map(([name, count]) => ({ id: name, name, count }))
+  arr.map(([name, count]) => ({ id: name, name, count, isBuiltIn: true }))
 
 export const CATEGORIES: CategoryDto[] = [
   {
@@ -31,6 +31,7 @@ export const CATEGORIES: CategoryDto[] = [
     color: '#8a9a5b',
     layout: 'en',
     kind: 'basic',
+    isBuiltIn: true,
     children: subs([
       ['Home row', 6],
       ['Top row', 5],
@@ -45,6 +46,7 @@ export const CATEGORIES: CategoryDto[] = [
     color: '#d97757',
     layout: 'en',
     kind: 'english',
+    isBuiltIn: true,
     children: subs([
       ['Web', 8],
       ['Banking', 5],
@@ -60,6 +62,7 @@ export const CATEGORIES: CategoryDto[] = [
     color: '#b06a4f',
     layout: 'zh',
     kind: 'chinese',
+    isBuiltIn: true,
     children: subs([
       ['Finance', 6],
       ['Accounting', 4],
@@ -75,6 +78,7 @@ export const CATEGORIES: CategoryDto[] = [
     color: '#a8763e',
     layout: 'zhuyin',
     kind: 'zhuyin',
+    isBuiltIn: true,
     children: subs([
       ['Initials', 4],
       ['Finals', 4],
@@ -88,6 +92,7 @@ export const CATEGORIES: CategoryDto[] = [
     color: '#6f8f85',
     layout: 'zh',
     kind: 'bilingual',
+    isBuiltIn: true,
     children: subs([
       ['Banking', 4],
       ['Accounting', 3],
@@ -102,6 +107,7 @@ export const CATEGORIES: CategoryDto[] = [
     color: '#7d8c5c',
     layout: 'en',
     kind: 'code',
+    isBuiltIn: true,
     children: subs([
       ['C#', 6],
       ['JavaScript', 7],
@@ -114,6 +120,7 @@ export const CATEGORIES: CategoryDto[] = [
     color: '#c08552',
     layout: 'en',
     kind: 'timed',
+    isBuiltIn: true,
     children: subs([
       ['1 min', 3],
       ['3 min', 3],
@@ -128,90 +135,117 @@ export const TEXTS: TextDto[] = [
     title: 'Q3 revenue outlook',
     category: 'Chinese',
     sub: 'Finance',
+    categoryId: 'chinese',
+    subId: 'Finance',
     level: 'L4',
     chars: 412,
     best: 52,
     lastPractisedAt: 'Today',
+    isBuiltIn: true,
   },
   {
     id: 2,
     title: 'SQL query drills #12',
     category: 'Code',
     sub: 'SQL',
+    categoryId: 'code',
+    subId: 'SQL',
     level: 'L6',
     chars: 286,
     best: 63,
     lastPractisedAt: 'Yesterday',
+    isBuiltIn: true,
   },
   {
     id: 3,
     title: 'Refund reply template',
     category: 'English',
     sub: 'Support email',
+    categoryId: 'english',
+    subId: 'Support email',
     level: 'L3',
     chars: 534,
     best: 74,
     lastPractisedAt: 'Sep 16',
+    isBuiltIn: true,
   },
   {
     id: 4,
     title: 'Memo: annual stocktake',
     category: 'Chinese',
     sub: 'Official',
+    categoryId: 'chinese',
+    subId: 'Official',
     level: 'L4',
     chars: 365,
     best: 48,
     lastPractisedAt: 'Sep 16',
+    isBuiltIn: true,
   },
   {
     id: 5,
     title: 'Bopomofo: ㄓㄔㄕㄖ drill',
     category: 'Bopomofo',
     sub: 'Initials',
+    categoryId: 'zhuyin',
+    subId: 'Initials',
     level: 'L2',
     chars: 96,
     best: 44,
     lastPractisedAt: 'Sep 15',
+    isBuiltIn: true,
   },
   {
     id: 6,
     title: 'C# exception handling',
     category: 'Code',
     sub: 'C#',
+    categoryId: 'code',
+    subId: 'C#',
     level: 'L6',
     chars: 238,
     best: 58,
     lastPractisedAt: 'Sep 15',
+    isBuiltIn: true,
   },
   {
     id: 7,
     title: 'FX and fee vocabulary ×30',
     category: 'Vocabulary',
     sub: 'Banking',
+    categoryId: 'bilingual',
+    subId: 'Banking',
     level: 'L3',
     chars: 268,
     best: 61,
     lastPractisedAt: 'Sep 14',
+    isBuiltIn: true,
   },
   {
     id: 8,
     title: 'Key drill: semicolon and slash',
     category: 'Basics',
     sub: 'Symbols',
+    categoryId: 'basic',
+    subId: 'Symbols',
     level: 'L5',
     chars: 96,
     best: 69,
     lastPractisedAt: 'Sep 13',
+    isBuiltIn: true,
   },
   {
     id: 9,
     title: 'AI chip supply chain report',
     category: 'English',
     sub: 'Tech news',
+    categoryId: 'english',
+    subId: 'Tech news',
     level: 'L4',
     chars: 478,
     best: 72,
     lastPractisedAt: 'Sep 09',
+    isBuiltIn: true,
   },
 ]
 
@@ -677,3 +711,83 @@ export function prompts(locale = 'en'): PromptDto[] {
     isBuiltIn: true,
   }))
 }
+
+/* ------------------------------------------------------------ practice texts */
+
+/**
+ * What the practice screen types in the web build, one group per category kind.
+ * Their ids start at 9001 so they never meet the library fixtures or the
+ * ids the mock library hands out.
+ */
+const META: Record<string, [category: string, sub: string]> = {
+  basic: ['Basics', 'Home row'],
+  english: ['English', 'Web'],
+  chinese: ['Chinese', 'Finance'],
+  zhuyin: ['Bopomofo', 'Initials'],
+  bilingual: ['Vocabulary', 'Banking'],
+  code: ['Code', 'C#'],
+  timed: ['Timed', '1 min'],
+  custom: ['Custom', 'Uncategorised'],
+}
+
+const SRC: Record<string, { items: string[] }> = {
+  basic: {
+    items: [
+      'asdf jkl; asdf jkl; fjdk slas dkfj gh',
+      'the quick fox jumps over a lazy dog by the river',
+      'sad lads ask dad; fall glass half gaff jail',
+    ],
+  },
+  english: {
+    items: [
+      'Design is not just what it looks like and feels like. Design is how it works. A good interface disappears into the task, leaving the person free to think about the work itself.',
+      'Typing well is a quiet skill. It rewards patience over speed, accuracy over bursts, and steady daily practice over a single long session.',
+    ],
+  },
+  chinese: {
+    items: [
+      '打字練習的重點不在速度，而在穩定。每天固定練十分鐘，手指會自己記住位置，速度自然跟上來。',
+      '好的介面會消失在任務裡，讓人專心想事情本身，而不是想著手上的工具怎麼操作。',
+    ],
+  },
+  zhuyin: {
+    items: [
+      'ㄅㄆㄇㄈ ㄉㄊㄋㄌ ㄍㄎㄏ ㄐㄑㄒ',
+      'ㄓㄔㄕㄖ ㄗㄘㄙ ㄧㄨㄩ ㄚㄛㄜㄝ',
+      'ㄞㄟㄠㄡ ㄢㄣㄤㄥ ㄦ ˊˇˋ˙',
+    ],
+  },
+  bilingual: { items: [] },
+  code: {
+    items: [
+      'const wpm = (chars, ms) => Math.round((chars / 5) / (ms / 60000));',
+      'if (typed[i] !== target[i]) { errors.set(target[i], (errors.get(target[i]) ?? 0) + 1); }',
+      'SELECT UserId, AVG(WPM) FROM Sessions WHERE CreatedAt > @start GROUP BY UserId;',
+    ],
+  },
+  timed: {
+    items: [
+      'A calm mind types faster than a rushed one. Focus on the next character, not the whole paragraph, and the speed will follow on its own.',
+    ],
+  },
+  custom: {
+    items: ['Paste your own paragraph here to practise exactly the words you write every day at work.'],
+  },
+}
+
+export const PRACTICE_TEXTS: TextDto[] = Object.entries(SRC).flatMap(([kind, group], g) =>
+  group.items.map((content, i) => ({
+    id: 9001 + g * 10 + i,
+    title: `${META[kind][0]} ${i + 1}`,
+    category: META[kind][0],
+    sub: META[kind][1],
+    categoryId: kind,
+    subId: META[kind][1],
+    level: 'L3',
+    chars: content.length,
+    best: null,
+    lastPractisedAt: null,
+    isBuiltIn: true,
+    content,
+  })),
+)

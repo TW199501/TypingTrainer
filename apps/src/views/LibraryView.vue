@@ -1,21 +1,43 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { ExportOutlined } from '@ant-design/icons-vue'
 import { catTotal, TAG_BY_CAT } from '@/data/constants'
 import { useLibraryStore } from '@/stores/library'
+import { useSessionStore } from '@/stores/session'
 import { useGridLayout } from '@/composables/useGridLayout'
 
 const { t } = useI18n()
 const library = useLibraryStore()
+const session = useSessionStore()
+const router = useRouter()
 const { libCols, libRows } = useGridLayout()
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const dragOver = ref(false)
 const page = ref(1)
 
-/** Texts the user added themselves have no personal best yet. */
-const customCount = computed(() => library.texts.filter((x) => x.best === '—').length)
+const customCount = computed(() => library.texts.filter((x) => !x.isBuiltIn).length)
+
+/** Commits on change (blur or Enter), then shows what the store holds, so a blank or failed rename snaps back. */
+async function rename(e: Event, groupId: string, topicId: string | null) {
+  const el = e.target as HTMLInputElement
+  await library.commitRename(groupId, topicId, el.value)
+  const group = library.byId(groupId)
+  el.value = (topicId === null ? group : group?.children.find((x) => x.id === topicId))?.name ?? el.value
+}
+/** Opens the chosen text on the practice screen. */
+async function practise(id: number) {
+  try {
+    await session.startText(id)
+  } catch {
+    // A lost connection already shows its own notice; stay on the library.
+    return
+  }
+  router.push({ name: 'practice' })
+}
+const blurOnEnter = (e: KeyboardEvent) => (e.target as HTMLInputElement).blur()
 
 const rows = computed(() =>
   library.texts.map((t) => ({
@@ -153,13 +175,20 @@ const modalPlaceholder = computed(() =>
               </span>
               <span class="cat-color" :style="{ background: c.color }" />
               <input
+                v-if="!c.isBuiltIn"
                 class="input-ghost cat-name"
                 :value="c.name"
-                @input="library.renameGroup(c.id, ($event.target as HTMLInputElement).value)"
+                @change="rename($event, c.id, null)"
+                @keydown.enter="blurOnEnter"
               />
+              <span v-else class="input-ghost cat-name">{{ c.name }}</span>
               <span class="cat-layout">{{ t(`layoutLabel.${c.layout}`) }}</span>
               <span class="cat-count">{{ catTotal(c) }}</span>
-              <span class="remove" :title="t('library.deleteGroup')" @click="library.removeGroup(c.id)"
+              <span
+                v-if="!c.isBuiltIn"
+                class="remove"
+                :title="t('library.deleteGroup')"
+                @click="library.removeGroup(c.id)"
                 >×</span
               >
             </div>
@@ -167,12 +196,16 @@ const modalPlaceholder = computed(() =>
               <div v-for="x in c.children" :key="x.id" class="child-row">
                 <span class="child-dash" />
                 <input
+                  v-if="!x.isBuiltIn"
                   class="input-ghost child-name"
                   :value="x.name"
-                  @input="library.renameTopic(c.id, x.id, ($event.target as HTMLInputElement).value)"
+                  @change="rename($event, c.id, x.id)"
+                  @keydown.enter="blurOnEnter"
                 />
+                <span v-else class="input-ghost child-name">{{ x.name }}</span>
                 <span class="cat-count">{{ x.count }}</span>
                 <span
+                  v-if="!x.isBuiltIn"
                   class="remove"
                   :title="t('library.deleteTopic')"
                   @click="library.removeTopic(c.id, x.id)"
@@ -191,9 +224,10 @@ const modalPlaceholder = computed(() =>
           <span class="col-level">{{ t('library.colLevel') }}</span>
           <span class="col-best">{{ t('library.colBest') }}</span>
           <span class="col-action" />
+          <span class="remove" />
         </div>
         <div class="scroll-y">
-          <div v-for="row in rows" :key="row.title" class="text-row">
+          <div v-for="row in rows" :key="row.id" class="text-row">
             <div class="col-title text-main">
               <span class="ell">{{ row.title }}</span>
               <span class="text-meta">
@@ -203,7 +237,15 @@ const modalPlaceholder = computed(() =>
             </div>
             <span class="col-level" :style="{ color: row.levelColor, fontWeight: 500 }">{{ row.level }}</span>
             <span class="col-best nums">{{ row.best }}</span>
-            <span class="col-action drill">{{ t('common.drill') }}</span>
+            <span class="col-action drill" @click="practise(row.id)">{{ t('common.drill') }}</span>
+            <span
+              v-if="!row.isBuiltIn"
+              class="remove"
+              :title="t('library.deleteText')"
+              @click="library.removeText(row.id)"
+              >×</span
+            >
+            <span v-else class="remove" />
           </div>
         </div>
         <div class="texts-foot">

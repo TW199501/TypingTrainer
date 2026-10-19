@@ -1,7 +1,10 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { api, type CategoryDto, type TextDto } from '@/api'
+import { message } from 'ant-design-vue'
+import { api, ApiError, type CategoryDto, type CreateTextBody, type TextDto } from '@/api'
+import { i18n } from '@/i18n'
 import { analyzeText } from '@/lib/analyze'
+import { readTextFile } from '@/lib/decode'
 import type { AnalysisResult, Category, ImportFile, TextItem } from '@/data/types'
 
 export interface CatModal {
@@ -15,6 +18,10 @@ const PALETTE = ['#d97757', '#a8763e', '#7d8c5c', '#b06a4f', '#c08552', '#6f8f85
 const toCategory = (c: CategoryDto): Category => ({ ...c, children: c.children.map((x) => ({ ...x })) })
 
 const toText = (t: TextDto): TextItem => ({
+  id: t.id,
+  isBuiltIn: t.isBuiltIn,
+  categoryId: t.categoryId,
+  subId: t.subId,
   title: t.title,
   category: t.category,
   sub: t.sub,
@@ -45,6 +52,59 @@ export const useLibraryStore = defineStore('library', () => {
     }
   }
 
+  /** Reads everything again even when it was loaded before, e.g. after the API restarted. */
+  async function reload() {
+    await refresh()
+    loaded.value = true
+  }
+
+  /** Re-reads the tree and the texts after a write, so the screen shows what the store really holds. */
+  async function refresh() {
+    const [cats, list] = await Promise.all([api.categories.list(), api.texts.list()])
+    categories.value = cats.map(toCategory)
+    texts.value = list.map(toText)
+  }
+
+  /** True while a write is in flight; a second save started meanwhile does nothing. */
+  const saving = ref(false)
+
+  interface SaveOptions {
+    /** The message for a failed write; null falls back to the generic one. */
+    onError?: (e: unknown) => string | null
+    /** Runs as soon as the write resolved, before the lists are read again. */
+    onSaved?: () => void
+  }
+
+  /**
+   * Runs a write. A failed write becomes one toast and the screen keeps its old state.
+   * Once the write resolved it counts as saved, whatever happens to the reload that
+   * follows; a failed reload gets a toast of its own.
+   */
+  async function save(write: () => Promise<void>, opts: SaveOptions = {}): Promise<boolean> {
+    if (saving.value) return false
+    saving.value = true
+    try {
+      try {
+        await write()
+      } catch (e) {
+        message.error(opts.onError?.(e) ?? i18n.global.t('library.saveFailed'))
+        return false
+      }
+      opts.onSaved?.()
+      try {
+        await refresh()
+      } catch {
+        message.warning(i18n.global.t('library.reloadFailed'))
+      }
+      return true
+    } finally {
+      saving.value = false
+    }
+  }
+
+  const deleteError = (e: unknown) =>
+    e instanceof ApiError && e.status === 409 ? i18n.global.t('library.cannotDeleteBuiltIn') : null
+
   // Composer (paste → analyse → save)
   const composerOpen = ref(false)
   const draft = ref('')
@@ -69,26 +129,25 @@ export const useLibraryStore = defineStore('library', () => {
     expanded.value = { ...expanded.value, [id]: !expanded.value[id] }
   }
 
-  function renameGroup(id: string, name: string) {
-    categories.value = categories.value.map((c) => (c.id === id ? { ...c, name } : c))
+  /** Commits a rename once the input is done (change, not input); a blank name keeps the old one. */
+  async function commitRename(groupId: string, topicId: string | null, name: string) {
+    const group = byId(groupId)
+    const current = topicId === null ? group : group?.children.find((x) => x.id === topicId)
+    const next = name.trim()
+    if (!current || !next || next === current.name) return
+    await save(() => api.categories.rename(topicId ?? groupId, next))
   }
 
-  function removeGroup(id: string) {
-    categories.value = categories.value.filter((c) => c.id !== id)
+  async function removeGroup(id: string) {
+    await save(() => api.categories.remove(id), { onError: deleteError })
   }
 
-  function renameTopic(groupId: string, topicId: string, name: string) {
-    categories.value = categories.value.map((g) =>
-      g.id !== groupId
-        ? g
-        : { ...g, children: g.children.map((y) => (y.id === topicId ? { ...y, name } : y)) },
-    )
+  async function removeTopic(_groupId: string, topicId: string) {
+    await save(() => api.categories.remove(topicId), { onError: deleteError })
   }
 
-  function removeTopic(groupId: string, topicId: string) {
-    categories.value = categories.value.map((g) =>
-      g.id !== groupId ? g : { ...g, children: g.children.filter((y) => y.id !== topicId) },
-    )
+  async function removeText(id: number) {
+    await save(() => api.texts.remove(id), { onError: deleteError })
   }
 
   function openCatModal() {
@@ -98,91 +157,85 @@ export const useLibraryStore = defineStore('library', () => {
     catModal.value = null
   }
 
-  function submitCat() {
+  async function submitCat() {
     const m = catModal.value
     if (!m) return
     const name = (m.name || '').trim()
     if (!name) return
 
-    if (m.level === 'top') {
-      const id = 'c' + Date.now()
-      categories.value = [
-        ...categories.value,
-        {
-          id,
-          name,
-          color: PALETTE[categories.value.length % PALETTE.length],
-          layout: 'en',
-          kind: 'custom',
-          children: [],
+    let openId = m.parent
+    await save(
+      async () => {
+        const body =
+          m.level === 'top'
+            ? { level: 'top' as const, name, color: PALETTE[categories.value.length % PALETTE.length] }
+            : { level: 'sub' as const, parentId: m.parent, name }
+        const { id } = await api.categories.create(body)
+        if (m.level === 'top') openId = id
+      },
+      {
+        onSaved: () => {
+          expanded.value = { ...expanded.value, [openId]: true }
+          catModal.value = null
         },
-      ]
-      expanded.value = { ...expanded.value, [id]: true }
-    } else {
-      categories.value = categories.value.map((g) =>
-        g.id !== m.parent ? g : { ...g, children: [...g.children, { id: 's' + Date.now(), name, count: 0 }] },
-      )
-      expanded.value = { ...expanded.value, [m.parent]: true }
-    }
-    catModal.value = null
+      },
+    )
   }
 
   function analyzeDraft() {
     ai.value = analyzeText(draft.value)
   }
 
-  function saveDraft() {
+  /** The category the analyser named, matched on the display name or the kind code. */
+  const categoryFor = (name: string) =>
+    categories.value.find((c) => c.name === name || c.kind === name.toLowerCase())
+
+  async function saveDraft() {
     const a = ai.value || analyzeText(draft.value)
     if (!a) return
-    categories.value = categories.value.map((c) =>
-      c.name !== a.category
-        ? c
-        : {
-            ...c,
-            children: c.children.some((x) => x.name === a.sub)
-              ? c.children.map((x) => (x.name === a.sub ? { ...x, count: x.count + 1 } : x))
-              : [...c.children, { id: a.sub, name: a.sub, count: 1 }],
-          },
-    )
-    texts.value = [
-      {
-        title: a.title,
-        category: a.category,
-        sub: a.sub,
-        level: a.level,
-        chars: a.chars,
-        best: '—',
-        last: 'Just now',
+    await save(
+      async () => {
+        await api.texts.create({
+          title: a.title,
+          content: draft.value,
+          categoryId: categoryFor(a.category)?.id,
+          sub: a.sub,
+          level: a.level,
+        })
       },
-      ...texts.value,
-    ]
-    draft.value = ''
-    ai.value = null
-    composerOpen.value = false
+      {
+        onSaved: () => {
+          draft.value = ''
+          ai.value = null
+          composerOpen.value = false
+        },
+      },
+    )
   }
 
-  /** Reads dropped/selected files and pre-labels each one with the AI guess. */
+  /** Reads dropped/selected files (UTF-8, or Big5) and pre-labels each one with the AI guess. */
   function addFiles(list: File[]) {
     if (!list.length) return
     list.slice(0, 20).forEach((file) => {
-      const reader = new FileReader()
-      reader.onload = () => {
-        const text = String(reader.result || '')
-        const ext = (file.name.split('.').pop() || '').toUpperCase()
-        const size = file.size < 1024 ? file.size + ' B' : (file.size / 1024).toFixed(1) + ' KB'
-        const a = analyzeText(text)
-        importFiles.value = [
-          ...importFiles.value,
-          {
-            name: file.name,
-            ext,
-            size,
-            text,
-            note: a ? a.category + ' › ' + a.sub + '　' + a.level : '',
-          },
-        ]
-      }
-      reader.readAsText(file)
+      // A file that cannot be read is left out, as before.
+      readTextFile(file).then(
+        (text) => {
+          const ext = (file.name.split('.').pop() || '').toUpperCase()
+          const size = file.size < 1024 ? file.size + ' B' : (file.size / 1024).toFixed(1) + ' KB'
+          const a = analyzeText(text)
+          importFiles.value = [
+            ...importFiles.value,
+            {
+              name: file.name,
+              ext,
+              size,
+              text,
+              note: a ? a.category + ' › ' + a.sub + '　' + a.level : '',
+            },
+          ]
+        },
+        () => {},
+      )
     })
   }
 
@@ -190,23 +243,28 @@ export const useLibraryStore = defineStore('library', () => {
     importFiles.value = importFiles.value.filter((_, j) => j !== i)
   }
 
-  function confirmImport() {
+  async function confirmImport() {
     if (!importFiles.value.length) return
-    const added: TextItem[] = importFiles.value.map((fl) => {
+    const body: CreateTextBody[] = importFiles.value.map((fl) => {
       const a = importMode.value === 'ai' ? analyzeText(fl.text) : null
-      return {
-        title: a?.title || fl.name.replace(/\.[^.]+$/, ''),
-        category: a?.category || 'English',
-        sub: a?.sub || 'Literature',
-        level: a?.level || 'L3',
-        chars: fl.text.length,
-        best: '—',
-        last: 'Just now',
-      }
+      const base = { title: a?.title || fl.name.replace(/\.[^.]+$/, ''), content: fl.text, fileName: fl.name }
+      return a ? { ...base, categoryId: categoryFor(a.category)?.id, sub: a.sub, level: a.level } : base
     })
-    texts.value = [...added, ...texts.value]
-    importFiles.value = []
-    importOpen.value = false
+    await save(
+      async () => {
+        await api.texts.import(body)
+      },
+      {
+        onError: (e) =>
+          e instanceof ApiError && e.failed?.length
+            ? i18n.global.t('library.importFailed', { files: e.failed.join(', ') })
+            : null,
+        onSaved: () => {
+          importFiles.value = []
+          importOpen.value = false
+        },
+      },
+    )
   }
 
   return {
@@ -216,8 +274,10 @@ export const useLibraryStore = defineStore('library', () => {
     catCount,
     byId,
     load,
+    reload,
     loading,
     loaded,
+    saving,
     composerOpen,
     draft,
     ai,
@@ -234,9 +294,9 @@ export const useLibraryStore = defineStore('library', () => {
     closeCatModal,
     submitCat,
     toggleExpanded,
-    renameGroup,
+    commitRename,
     removeGroup,
-    renameTopic,
     removeTopic,
+    removeText,
   }
 })

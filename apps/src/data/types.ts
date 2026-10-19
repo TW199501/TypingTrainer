@@ -1,6 +1,6 @@
 export type LayoutKind = 'en' | 'zh' | 'zhuyin'
 
-/** Matches a key in TEXTS; `custom` is the fallback bucket for user-pasted content. */
+/** Matches a value in PRACTICE_KINDS; `custom` is the fallback bucket for user-pasted content. */
 export type CategoryKind =
   'basic' | 'english' | 'chinese' | 'zhuyin' | 'bilingual' | 'code' | 'timed' | 'custom'
 
@@ -8,6 +8,7 @@ export interface SubCategory {
   id: string
   name: string
   count: number
+  isBuiltIn: boolean
 }
 
 export interface Category {
@@ -16,10 +17,15 @@ export interface Category {
   color: string
   layout: LayoutKind
   kind: CategoryKind
+  isBuiltIn: boolean
   children: SubCategory[]
 }
 
 export interface TextItem {
+  id: number
+  isBuiltIn: boolean
+  categoryId: string
+  subId: string
   title: string
   category: string
   sub: string
@@ -30,6 +36,7 @@ export interface TextItem {
 }
 
 export interface DictEntry {
+  id: number
   w: string
   ph: string
   pos: string

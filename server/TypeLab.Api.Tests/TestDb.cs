@@ -11,7 +11,7 @@ internal sealed class TestDb : IDisposable
 {
     public ISqlSugarClient Db { get; }
 
-    public TestDb()
+    public TestDb(params Type[] tables)
     {
         var client = new SqlSugarClient(new ConnectionConfig
         {
@@ -22,9 +22,9 @@ internal sealed class TestDb : IDisposable
         });
         client.Ado.Open();
         client.CodeFirst.InitTables(
-            typeof(PromptTemplate),
-            typeof(LocalModelEntry),
-            typeof(Translation));
+            tables.Length > 0
+                ? tables
+                : [typeof(PromptTemplate), typeof(LocalModelEntry), typeof(Translation)]);
         Db = client;
     }
 

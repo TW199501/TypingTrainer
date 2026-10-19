@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import { defineComponent, h } from 'vue'
 import { i18n } from '@/i18n'
 
@@ -36,13 +37,23 @@ vi.mock('@/api/desktop', () => ({
 
 const session = {
   done: false,
+  text: null as { id: number; content: string } | null,
+  textLoading: false,
+  isWord: false,
+  reviewText: null as string | null,
   startClock: vi.fn(),
   stopClock: vi.fn(),
   loadBook: vi.fn(),
+  // Like the real one, a load marks the text as loading straight away.
+  loadText: vi.fn(() => {
+    session.textLoading = true
+  }),
+  nextText: vi.fn(),
+  startRun: vi.fn(),
   handleKey: vi.fn(),
 }
-const library = { load: vi.fn() }
-const dictionary = { load: vi.fn() }
+const library = { load: vi.fn(), reload: vi.fn() }
+const dictionary = { load: vi.fn(), reload: vi.fn() }
 vi.mock('@/stores/session', () => ({ useSessionStore: () => session }))
 vi.mock('@/stores/library', () => ({ useLibraryStore: () => library }))
 vi.mock('@/stores/dictionary', () => ({ useDictionaryStore: () => dictionary }))
@@ -72,11 +83,18 @@ function render() {
 }
 
 beforeEach(() => {
+  setActivePinia(createPinia())
   vi.clearAllMocks()
   failedHandlers.length = 0
   readyHandlers.length = 0
   shell.desktop = false
   shell.update = null
+  session.text = null
+  session.textLoading = false
+  session.isWord = false
+  session.reviewText = null
+  library.reload.mockResolvedValue(undefined)
+  dictionary.reload.mockResolvedValue(undefined)
   checkHealth.mockResolvedValue({ ok: true })
 })
 
@@ -84,6 +102,7 @@ function expectStartedOnce() {
   expect(library.load).toHaveBeenCalledOnce()
   expect(dictionary.load).toHaveBeenCalledOnce()
   expect(session.loadBook).toHaveBeenCalledOnce()
+  expect(session.loadText).toHaveBeenCalledOnce()
   expect(session.startClock).toHaveBeenCalledOnce()
 }
 
@@ -257,5 +276,73 @@ describe('App startup', () => {
     expect(wrapper.find('.backend-error').exists()).toBe(true)
     expect(wrapper.get('.update button').text()).toBe('Installing… 0%')
     expect(library.load).not.toHaveBeenCalled()
+  })
+})
+
+describe('API restarted while the app runs', () => {
+  async function started() {
+    initBackend.mockResolvedValue({ ok: true })
+    render()
+    await flushPromises()
+    vi.clearAllMocks()
+    // The first load has finished, without a text.
+    session.textLoading = false
+  }
+
+  it('reloads the library, the dictionary and the missing practice text', async () => {
+    await started()
+
+    readyHandlers[0]('http://127.0.0.1:6000/api')
+    await flushPromises()
+
+    expect(library.reload).toHaveBeenCalledOnce()
+    expect(dictionary.reload).toHaveBeenCalledOnce()
+    expect(session.loadText).toHaveBeenCalledOnce()
+  })
+
+  it('keeps the text on screen, a word drill, a review and a load in flight as they are', async () => {
+    await started()
+
+    for (const patch of [
+      { text: { id: 1, content: 'shown' } },
+      { isWord: true },
+      { reviewText: 'aaaa' },
+      { textLoading: true },
+    ]) {
+      Object.assign(session, { text: null, textLoading: false, isWord: false, reviewText: null }, patch)
+      readyHandlers[0]('http://127.0.0.1:6000/api')
+      await flushPromises()
+    }
+
+    expect(library.reload).toHaveBeenCalledTimes(4)
+    expect(session.loadText).not.toHaveBeenCalled()
+  })
+
+  it('handles a failed reload instead of leaving the rejection unhandled', async () => {
+    await started()
+    /** A rejected reload that records whether anyone attached a rejection handler. */
+    const failing = () => {
+      const p = Promise.reject(new Error('down'))
+      p.catch(() => {})
+      return { p, then: vi.spyOn(p, 'then') }
+    }
+    const lib = failing()
+    const dict = failing()
+    // Plain functions: a vi.fn attaches its own handlers to the promises it returns.
+    const mocks = { library: library.reload, dictionary: dictionary.reload }
+    Object.assign(library, { reload: () => lib.p })
+    Object.assign(dictionary, { reload: () => dict.p })
+
+    try {
+      readyHandlers[0]('http://127.0.0.1:6000/api')
+      await flushPromises()
+    } finally {
+      Object.assign(library, { reload: mocks.library })
+      Object.assign(dictionary, { reload: mocks.dictionary })
+    }
+
+    const handled = (spy: typeof lib.then) => spy.mock.calls.some((c) => typeof c[1] === 'function')
+    expect(handled(lib.then)).toBe(true)
+    expect(handled(dict.then)).toBe(true)
   })
 })

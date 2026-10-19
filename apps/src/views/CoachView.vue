@@ -57,7 +57,7 @@ const recommended = computed(() =>
 /** `mode` names a category kind; resolve it against the loaded categories. */
 function start(mode: string, sub?: string) {
   const cat = library.categories.find((c) => c.kind === mode || c.id === mode)
-  session.reset({ mode: cat?.id ?? mode, sub })
+  void session.startCategory(cat?.id ?? mode, sub)
   router.push({ name: 'practice' })
 }
 

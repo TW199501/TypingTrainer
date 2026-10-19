@@ -125,9 +125,14 @@ public static class SqlSugarSetup
             db.DbMaintenance.CreateDatabase();
             db.CodeFirst.InitTables(Entities);
             LocalUserSeeds.Seed(db);
+            CategorySeeds.Seed(db);
+            TextSeeds.Seed(db);
+            WordSeeds.Seed(db);
             PromptSeeds.Seed(db);
             ModelSeeds.Seed(db);
             CatalogueTranslationSeeds.Seed(db);
+            // Texts saved before writes were normalised; clean rows are skipped.
+            TextContent.NormaliseStored(db);
         }
         finally
         {

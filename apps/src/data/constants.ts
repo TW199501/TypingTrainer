@@ -184,54 +184,17 @@ Object.keys(ZHUYIN).forEach((k) => {
 
 /* -------------------------------------------------------------------- texts */
 
-export interface TextGroup {
-  items: string[]
-}
-
-export const TEXTS: Record<string, TextGroup> = {
-  basic: {
-    items: [
-      'asdf jkl; asdf jkl; fjdk slas dkfj gh',
-      'the quick fox jumps over a lazy dog by the river',
-      'sad lads ask dad; fall glass half gaff jail',
-    ],
-  },
-  english: {
-    items: [
-      'Design is not just what it looks like and feels like. Design is how it works. A good interface disappears into the task, leaving the person free to think about the work itself.',
-      'Typing well is a quiet skill. It rewards patience over speed, accuracy over bursts, and steady daily practice over a single long session.',
-    ],
-  },
-  chinese: {
-    items: [
-      '打字練習的重點不在速度，而在穩定。每天固定練十分鐘，手指會自己記住位置，速度自然跟上來。',
-      '好的介面會消失在任務裡，讓人專心想事情本身，而不是想著手上的工具怎麼操作。',
-    ],
-  },
-  zhuyin: {
-    items: [
-      'ㄅㄆㄇㄈ ㄉㄊㄋㄌ ㄍㄎㄏ ㄐㄑㄒ',
-      'ㄓㄔㄕㄖ ㄗㄘㄙ ㄧㄨㄩ ㄚㄛㄜㄝ',
-      'ㄞㄟㄠㄡ ㄢㄣㄤㄥ ㄦ ˊˇˋ˙',
-    ],
-  },
-  bilingual: { items: [] },
-  code: {
-    items: [
-      'const wpm = (chars, ms) => Math.round((chars / 5) / (ms / 60000));',
-      'if (typed[i] !== target[i]) { errors.set(target[i], (errors.get(target[i]) ?? 0) + 1); }',
-      'SELECT UserId, AVG(WPM) FROM Sessions WHERE CreatedAt > @start GROUP BY UserId;',
-    ],
-  },
-  timed: {
-    items: [
-      'A calm mind types faster than a rushed one. Focus on the next character, not the whole paragraph, and the speed will follow on its own.',
-    ],
-  },
-  custom: {
-    items: ['Paste your own paragraph here to practise exactly the words you write every day at work.'],
-  },
-}
+/** Category kinds that have a `practice.meta.*` line; anything else uses `custom`. */
+export const PRACTICE_KINDS = [
+  'basic',
+  'english',
+  'chinese',
+  'zhuyin',
+  'bilingual',
+  'code',
+  'timed',
+  'custom',
+] as const
 
 /* --------------------------------------------------------------- categories */
 

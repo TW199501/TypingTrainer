@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { ZH_REV } from '@/data/constants'
 import { useSessionStore } from '@/stores/session'
 import { useSettingsStore } from '@/stores/settings'
@@ -13,6 +14,7 @@ const { t } = useI18n()
 const session = useSessionStore()
 const settings = useSettingsStore()
 const library = useLibraryStore()
+const router = useRouter()
 const { vh } = useViewport()
 
 const colRef = ref<HTMLElement | null>(null)
@@ -55,12 +57,16 @@ interface CharCell {
   shadow: string
   cur: boolean
   cell: boolean
+  /** Line breaks shown before this character; display only, never typed. */
+  brk: number
 }
 
 const chars = computed<CharCell[]>(() => {
   const t = session.target
   const cell = session.cellMode
   const idle = !session.startedAt && session.count === 0
+  const brk: Record<number, number> = {}
+  for (const b of session.breaks) brk[b] = (brk[b] || 0) + 1
   return t.split('').map((ch, i) => {
     const typedCh = session.typed[i]
     let color = '#8c877c'
@@ -82,6 +88,7 @@ const chars = computed<CharCell[]>(() => {
       deco,
       cur,
       cell,
+      brk: brk[i] || 0,
       anim:
         cur && idle ? (cell ? 'caretCell 1s steps(1) infinite' : 'caretPulse 1s steps(1) infinite') : 'none',
       shadow: cur
@@ -133,6 +140,13 @@ const prompt = computed(() => {
       '　' +
       (half === 'zh' ? t('practice.chineseFirst') : t('practice.thenEnglish')),
   }
+})
+
+/** Why there is nothing to type: the text is still loading, it failed to load, or the category has none. */
+const textState = computed<'loading' | 'error' | 'empty' | null>(() => {
+  if (session.target || session.isWord || session.reviewText) return null
+  if (session.textLoading) return 'loading'
+  return session.textError ? 'error' : 'empty'
 })
 
 const textCategory = computed(() => (session.reviewText ? t('practice.errorReview') : session.cat.name))
@@ -271,25 +285,42 @@ onMounted(() => nextTick(() => imeRef.value?.focus()))
         <span class="vocab-meta">{{ prompt.pos }} {{ prompt.ph }}</span>
       </div>
 
+      <div v-if="textState === 'loading'" class="text-state" role="status">
+        <span class="dim">{{ t('practice.loadingText') }}</span>
+      </div>
+      <div v-else-if="textState === 'error'" class="text-state" role="alert">
+        <span class="dim">{{ t('practice.loadError') }}</span>
+        <div class="btn-slot" @click="session.loadText()">
+          <a-button>{{ t('practice.retry') }}</a-button>
+        </div>
+      </div>
+      <div v-else-if="textState === 'empty'" class="text-state">
+        <span class="dim">{{ t('practice.emptyCategory') }}</span>
+        <div class="btn-slot" @click="router.push({ name: 'library' })">
+          <a-button>{{ t('practice.openLibrary') }}</a-button>
+        </div>
+      </div>
+
       <div
         ref="boxRef"
         class="chars"
         :style="{ textAlign: session.isWord ? 'center' : 'left', fontSize: typeFontSize }"
       >
-        <span
-          v-for="(c, i) in chars"
-          :key="i"
-          class="char"
-          :class="{ 'char--cell': c.cell, 'is-cur': c.cur }"
-          :style="{
-            animation: c.anim,
-            color: c.color,
-            background: c.bg,
-            boxShadow: c.shadow,
-            textDecoration: c.deco,
-          }"
-          >{{ c.ch }}<span v-if="c.cur && session.comp" class="comp">{{ session.comp }}</span></span
-        >
+        <template v-for="(c, i) in chars" :key="i">
+          <br v-for="n in c.brk" :key="n" class="soft-break" />
+          <span
+            class="char"
+            :class="{ 'char--cell': c.cell, 'is-cur': c.cur }"
+            :style="{
+              animation: c.anim,
+              color: c.color,
+              background: c.bg,
+              boxShadow: c.shadow,
+              textDecoration: c.deco,
+            }"
+            >{{ c.ch }}<span v-if="c.cur && session.comp" class="comp">{{ session.comp }}</span></span
+          >
+        </template>
       </div>
 
       <input
@@ -439,6 +470,16 @@ onMounted(() => nextTick(() => imeRef.value?.focus()))
 .vocab-meta {
   font-size: 13px;
   color: var(--text-3);
+}
+
+.text-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px 0;
+  flex-shrink: 0;
 }
 
 .chars {

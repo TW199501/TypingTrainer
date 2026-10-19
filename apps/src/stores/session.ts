@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { FMAP, SHIFTED, SRS_DAYS, TEXTS, ZHUYIN, ZH_REV, type Finger } from '@/data/constants'
+import { FMAP, SHIFTED, PRACTICE_KINDS, SRS_DAYS, ZHUYIN, ZH_REV, type Finger } from '@/data/constants'
 import { api, type KeystrokeDto } from '@/api'
 import type { BookEntry, Category, LayoutKind } from '@/data/types'
 import { useLibraryStore } from './library'
@@ -25,6 +25,7 @@ const FALLBACK_CAT: Category = {
   name: 'Basics',
   color: '#8a9a5b',
   layout: 'en',
+  isBuiltIn: true,
   kind: 'basic',
   children: [],
 }
@@ -60,6 +61,12 @@ export const useSessionStore = defineStore('session', () => {
   const comp = ref('')
   const composing = ref(false)
 
+  /** The text being typed; null while it loads or when the category has none. */
+  const text = ref<{ id: number; content: string } | null>(null)
+  const textLoading = ref(false)
+  /** True when the last text load failed, so the screen can say so instead of "no texts". */
+  const textError = ref(false)
+
   const book = ref<BookEntry[]>([])
   const bookLoaded = ref(false)
 
@@ -86,14 +93,31 @@ export const useSessionStore = defineStore('session', () => {
 
   const dictList = computed(() => dictionary.listFor(subName.value, dictionary.start))
 
-  const target = computed(() => {
-    if (reviewText.value) return reviewText.value
+  /**
+   * The text to type, plus the target indices a line break preceded. An IME has no
+   * key for a line break, so Chinese and bopomofo texts are typed straight across
+   * and their breaks are display only; latin texts keep `\n`, typed with Enter.
+   */
+  const lines = computed<{ target: string; breaks: number[] }>(() => {
+    if (reviewText.value) return { target: reviewText.value, breaks: [] }
     if (cat.value.kind === 'bilingual') {
-      return dictList.value.map((d) => d.zh.split('；')[0] + ' ' + d.w).join('　')
+      return {
+        target: dictList.value.map((d) => d.zh.split('；')[0] + ' ' + d.w).join('　'),
+        breaks: [],
+      }
     }
-    const g = TEXTS[cat.value.kind] || TEXTS.custom
-    return g.items[idx.value % g.items.length]
+    const content = text.value?.content ?? ''
+    if (!cellMode.value) return { target: content, breaks: [] }
+    let out = ''
+    const breaks: number[] = []
+    for (const ch of content) {
+      if (ch === '\n') breaks.push(out.length)
+      else if (ch !== '\r') out += ch
+    }
+    return { target: out, breaks }
   })
+  const target = computed(() => lines.value.target)
+  const breaks = computed(() => lines.value.breaks)
 
   const limit = computed(() => (cat.value.kind === 'timed' ? TIMED_SECONDS : 0))
   const elapsedMs = computed(() => {
@@ -160,7 +184,7 @@ export const useSessionStore = defineStore('session', () => {
   )
   /** i18n key suffix under `practice.meta.*`; null while reviewing. */
   const metaKey = computed(() =>
-    reviewText.value ? null : cat.value.kind in TEXTS ? cat.value.kind : 'custom',
+    reviewText.value ? null : (PRACTICE_KINDS.find((k) => k === cat.value.kind) ?? 'custom'),
   )
 
   /* ------------------------------------------------------------- actions */
@@ -213,14 +237,62 @@ export const useSessionStore = defineStore('session', () => {
     }, 1000)
   }
 
+  /** Bumped by every load and by `setText`, so an answer that arrives late is dropped. */
+  let textRequest = 0
+
+  function setText(t: { id: number; content: string } | null) {
+    textRequest++
+    text.value = t
+    textLoading.value = false
+    textError.value = false
+  }
+
+  /** Fetches the text for the current category and topic: the one at `idx`, wrapping round the list. */
+  async function loadText() {
+    const request = ++textRequest
+    text.value = null
+    textLoading.value = true
+    textError.value = false
+    try {
+      const category = mode.value
+      let list = sub.value ? await api.texts.list({ category, sub: sub.value }) : []
+      if (!list.length) list = await api.texts.list({ category })
+      const chosen = list.length ? list[idx.value % list.length] : null
+      const full = chosen ? await api.texts.get(chosen.id) : null
+      if (request !== textRequest) return
+      text.value = full ? { id: full.id, content: full.content ?? '' } : null
+    } catch {
+      // The connection store owns the lost-connection banner; the practice card says it failed.
+      if (request === textRequest) textError.value = true
+    } finally {
+      if (request === textRequest) textLoading.value = false
+    }
+  }
+
+  /** Practises one chosen text in the category it belongs to. */
+  async function startText(id: number) {
+    const full = await api.texts.get(id)
+    reset({ mode: full.categoryId, sub: full.subId, idx: 0 })
+    setText({ id: full.id, content: full.content ?? '' })
+  }
+
+  /** Opens a category (and topic) from outside the practice screen, with its own text. */
+  async function startCategory(categoryId: string, topicId?: string) {
+    reset({ mode: categoryId, sub: topicId ?? '', idx: 0 })
+    if (!isWord.value) await loadText()
+  }
+
   function pickCategory(c: Category) {
     reset({ mode: c.id, sub: c.children[0]?.id || '', idx: 0 })
+    if (!isWord.value) void loadText()
   }
   function pickTopic(topicId: string, i: number) {
     reset({ sub: topicId, idx: i })
+    if (!isWord.value) void loadText()
   }
   function nextText() {
     reset({ idx: idx.value + 1 })
+    if (!isWord.value) void loadText()
   }
 
   async function loadBook() {
@@ -309,6 +381,7 @@ export const useSessionStore = defineStore('session', () => {
 
     const lay = layout.value
     const t = target.value
+    if (!t) return false
 
     // Chinese goes through the IME input; here we only mirror the physical key.
     if (lay === 'zh') {
@@ -372,6 +445,7 @@ export const useSessionStore = defineStore('session', () => {
   /** Shared by the IME input's change and compositionend handlers. */
   function applyImeValue(raw: string) {
     const t = target.value
+    if (!t) return
     const v = (raw || '').slice(0, t.length)
     const grew = v.length > typed.value.length
     const nextErrors = { ...errors.value }
@@ -445,6 +519,9 @@ export const useSessionStore = defineStore('session', () => {
     count,
     armed,
     reviewText,
+    text,
+    textLoading,
+    textError,
     comp,
     composing,
     book,
@@ -458,6 +535,7 @@ export const useSessionStore = defineStore('session', () => {
     isZh,
     dictList,
     target,
+    breaks,
     limit,
     elapsedMs,
     correctChars,
@@ -482,6 +560,11 @@ export const useSessionStore = defineStore('session', () => {
     press,
     reset,
     startRun,
+    setText,
+    loadText,
+    startText,
+    startCategory,
+    applyImeValue,
     pickCategory,
     pickTopic,
     nextText,

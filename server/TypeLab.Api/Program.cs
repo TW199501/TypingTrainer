@@ -1,3 +1,4 @@
+using ELF.Modules.Excel.Extensions.DependencyInjection;
 using ELF.Modules.Hosting.Sidecar;
 using ELF.Modules.Hosting.Sidecar.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.HostFiltering;
@@ -47,6 +48,12 @@ if (!string.IsNullOrWhiteSpace(modelDir))
 builder.Services.AddOpenApi();
 builder.Services.AddSqlSugar(builder.Configuration, builder.Environment);
 builder.Services.AddSingleton<ModelStorage>();
+builder.Services.AddSingleton<LibraryService>();
+builder.Services.AddSingleton<DictionaryService>();
+
+// Dictionary files are read by ELF.Modules.Excel (.xlsx, and .csv/.tsv/.txt in UTF-8 or Big5).
+// Registering it also installs the code-page encodings, Big5 among them, for the whole process.
+builder.Services.AddElfExcel(builder.Configuration);
 
 // Translation: the router plus its providers. OpenCC handles Chinese script
 // conversion offline; Google covers the rest and stays dormant until
@@ -58,12 +65,13 @@ builder.Services.AddXiHanGoogleTranslator(builder.Configuration);
 // The web app is served from Vite in development and from file:// inside the
 // Tauri shell, so both origins have to be allowed.
 const string WebCors = "web";
+var webOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>()
+    ?? ["http://localhost:5173", "http://tauri.localhost", "tauri://localhost"];
 builder.Services.AddCors(o => o.AddPolicy(WebCors, p => p
-    .WithOrigins(
-        builder.Configuration.GetSection("Cors:Origins").Get<string[]>()
-            ?? ["http://localhost:5173", "http://tauri.localhost", "tauri://localhost"])
+    .WithOrigins(webOrigins)
     .AllowAnyHeader()
-    .AllowAnyMethod()));
+    .AllowAnyMethod()
+    .WithExposedHeaders("X-Total-Count")));
 
 var app = builder.Build();
 
@@ -91,6 +99,9 @@ if (!app.Services.GetRequiredService<ISidecarContext>().IsSidecar)
     app.UseHttpsRedirection();
 }
 
+// A write from a page outside the CORS allowlist is refused, even one CORS lets through
+// without a preflight (a multipart form). Same list as the policy, so the two cannot drift.
+app.UseMiddleware<OriginGuard>((IReadOnlyCollection<string>)webOrigins);
 app.UseCors(WebCors);
 
 // VITE_API_BASE_URL points at this prefix.
@@ -99,12 +110,12 @@ var api = app.MapGroup("/api");
 api.MapGet("/health", () => Results.Ok(new { status = "ok", utc = DateTime.UtcNow }))
     .WithName("Health");
 
-// Plumbing routes generated straight from the entities. Endpoints carrying real
-// behaviour (auth, session scoring and anti-cheat, stats, coach, error book)
-// are still to be written — see docs/api-contract.md.
-api.MapCrud<Category>("/categories");
-api.MapCrud<PracticeText>("/texts");
-api.MapCrud<Word>("/words");
+// Hand-written: the dictionary rows carry the local user's mastery and import rules.
+api.MapWords();
+
+// Hand-written: built-in categories and texts are read-only, and texts are filed
+// under a sub-category.
+api.MapLibrary();
 
 // Hand-written: the storage path is resolved per runtime, and the built-in
 // prompt rows must not be deletable through a generic DELETE.
